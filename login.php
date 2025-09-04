@@ -115,16 +115,9 @@
           </div>
 
           <!-- Error/Success Messages -->
-          <?php
-          if (isset($_GET['error'])) {
-            echo '<div class="alert alert-danger">' . htmlspecialchars($_GET['error']) . '</div>';
-          }
-          if (isset($_GET['success'])) {
-            echo '<div class="alert alert-success">' . htmlspecialchars($_GET['success']) . '</div>';
-          }
-          ?>
+          <div id="message-container"></div>
 
-          <form id="loginForm" action="login_process.php" method="POST" novalidate>
+          <form id="loginForm" novalidate>
             <div class="mb-3">
               <label for="loginEmail" class="form-label">Email Address</label>
               <div class="input-group">
@@ -190,13 +183,40 @@
       this.querySelector('i').classList.toggle('fa-eye-slash');
     });
 
-    // Form validation
-    document.getElementById('loginForm').addEventListener('submit', function(event) {
+    // Form submission and error handling
+    document.getElementById('loginForm').addEventListener('submit', async function(event) {
+      event.preventDefault();
+      event.stopPropagation();
+
       if (!this.checkValidity()) {
-        event.preventDefault();
-        event.stopPropagation();
+        this.classList.add('was-validated');
+        return;
       }
-      this.classList.add('was-validated');
+
+      const formData = new FormData(this);
+      const messageContainer = document.getElementById('message-container');
+
+      try {
+        const response = await fetch('login_process.php', {
+          method: 'POST',
+          body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.error) {
+          let errorMessage = '<div class="alert alert-danger">' + result.error.message + '</div>';
+          if (result.error.file && result.error.line) {
+            errorMessage += '<div class="alert alert-warning">Error in ' + result.error.file + ' on line ' + result.error.line + '</div>';
+          }
+          messageContainer.innerHTML = errorMessage;
+        } else if (result.success) {
+          messageContainer.innerHTML = '<div class="alert alert-success">Login successful!</div>';
+          // Redirect to a new page or update the UI
+        }
+      } catch (error) {
+        messageContainer.innerHTML = '<div class="alert alert-danger">An unexpected error occurred. Please try again.</div>';
+      }
     });
   </script>
 </body>

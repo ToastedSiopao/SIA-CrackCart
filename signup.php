@@ -138,18 +138,9 @@
       </div>
 
       <!-- Messages (PHP or JS can inject here) -->
-      <div id="messageContainer">
-        <?php
-        if (isset($_GET['error'])) {
-          echo '<div class="alert alert-danger">' . htmlspecialchars($_GET['error']) . '</div>';
-        }
-        if (isset($_GET['success'])) {
-          echo '<div class="alert alert-success">' . htmlspecialchars($_GET['success']) . '</div>';
-        }
-        ?>
-      </div>
+      <div id="messageContainer"></div>
 
-      <form id="signupForm" action="signup_process.php" method="POST">
+      <form id="signupForm" novalidate>
         <div class="mb-3">
           <label class="form-label">Full Name</label>
           <div class="input-group">
@@ -212,24 +203,54 @@
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      const form = document.getElementById('signupForm');
-      form.addEventListener('submit', function(event) {
-        const password = document.getElementById('password').value;
-        const confirmPassword = document.getElementById('confirmPassword').value;
+    document.getElementById('signupForm').addEventListener('submit', async function(event) {
+      event.preventDefault();
+      event.stopPropagation();
 
-        if (password.length < 8) {
-          event.preventDefault();
-          alert('Password must be at least 8 characters long');
-          return;
-        }
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      const messageContainer = document.getElementById('messageContainer');
 
-        if (password !== confirmPassword) {
-          event.preventDefault();
-          alert('Passwords do not match');
-          return;
+      if (password.length < 8) {
+        messageContainer.innerHTML = '<div class="alert alert-danger">Password must be at least 8 characters long.</div>';
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        messageContainer.innerHTML = '<div class="alert alert-danger">Passwords do not match.</div>';
+        return;
+      }
+
+      if (!this.checkValidity()) {
+        this.classList.add('was-validated');
+        return;
+      }
+
+      const formData = new FormData(this);
+
+      try {
+        const response = await fetch('signup_process.php', {
+          method: 'POST',
+          body: formData
+        });
+
+        const result = await response.json();
+        messageContainer.innerHTML = ''; // Clear previous messages
+
+        if (result.error) {
+          let errorMessage = '<div class="alert alert-danger">' + result.error.message + '</div>';
+          if (result.error.file && result.error.line) {
+            errorMessage += '<div class="alert alert-warning">Error in ' + result.error.file + ' on line ' + result.error.line + '</div>';
+          }
+          messageContainer.innerHTML = errorMessage;
+        } else if (result.success) {
+          messageContainer.innerHTML = '<div class="alert alert-success">Signup successful! You can now log in.</div>';
+          // Optionally, redirect to login page
+          // window.location.href = 'login.php';
         }
-      });
+      } catch (error) {
+        messageContainer.innerHTML = '<div class="alert alert-danger">An unexpected error occurred. Please try again.</div>';
+      }
     });
   </script>
 </body>
