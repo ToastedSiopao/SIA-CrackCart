@@ -131,7 +131,7 @@ $username = $isLoggedIn ? $_SESSION['user_name'] : '';
         <li><a href="#">About</a></li>
         <li><a href="#">Features</a></li>
         <?php if($isLoggedIn): ?>
-          <li><a href="dashboard.html">Dashboard</a></li>
+          <li><a href="dashboard.php">Dashboard</a></li>
           <li class="user-info">
             <i class="fas fa-user-circle"></i>
             <span><?php echo htmlspecialchars($username); ?></span>
@@ -151,7 +151,7 @@ $username = $isLoggedIn ? $_SESSION['user_name'] : '';
       <h1>Shop Smarter with CrackCart</h1>
       <p>Your one-stop cart for fast and reliable shopping.</p>
       <div class="buttons">
-        <a href="<?php echo $isLoggedIn ? 'dashboard.html' : 'login.php'; ?>" class="btn btn-primary">Get Started</a>
+        <a href="<?php echo $isLoggedIn ? 'dashboard.php' : 'login.php'; ?>" class="btn btn-primary">Get Started</a>
         <a href="#" class="btn btn-secondary">Learn More</a>
       </div>
     </div>

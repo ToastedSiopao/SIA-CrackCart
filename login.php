@@ -210,10 +210,13 @@
             errorMessage += '<div class="alert alert-warning">Error in ' + result.error.file + ' on line ' + result.error.line + '</div>';
           }
           messageContainer.innerHTML = errorMessage;
-        } else if (result.success) {
-          messageContainer.innerHTML = '<div class="alert alert-success">Login successful!</div>';
-          // Redirect to a new page or update the UI
-        }
+        } else if (result.success && result.two_factor) {
+    messageContainer.innerHTML = '<div class="alert alert-success">Login successful! Redirecting...</div>';
+    setTimeout(() => {
+        window.location.href = "2fa.php"; 
+    }, 1000);
+}
+
       } catch (error) {
         messageContainer.innerHTML = '<div class="alert alert-danger">An unexpected error occurred. Please try again.</div>';
       }
