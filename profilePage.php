@@ -1,4 +1,4 @@
-<?php
+ <?php
 // Start session and check if user is logged in
 session_start();
 if (!isset($_SESSION['user_id'])) {
@@ -11,21 +11,26 @@ include("db_connect.php");
 
 // Initialize variables
 $user_id = $_SESSION['user_id'];
-$full_name = $email = $phone = $role = $status = $created_at = "";
+$first_name = $middle_name = $last_name = $email = $phone = $role = $house_no = $street_name = $barangay = $city = $created_at = "";
 $success_msg = $error_msg = "";
 
 // Fetch user data from database
-$sql = "SELECT * FROM users WHERE user_id = '$user_id'";
+$sql = "SELECT * FROM USER WHERE USER_ID = '$user_id'";
 $result = mysqli_query($conn, $sql);
 
 if ($result && mysqli_num_rows($result) > 0) {
     $user = mysqli_fetch_assoc($result);
-    $full_name = $user['full_name'];
-    $email = $user['email'];
-    $phone = $user['phone'] ?? '';
-    $role = $user['role'] ?? 'customer';
-    $status = $user['status'] ?? 'active';
-    $created_at = $user['created_at'] ?? '';
+    $first_name = $user['FIRST_NAME'];
+    $middle_name = $user['MIDDLE_NAME'] ?? '';
+    $last_name = $user['LAST_NAME'];
+    $email = $user['EMAIL'];
+    $phone = $user['PHONE'] ?? '';
+    $role = $user['ROLE'] ?? 'customer';
+    $house_no = $user['HOUSE_NO'] ?? '';
+    $street_name = $user['STREET_NAME'] ?? '';
+    $barangay = $user['BARANGAY'] ?? '';
+    $city = $user['CITY'] ?? '';
+    $created_at = $user['CREATED_AT'] ?? '';
 } else {
     $error_msg = "User not found!";
 }
@@ -33,8 +38,14 @@ if ($result && mysqli_num_rows($result) > 0) {
 // Process form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['save'])) {
     // Get and sanitize form data
-    $full_name = mysqli_real_escape_string($conn, $_POST['full_name']);
+    $first_name = mysqli_real_escape_string($conn, $_POST['first_name']);
+    $middle_name = mysqli_real_escape_string($conn, $_POST['middle_name']);
+    $last_name = mysqli_real_escape_string($conn, $_POST['last_name']);
     $phone = mysqli_real_escape_string($conn, $_POST['phone']);
+    $house_no = mysqli_real_escape_string($conn, $_POST['house_no']);
+    $street_name = mysqli_real_escape_string($conn, $_POST['street_name']);
+    $barangay = mysqli_real_escape_string($conn, $_POST['barangay']);
+    $city = mysqli_real_escape_string($conn, $_POST['city']);
     
     // Check if password is being changed
     $password_update = "";
@@ -43,23 +54,36 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['save'])) {
             $error_msg = "Password must be at least 8 characters long.";
         } else {
             $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
-            $password_update = ", password = '$password'";
+            $password_update = ", PASSWORD = '$password'";
         }
     }
     
     // Only update if no error with password
     if (empty($error_msg)) {
         // Update user table
-        $update_sql = "UPDATE users 
-                      SET full_name = '$full_name', 
-                          phone = '$phone'
+        $update_sql = "UPDATE USER 
+                      SET FIRST_NAME = '$first_name', 
+                          MIDDLE_NAME = '$middle_name',
+                          LAST_NAME = '$last_name',
+                          PHONE = '$phone',
+                          HOUSE_NO = '$house_no',
+                          STREET_NAME = '$street_name',
+                          BARANGAY = '$barangay',
+                          CITY = '$city'
                           $password_update 
-                      WHERE user_id = '$user_id'";
+                      WHERE USER_ID = '$user_id'";
         
         if (mysqli_query($conn, $update_sql)) {
             $success_msg = "Profile updated successfully!";
             // Update session variables
-            $_SESSION['user_name'] = $full_name;
+            $_SESSION['user_first_name'] = $first_name;
+            $_SESSION['user_middle_name'] = $middle_name;
+            $_SESSION['user_last_name'] = $last_name;
+            $_SESSION['user_phone'] = $phone;
+            $_SESSION['user_house_no'] = $house_no;
+            $_SESSION['user_street_name'] = $street_name;
+            $_SESSION['user_barangay'] = $barangay;
+            $_SESSION['user_city'] = $city;
         } else {
             $error_msg = "Error updating profile: " . mysqli_error($conn);
         }
@@ -96,7 +120,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['save'])) {
         <a href="#" class="text-dark fs-5"><i class="bi bi-bell"></i></a>
         <div class="dropdown">
           <a class="d-flex align-items-center text-dark text-decoration-none dropdown-toggle" href="#" data-bs-toggle="dropdown">
-            <span class="me-2"><?php echo htmlspecialchars($_SESSION['user_name']); ?></span>
+            <span class="me-2"><?php echo htmlspecialchars($_SESSION['user_first_name'] . ' ' . $_SESSION['user_last_name']); ?></span>
             <i class="bi bi-person-circle fs-4"></i>
           </a>
           <ul class="dropdown-menu dropdown-menu-end">
@@ -115,12 +139,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['save'])) {
       <!-- Sidebar -->
       <div class="col-auto col-md-3 col-lg-2 px-3 sidebar d-none d-md-block">
         <ul class="nav flex-column mb-auto mt-4">
-          <li><a href="dashboard.php" class="nav-link"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a></li>
-          <li><a href="#" class="nav-link"><i class="bi bi-cart3 me-2"></i> Order</a></li>
-          <li><a href="#" class="nav-link"><i class="bi bi-chat-dots me-2"></i> Messages</a></li>
-          <li><a href="#" class="nav-link"><i class="bi bi-clock-history me-2"></i> Order History</a></li>
-          <li><a href="#" class="nav-link"><i class="bi bi-receipt me-2"></i> Bills</a></li>
-          <li><a href="profilePage.php" class="nav-link active"><i class="bi bi-gear me-2"></i> Setting</a></li>
+          <li><a href="dashboard.php" class="nav-link active"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a></li>
+          <li><a href="orders.php" class="nav-link"><i class="bi bi-cart3 me-2"></i>Make an Order</a></li>
+          <li><a href="messages.php" class="nav-link"><i class="bi bi-chat-dots me-2"></i> Messages</a></li>
+          <li><a href="history.php" class="nav-link"><i class="bi bi-clock-history me-2"></i> Order History</a></li>
+          <li><a href="bills.php" class="nav-link"><i class="bi bi-receipt me-2"></i> Bills</a></li>
+          <li><a href="profilePage.php" class="nav-link"><i class="bi bi-gear me-2"></i> Setting</a></li>
+          <li><a href="producers.php" class="nav-link"><i class="bi bi-egg me-2"></i> Producers</a></li>
+
         </ul>
         <div class="upgrade-box">
           <p>Upgrade your Account to Get Free Voucher</p>
@@ -148,7 +174,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['save'])) {
         <div class="profile-card">
           <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-              <h5 id="profileName"><?php echo htmlspecialchars($full_name); ?></h5>
+              <h5 id="profileName"><?php echo htmlspecialchars($first_name . ' ' . $last_name); ?></h5>
               <p class="text-muted small mb-0" id="profileEmail"><?php echo htmlspecialchars($email); ?></p>
               <p class="text-muted small mb-0">Role: <?php echo ucfirst(htmlspecialchars($role)); ?></p>
             </div>
@@ -160,14 +186,54 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['save'])) {
           </div>
 
           <form id="profileForm" method="POST" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>">
+            <!-- Name Fields -->
+            <div class="row mb-3">
+              <div class="col-md-4">
+                <label class="form-label">First Name</label>
+                <input type="text" class="form-control" id="firstName" name="first_name" value="<?php echo htmlspecialchars($first_name); ?>" disabled required>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Middle Name</label>
+                <input type="text" class="form-control" id="middleName" name="middle_name" value="<?php echo htmlspecialchars($middle_name); ?>" disabled>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Last Name</label>
+                <input type="text" class="form-control" id="lastName" name="last_name" value="<?php echo htmlspecialchars($last_name); ?>" disabled required>
+              </div>
+            </div>
+
             <div class="row mb-3">
               <div class="col-md-6">
-                <label class="form-label">Full Name</label>
-                <input type="text" class="form-control" id="fullName" name="full_name" value="<?php echo htmlspecialchars($full_name); ?>" disabled required>
+                <label class="form-label">Email Address</label>
+                <input type="email" class="form-control" value="<?php echo htmlspecialchars($email); ?>" disabled>
+                <div class="form-text">Email cannot be changed</div>
               </div>
               <div class="col-md-6">
                 <label class="form-label">Phone Number</label>
                 <input type="text" class="form-control" id="phone" name="phone" value="<?php echo htmlspecialchars($phone); ?>" disabled>
+              </div>
+            </div>
+
+            <!-- Address Fields -->
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="form-label">House No.</label>
+                <input type="text" class="form-control" id="houseNo" name="house_no" value="<?php echo htmlspecialchars($house_no); ?>" disabled>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Street Name</label>
+                <input type="text" class="form-control" id="streetName" name="street_name" value="<?php echo htmlspecialchars($street_name); ?>" disabled>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="form-label">Barangay</label>
+                <input type="text" class="form-control" id="barangay" name="barangay" value="<?php echo htmlspecialchars($barangay); ?>" disabled>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">City</label>
+                <input type="text" class="form-control" id="city" name="city" value="<?php echo htmlspecialchars($city); ?>" disabled required>
               </div>
             </div>
 
@@ -191,7 +257,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['save'])) {
                   <p class="mb-1"><strong>Role:</strong> <?php echo ucfirst(htmlspecialchars($role)); ?></p>
                 </div>
                 <div class="col-md-6">
-                  <p class="mb-1"><strong>Status:</strong> <?php echo ucfirst(htmlspecialchars($status)); ?></p>
                   <p class="mb-1"><strong>Member since:</strong> <?php echo htmlspecialchars($created_at); ?></p>
                 </div>
               </div>
@@ -220,8 +285,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['save'])) {
     editBtn.addEventListener("click", () => {
       originalValues = {};
       formFields.forEach(f => {
-        f.disabled = false;
-        originalValues[f.id] = f.value;
+        // Skip email field as it cannot be changed
+        if (f.type !== 'email') {
+          f.disabled = false;
+          originalValues[f.id] = f.value;
+        }
       });
       editBtn.classList.add("d-none");
       saveBtn.classList.remove("d-none");
@@ -231,8 +299,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['save'])) {
     // Cancel changes
     cancelBtn.addEventListener("click", () => {
       formFields.forEach(f => {
-        f.value = originalValues[f.id];
-        f.disabled = true;
+        if (f.type !== 'email') {
+          f.value = originalValues[f.id];
+          f.disabled = true;
+        }
       });
       // Clear password fields
       passwordField.value = "";
@@ -266,4 +336,4 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['save'])) {
     });
   </script>
 </body>
-</html>
+</html

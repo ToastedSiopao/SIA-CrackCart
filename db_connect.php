@@ -1,4 +1,4 @@
-<?php
+ <?php
 // MySQL connection details
 $host = "sql101.infinityfree.com";   // MySQL Hostname
 $user = "if0_39829885";             // MySQL Username
@@ -12,4 +12,4 @@ $conn = mysqli_connect($host, $user, $pass, $db);
 if (!$conn) {
     die("Connection failed: " . mysqli_connect_error());
 }
-?>
+?

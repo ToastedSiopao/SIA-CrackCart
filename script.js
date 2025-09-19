@@ -1,4 +1,4 @@
-// Password visibility toggle
+ // Password visibility toggle
 function initPasswordToggle() {
   const toggleButtons = document.querySelectorAll('[id^="toggle"]');
   
@@ -370,4 +370,4 @@ window.CrackCartAuth = {
   validatePassword,
   checkPasswordStrength,
   showFormFeedback
-};
+}

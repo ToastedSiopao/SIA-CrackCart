@@ -1,4 +1,4 @@
-<?php
+ <?php
 set_error_handler(function($errno, $errstr, $errfile, $errline) {
     http_response_code(500);
     echo json_encode([
@@ -10,4 +10,4 @@ set_error_handler(function($errno, $errstr, $errfile, $errline) {
     ]);
     die();
 });
-?>
+?

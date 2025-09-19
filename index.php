@@ -1,4 +1,4 @@
-<?php
+ <?php
 // Start session to check login status
 session_start();
 $isLoggedIn = isset($_SESSION['user_id']);
@@ -160,4 +160,4 @@ $username = $isLoggedIn ? $_SESSION['user_name'] : '';
     </div>
   </section>
 </body>
-</html>
+</html

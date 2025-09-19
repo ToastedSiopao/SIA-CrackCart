@@ -1,4 +1,4 @@
-:root {
+ :root {
   --primary-color: #ffb347;
   --secondary-color: #ffd54f;
   --accent-color: #ffe082;
@@ -323,4 +323,3 @@ body::before {
   transform: translateY(-5px);
   box-shadow: 0 15px 35px rgba(0,0,0,.15);
 }
-

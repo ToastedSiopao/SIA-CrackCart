@@ -1,4 +1,4 @@
-<?php
+ <?php
 session_start();
 
 // If user has no 2FA session, send them back to login

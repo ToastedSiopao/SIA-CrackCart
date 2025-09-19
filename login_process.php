@@ -1,4 +1,4 @@
-<?php
+ <?php
 require_once 'error_handler.php';
 require 'vendor/autoload.php';
 
@@ -14,20 +14,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $email = mysqli_real_escape_string($conn, $_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
 
-    // Find active user by email
-    $sql = "SELECT * FROM users WHERE email='$email' AND status='active' LIMIT 1";
+    // Find active user by email - updated to match USER table structure
+    $sql = "SELECT * FROM USER WHERE EMAIL='$email' LIMIT 1";
     $result = mysqli_query($conn, $sql);
 
     if ($result && mysqli_num_rows($result) === 1) {
         $user = mysqli_fetch_assoc($result);
 
-        if (password_verify($password, $user['password'])) {
+        if (password_verify($password, $user['PASSWORD'])) {
             // Generate 6-digit 2FA code
             $two_fa_code = rand(100000, 999999);
 
             // Save temporary values in session
             $_SESSION['2fa_code'] = (string)$two_fa_code;
-            $_SESSION['2fa_user_id'] = $user['user_id']; 
+            $_SESSION['2fa_user_id'] = $user['USER_ID']; 
 
             // Send code by email
             $mail = new PHPMailer(true);
@@ -42,13 +42,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                 // Recipients
                 $mail->setFrom('yourgmail@gmail.com', 'CrackCart');
-                $mail->addAddress($user['email'], $user['full_name']);
+                $mail->addAddress($user['EMAIL'], $user['FIRST_NAME'] . ' ' . $user['LAST_NAME']);
                 $mail->addReplyTo('yourgmail@gmail.com', 'Support Team');
 
                 // Email content
                 $mail->isHTML(true);
                 $mail->Subject = 'Your CrackCart 2FA Code';
-                $mail->Body    = "Hello <b>{$user['full_name']}</b>,<br><br>
+                $mail->Body    = "Hello <b>{$user['FIRST_NAME']} {$user['LAST_NAME']}</b>,<br><br>
                                   Your 2FA code is: <b>{$two_fa_code}</b><br><br>
                                   This code will expire in 5 minutes.";
                 $mail->AltBody = "Your 2FA code is: {$two_fa_code}";
@@ -72,3 +72,4 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         exit();
     }
 }
+?
