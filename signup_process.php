@@ -1,4 +1,4 @@
-<?php
+ <?php
 require_once 'error_handler.php';
 
 header('Content-Type: application/json');
@@ -6,12 +6,20 @@ header('Content-Type: application/json');
 include("db_connect.php");
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $fullName = mysqli_real_escape_string($conn, $_POST['fullName']);
+    // Get form data
+    $firstName = mysqli_real_escape_string($conn, $_POST['firstName']);
+    $middleName = mysqli_real_escape_string($conn, $_POST['middleName'] ?? '');
+    $lastName = mysqli_real_escape_string($conn, $_POST['lastName']);
     $email = mysqli_real_escape_string($conn, $_POST['email']);
-    $phone = mysqli_real_escape_string($conn, $_POST['phone']);
+    $phone = mysqli_real_escape_string($conn, $_POST['phone'] ?? '');
+    $houseNo = mysqli_real_escape_string($conn, $_POST['houseNo'] ?? '');
+    $streetName = mysqli_real_escape_string($conn, $_POST['streetName'] ?? '');
+    $barangay = mysqli_real_escape_string($conn, $_POST['barangay'] ?? '');
+    $city = mysqli_real_escape_string($conn, $_POST['city']);
     $password = $_POST['password'];
     $confirmPassword = $_POST['confirmPassword'];
 
+    // Validation
     if ($password !== $confirmPassword) {
         echo json_encode(['error' => ['message' => 'Passwords do not match']]);
         exit();
@@ -22,9 +30,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         exit();
     }
 
+    if (empty($firstName) || empty($lastName) || empty($email) || empty($city)) {
+        echo json_encode(['error' => ['message' => 'Please fill in all required fields']]);
+        exit();
+    }
+
     $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
-    $checkEmail = "SELECT * FROM users WHERE email='$email'";
+    // Check if email already exists
+    $checkEmail = "SELECT * FROM USER WHERE EMAIL='$email'";
     $result = mysqli_query($conn, $checkEmail);
 
     if (mysqli_num_rows($result) > 0) {
@@ -32,8 +46,34 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         exit();
     }
 
-    $sql = "INSERT INTO users (full_name, email, phone, password, role, status, created_at) 
-            VALUES ('$fullName', '$email', '$phone', '$hashedPassword', 'customer', 'active', NOW())";
+    // Insert into database
+    $sql = "INSERT INTO USER (
+        FIRST_NAME, 
+        MIDDLE_NAME, 
+        LAST_NAME, 
+        EMAIL, 
+        PHONE, 
+        PASSWORD, 
+        HOUSE_NO, 
+        STREET_NAME, 
+        BARANGAY, 
+        CITY, 
+        ROLE,
+        CREATED_AT
+    ) VALUES (
+        '$firstName', 
+        '$middleName', 
+        '$lastName', 
+        '$email', 
+        '$phone', 
+        '$hashedPassword', 
+        '$houseNo', 
+        '$streetName', 
+        '$barangay', 
+        '$city', 
+        'customer',
+        NOW()
+    )";
 
     if (mysqli_query($conn, $sql)) {
         echo json_encode(['success' => true]);
@@ -43,4 +83,4 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         exit();
     }
 }
-?>
+?

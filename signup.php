@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -11,12 +11,11 @@
       margin: 0;
       padding: 0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: url("assets/eggBG.png") no-repeat center center fixed; /* your background */
+      background: url("assets/eggBG.png") no-repeat center center fixed;
       background-size: cover;
       overflow-x: hidden;
     }
 
-    /* Header */
     .header-logo {
       display: flex;
       align-items: center;
@@ -34,7 +33,6 @@
       color: #222;
     }
 
-    /* Main container */
     .content-container {
       display: flex;
       justify-content: center;
@@ -44,7 +42,6 @@
       flex-wrap: wrap;
     }
 
-    /* Left text card */
     .text-card {
       flex: 1;
       min-width: 320px;
@@ -78,7 +75,6 @@
     .arrow-btn.right { right: -20px; }
     .arrow-btn i { color: #222; }
 
-    /* Signup card */
     .signup-card {
       flex: 0.7;
       min-width: 320px;
@@ -141,11 +137,28 @@
       <div id="messageContainer"></div>
 
       <form id="signupForm" novalidate>
-        <div class="mb-3">
-          <label class="form-label">Full Name</label>
-          <div class="input-group">
-            <span class="input-group-text"><i class="fas fa-user"></i></span>
-            <input type="text" class="form-control" name="fullName" placeholder="Enter your full name" required>
+        <!-- Name Fields -->
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <label class="form-label">First Name</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="fas fa-user"></i></span>
+              <input type="text" class="form-control" name="firstName" placeholder="First name" required>
+            </div>
+          </div>
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Middle Name</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="fas fa-user"></i></span>
+              <input type="text" class="form-control" name="middleName" placeholder="Middle name">
+            </div>
+          </div>
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Last Name</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="fas fa-user"></i></span>
+              <input type="text" class="form-control" name="lastName" placeholder="Last name" required>
+            </div>
           </div>
         </div>
 
@@ -162,6 +175,41 @@
           <div class="input-group">
             <span class="input-group-text"><i class="fas fa-phone"></i></span>
             <input type="tel" class="form-control" name="phone" placeholder="Enter your phone number">
+          </div>
+        </div>
+
+        <!-- Address Fields -->
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">House No.</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="fas fa-home"></i></span>
+              <input type="text" class="form-control" name="houseNo" placeholder="House number">
+            </div>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Street Name</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="fas fa-road"></i></span>
+              <input type="text" class="form-control" name="streetName" placeholder="Street name">
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Barangay</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="fas fa-map-marker"></i></span>
+              <input type="text" class="form-control" name="barangay" placeholder="Barangay">
+            </div>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">City</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="fas fa-city"></i></span>
+              <input type="text" class="form-control" name="city" placeholder="City" required>
+            </div>
           </div>
         </div>
 
@@ -254,4 +302,4 @@
     });
   </script>
 </body>
-</html>
+</html
