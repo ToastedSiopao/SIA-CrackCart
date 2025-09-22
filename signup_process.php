@@ -1,4 +1,4 @@
-<?php
+ <?php
 require_once 'error_handler.php';
 
 header('Content-Type: application/json');
@@ -7,17 +7,17 @@ include("db_connect.php");
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Get form data
-    $firstName = $_POST['firstName'] ?? '';
-    $middleName = $_POST['middleName'] ?? '';
-    $lastName = $_POST['lastName'] ?? '';
-    $email = $_POST['email'] ?? '';
-    $phone = $_POST['phone'] ?? '';
-    $houseNo = $_POST['houseNo'] ?? '';
-    $streetName = $_POST['streetName'] ?? '';
-    $barangay = $_POST['barangay'] ?? '';
-    $city = $_POST['city'] ?? '';
-    $password = $_POST['password'] ?? '';
-    $confirmPassword = $_POST['confirmPassword'] ?? '';
+    $firstName = mysqli_real_escape_string($conn, $_POST['firstName']);
+    $middleName = mysqli_real_escape_string($conn, $_POST['middleName'] ?? '');
+    $lastName = mysqli_real_escape_string($conn, $_POST['lastName']);
+    $email = mysqli_real_escape_string($conn, $_POST['email']);
+    $phone = mysqli_real_escape_string($conn, $_POST['phone'] ?? '');
+    $houseNo = mysqli_real_escape_string($conn, $_POST['houseNo'] ?? '');
+    $streetName = mysqli_real_escape_string($conn, $_POST['streetName'] ?? '');
+    $barangay = mysqli_real_escape_string($conn, $_POST['barangay'] ?? '');
+    $city = mysqli_real_escape_string($conn, $_POST['city']);
+    $password = $_POST['password'];
+    $confirmPassword = $_POST['confirmPassword'];
 
     // Validation
     if ($password !== $confirmPassword) {
@@ -35,54 +35,52 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         exit();
     }
 
-    // Check if email already exists using a prepared statement
-    $sql_check = "SELECT USER_ID FROM USER WHERE EMAIL=? LIMIT 1";
-    $stmt_check = $conn->prepare($sql_check);
-    $stmt_check->bind_param("s", $email);
-    $stmt_check->execute();
-    $stmt_check->store_result();
+    $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
-    if ($stmt_check->num_rows > 0) {
+    // Check if email already exists
+    $checkEmail = "SELECT * FROM USER WHERE EMAIL='$email'";
+    $result = mysqli_query($conn, $checkEmail);
+
+    if (mysqli_num_rows($result) > 0) {
         echo json_encode(['error' => ['message' => 'Email already registered. Please login.']]);
-        $stmt_check->close();
         exit();
     }
-    $stmt_check->close();
 
-    // Hash the password
-    $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-    $role = 'customer'; // Default role
+    // Insert into database
+    $sql = "INSERT INTO USER (
+        FIRST_NAME, 
+        MIDDLE_NAME, 
+        LAST_NAME, 
+        EMAIL, 
+        PHONE, 
+        PASSWORD, 
+        HOUSE_NO, 
+        STREET_NAME, 
+        BARANGAY, 
+        CITY, 
+        ROLE,
+        CREATED_AT
+    ) VALUES (
+        '$firstName', 
+        '$middleName', 
+        '$lastName', 
+        '$email', 
+        '$phone', 
+        '$hashedPassword', 
+        '$houseNo', 
+        '$streetName', 
+        '$barangay', 
+        '$city', 
+        'customer',
+        NOW()
+    )";
 
-    // Insert into database using a prepared statement
-    $sql_insert = "INSERT INTO USER (
-        FIRST_NAME, MIDDLE_NAME, LAST_NAME, EMAIL, PHONE, PASSWORD, 
-        HOUSE_NO, STREET_NAME, BARANGAY, CITY, ROLE, CREATED_AT
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
-
-    $stmt_insert = $conn->prepare($sql_insert);
-    $stmt_insert->bind_param("sssssssssss", 
-        $firstName, 
-        $middleName, 
-        $lastName, 
-        $email, 
-        $phone, 
-        $hashedPassword, 
-        $houseNo, 
-        $streetName, 
-        $barangay, 
-        $city, 
-        $role
-    );
-
-    if ($stmt_insert->execute()) {
+    if (mysqli_query($conn, $sql)) {
         echo json_encode(['success' => true]);
+        exit();
     } else {
-        error_log("Signup Error: " . $stmt_insert->error);
-        echo json_encode(['error' => ['message' => 'Error creating account. Please try again later.']]);
+        echo json_encode(['error' => ['message' => 'Error creating account: ' . mysqli_error($conn)]]);
+        exit();
     }
-
-    $stmt_insert->close();
-    $conn->close();
-    exit();
 }
 ?>

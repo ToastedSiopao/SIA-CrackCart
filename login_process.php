@@ -1,4 +1,4 @@
-<?php
+ <?php
 require_once 'error_handler.php';
 require 'vendor/autoload.php';
 
@@ -8,21 +8,18 @@ use PHPMailer\PHPMailer\Exception;
 header('Content-Type: application/json');
 
 session_start();
-include("db_connect.php"); // $conn is an object
+include("db_connect.php");
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $email = $_POST['email'] ?? '';
+    $email = mysqli_real_escape_string($conn, $_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
 
-    // Find active user by email - updated to use prepared statements
-    $sql = "SELECT * FROM USER WHERE EMAIL=? LIMIT 1";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("s", $email);
-    $stmt->execute();
-    $result = $stmt->get_result();
+    // Find active user by email - updated to match USER table structure
+    $sql = "SELECT * FROM USER WHERE EMAIL='$email' LIMIT 1";
+    $result = mysqli_query($conn, $sql);
 
-    if ($result && $result->num_rows === 1) {
-        $user = $result->fetch_assoc();
+    if ($result && mysqli_num_rows($result) === 1) {
+        $user = mysqli_fetch_assoc($result);
 
         if (password_verify($password, $user['PASSWORD'])) {
             // Generate 6-digit 2FA code
@@ -30,7 +27,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             // Save temporary values in session
             $_SESSION['2fa_code'] = (string)$two_fa_code;
-            $_SESSION['2fa_user_id'] = $user['USER_ID'];
+            $_SESSION['2fa_user_id'] = $user['USER_ID']; 
 
             // Send code by email
             $mail = new PHPMailer(true);

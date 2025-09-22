@@ -10,4 +10,4 @@ set_error_handler(function($errno, $errstr, $errfile, $errline) {
     ]);
     die();
 });
-?
+?>

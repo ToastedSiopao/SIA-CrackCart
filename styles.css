@@ -1,114 +1,325 @@
-/* General Styles */
-body {
-    font-family: 'Poppins', sans-serif;
-    color: #444;
-    line-height: 1.6;
+ :root {
+  --primary-color: #ffb347;
+  --secondary-color: #ffd54f;
+  --accent-color: #ffe082;
+  --success-color: #27ae60;
+  --warning-color: #ff9800;
+  --danger-color: #e74c3c;
+  --light-color: #fffef7;
+  --dark-color: #e65100;
+  --border-radius: 18px;
+  --box-shadow: 0 10px 24px rgba(0,0,0,.12);
+  --transition: all 0.3s ease;
 }
 
-h1, h2, h3, h4, h5, h6 {
-    font-weight: 600;
-    color: #222;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Background overlay */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: url('bg.jpg') no-repeat center center fixed;
+  background-size: cover;
+}
+
+.header-logo {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1050;
+  text-align: center;
+}
+
+.logo-img {
+  height: 60px;
+  width: auto;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+  transition: var(--transition);
+}
+
+.logo-img:hover {
+  transform: scale(1.05);
+}
+
+/* Login Page Styles */
+.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding-top: 100px;
+}
+
+.carousel-container {
+  background: rgba(255, 248, 240, 0.98);
+  backdrop-filter: blur(10px);
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  border: 1px solid rgba(255, 213, 79, 0.3);
+  height: 450px;
+  overflow: hidden;
+  transition: var(--transition);
+}
+
+.carousel-container:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 35px rgba(0,0,0,.15);
+}
+
+.carousel-content {
+  padding: 60px 40px;
+  text-align: center;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.carousel-content i {
+  font-size: 3rem;
+  color: var(--primary-color);
+  margin-bottom: 1rem;
+}
+
+.carousel-content h3 {
+  color: var(--dark-color);
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.carousel-content p {
+  color: #666;
+  line-height: 1.6;
+  font-size: 1rem;
+}
+
+.carousel-control-prev,
+.carousel-control-next {
+  width: 40px;
+  height: 40px;
+  background: var(--primary-color);
+  border-radius: 50%;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0.8;
+  transition: var(--transition);
+}
+
+.carousel-control-prev {
+  left: 15px;
+}
+
+.carousel-control-next {
+  right: 15px;
+}
+
+.carousel-control-prev:hover,
+.carousel-control-next:hover {
+  opacity: 1;
+  transform: translateY(-50%) scale(1.1);
+}
+
+.login-container {
+  background: rgba(255, 248, 240, 0.98);
+  backdrop-filter: blur(10px);
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  border: 1px solid rgba(255, 213, 79, 0.3);
+  padding: 40px;
+  transition: var(--transition);
+}
+
+.login-container:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 35px rgba(0,0,0,.15);
+}
+
+.truck-logo {
+  height: 50px;
+  width: auto;
+  margin-bottom: 10px;
+}
+
+.login-title,
+.signup-title {
+  color: var(--dark-color);
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+/* Form Styles */
+.form-label {
+  font-weight: 500;
+  color: var(--dark-color);
+  margin-bottom: 8px;
+}
+
+.form-control {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 14px;
+  transition: var(--transition);
+}
+
+.form-control:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.2rem rgba(255, 179, 71, 0.25);
+}
+
+.input-group-text {
+  background: rgba(255, 248, 240, 0.8);
+  border: 1px solid #ddd;
+  border-radius: 8px 0 0 8px;
+  color: var(--dark-color);
 }
 
 .btn-primary {
-    background-color: #ffc107;
-    border: none;
-    padding: 12px 25px;
-    border-radius: 30px;
-    font-weight: 600;
-    transition: background-color 0.3s ease;
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: var(--transition);
 }
 
 .btn-primary:hover {
-    background-color: #e0a800;
+  background: linear-gradient(135deg, var(--secondary-color), var(--accent-color));
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(255, 179, 71, 0.4);
 }
 
-/* Navbar */
-.navbar {
-    padding: 1rem 0;
-    background-color: #fff;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+.btn-outline-primary {
+  border: 2px solid var(--primary-color);
+  color: var(--primary-color);
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: var(--transition);
 }
 
-.navbar-brand {
-    font-weight: 700;
-    font-size: 1.8rem;
+.btn-outline-primary:hover {
+  background: var(--primary-color);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(255, 179, 71, 0.4);
 }
 
-.navbar-nav .nav-link {
-    font-weight: 500;
-    color: #555;
-    transition: color 0.3s ease;
+.btn-outline-secondary {
+  border: 1px solid #ddd;
+  color: #666;
+  border-radius: 0 8px 8px 0;
 }
 
-.navbar-nav .nav-link:hover {
-    color: #ffc107;
+.btn-outline-secondary:hover {
+  background: rgba(255, 248, 240, 0.8);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
 }
 
-/* Hero Section */
-#hero {
-    background: url('assets/eggBG.png') center center/cover no-repeat;
-    padding: 8rem 0;
-    color: #fff;
-    text-align: center;
+.forgot-link {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-size: 14px;
+  transition: var(--transition);
 }
 
-#hero h1 {
-    font-size: 3.5rem;
-    font-weight: 700;
-    text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+.forgot-link:hover {
+  color: var(--dark-color);
+  text-decoration: underline;
 }
 
-#hero p {
-    font-size: 1.2rem;
-    max-width: 600px;
-    margin: 1rem auto;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+/* Signup Page Styles */
+.signup-page {
+  padding-top: 100px;
+  padding-bottom: 40px;
 }
 
-/* Sections */
-.section {
-    padding: 4rem 0;
+.welcome-container {
+  background: rgba(255, 248, 240, 0.98);
+  backdrop-filter: blur(10px);
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  border: 1px solid rgba(255, 213, 79, 0.3);
+  padding: 60px 40px;
+  text-align: center;
+  transition: var(--transition);
 }
 
-.section-title {
-    text-align: center;
-    margin-bottom: 3rem;
-    font-size: 2.5rem;
-    font-weight: 700;
+.welcome-container:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 35px rgba(0,0,0,.15);
 }
 
-.feature-box {
-    text-align: center;
-    padding: 2rem;
-    border-radius: 10px;
-    background-color: #f8f9fa;
-    transition: transform 0.3s ease;
+.welcome-content i {
+  font-size: 4rem;
+  color: var(--accent-color);
+  margin-bottom: 1.5rem;
 }
 
-.feature-box:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+.welcome-content h2 {
+  color: var(--dark-color);
+  margin-bottom: 1rem;
+  font-weight: 600;
 }
 
-.feature-box i {
-    font-size: 3rem;
-    color: #ffc107;
-    margin-bottom: 1.5rem;
+.welcome-content .lead {
+  color: #666;
+  margin-bottom: 2rem;
+  line-height: 1.6;
 }
 
-/* Footer */
-footer {
-    background-color: #343a40;
-    color: #fff;
-    padding: 3rem 0;
+.features-list {
+  text-align: left;
 }
 
-footer a {
-    color: #ffc107;
-    text-decoration: none;
+.feature-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding: 8px 0;
 }
 
-footer a:hover {
-    text-decoration: underline;
+.feature-item i {
+  color: var(--success-color);
+  margin-right: 12px;
+  font-size: 1.1rem;
+}
+
+.feature-item span {
+  color: var(--dark-color);
+  font-weight: 500;
+}
+
+.signup-container {
+  background: rgba(255, 248, 240, 0.98);
+  backdrop-filter: blur(10px);
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  border: 1px solid rgba(255, 213, 79, 0.3);
+  padding: 40px;
+  transition: var(--transition);
+}
+
+.signup-container:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 35px rgba(0,0,0,.15);
 }
