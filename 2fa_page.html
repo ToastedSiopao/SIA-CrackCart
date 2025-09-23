@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Two-Factor Authentication</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <form id="2fa-form" class="form">
+            <h2>Two-Factor Authentication</h2>
+            <p>Please enter the 6-digit code sent to your email.</p>
+            <div class="form-control">
+                <label for="2fa-code">2FA Code</label>
+                <input type="text" id="2fa-code" name="2fa-code" required maxlength="6">
+            </div>
+            <button type="submit">Verify</button>
+            <div id="error-message" class="error-message"></div>
+        </form>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
