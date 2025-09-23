@@ -9,18 +9,18 @@
     <link href="order-styles.css" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <div class="header-logo text-center py-4">
-            <img src="assets/Logo.png" alt="CrackCart Logo" class="logo-img">
-        </div>
+    <div class="header-logo text-center py-4">
+        <img src="assets/Logo.png" alt="CrackCart Logo" class="logo-img">
+    </div>
 
+    <div class="order-page">
         <div class="order-card">
-            <h1 class="text-center page-title">Place Your Order</h1>
+            <h1 class="page-title">Place Your Order</h1>
 
             <?php
             if (isset($_GET['producer'])) {
                 $producer_name = htmlspecialchars($_GET['producer']);
-                echo "<h2 class='text-center producer-info'>You are ordering from: <strong>" . $producer_name . "</strong></h2>";
+                echo "<h2 class='producer-info'>You are ordering from: <strong>" . $producer_name . "</strong></h2>";
             } else {
                 echo "<div class='alert alert-warning'>No producer selected. Please go back to the producers page and select a producer to order from.</div>";
             }
