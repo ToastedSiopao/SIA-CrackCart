@@ -387,7 +387,7 @@ $producers = [
         const producerName = this.getAttribute('data-producer');
         alert('Ordering from: ' + producerName + '\nRedirecting to order page...');
         // You can redirect to order page with producer parameter
-        // window.location.href = 'order.php?producer=' + encodeURIComponent(producerName);
+        window.location.href = 'order.php?producer=' + encodeURIComponent(producerName);
       });
     });
   </script>
