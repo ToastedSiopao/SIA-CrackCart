@@ -5,39 +5,39 @@ body {
 }
 
 .sidebar {
-    background-color: #0d1b2a;
+    background-color: #231F20; /* Dark background */
     min-height: 100vh;
     display: flex;
     flex-direction: column;
 }
 
 .sidebar .nav-link {
-    color: #e0e1dd;
+    color: #FFFFFF; /* White text */
     font-weight: 500;
     margin-bottom: .5rem;
     transition: background-color 0.3s;
 }
 
 .sidebar .nav-link:hover {
-    background-color: #1b263b;
+    background-color: #343a40; /* Slightly lighter dark on hover */
     border-radius: 8px;
 }
 
 .sidebar .nav-link.active {
-    background-color: #415a77;
-    color: #fff;
+    background-color: #FFB703; /* Yellow for active */
+    color: #231F20; /* Dark text on yellow */
     border-radius: 8px;
 }
 
 .sidebar .nav-link i {
-    color: #778da9;
+    color: #FFD60A; /* Lighter yellow for icons */
 }
 
 .sidebar .upgrade-box {
-    background-color: #1b263b;
+    background-color: #FFB703; /* Yellow background */
     border-radius: 12px;
     padding: 20px;
-    color: #e0e1dd;
+    color: #231F20; /* Dark text */
     text-align: center;
     margin-top: auto;
     margin-bottom: 20px;
@@ -49,7 +49,7 @@ body {
 }
 
 .sidebar .upgrade-box .btn {
-    background-color: #415a77;
+    background-color: #FB8500; /* Orange accent for button */
     color: #fff;
     border: none;
 }
@@ -60,7 +60,7 @@ body {
 }
 
 .navbar-brand {
-    color: #0d1b2a !important;
+    color: #231F20 !important;
     font-weight: 700;
 }
 
@@ -88,28 +88,28 @@ body {
     font-size: 2.5rem;
     margin-bottom: 15px;
     display: block;
-    color: #415a77;
+    color: #FFB703; /* Yellow icons */
 }
 
 .category-card p {
-    color: #778da9;
+    color: #6c757d; /* Grey text */
     font-weight: 500;
 }
 
 .category-card h5 {
-    color: #0d1b2a;
+    color: #231F20;
     font-weight: 700;
 }
 
 .category-card.active {
-    background-color: #415a77;
-    color: #fff;
+    background-color: #FFB703; /* Yellow for active card */
+    color: #231F20;
 }
 
 .category-card.active i,
 .category-card.active p,
 .category-card.active h5 {
-    color: #fff;
+    color: #231F20; /* Dark text on active card */
 }
 
 .welcome-card {
@@ -120,31 +120,31 @@ body {
 }
 
 .welcome-card h4 {
-    color: #0d1b2a;
+    color: #231F20;
     font-weight: 700;
 }
 
 .welcome-card h6 {
-    color: #415a77;
+    color: #FFB703; /* Yellow accent */
     font-weight: 500;
 }
 
 .offcanvas-start {
-    background-color: #0d1b2a;
+    background-color: #231F20; /* Dark background for offcanvas */
 }
 
 .offcanvas-body .nav-link {
-    color: #e0e1dd;
+    color: #FFFFFF;
 }
 
 .offcanvas-body .nav-link.active {
-    background-color: #415a77;
-    color: #fff;
+    background-color: #FFB703;
+    color: #231F20;
     border-radius: 8px;
 }
 
 .offcanvas-body .upgrade-box {
-    background-color: #1b263b;
+    background-color: #FFB703;
 }
 
 .btn-close {
