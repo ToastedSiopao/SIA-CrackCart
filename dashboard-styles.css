@@ -1,6 +1,6 @@
 
 body {
-    background-color: #ffeb3b;
+    background-color: #ffffff;
     font-family: 'Poppins', sans-serif;
 }
 
@@ -64,21 +64,21 @@ body {
 }
 
 .navbar {
-    background-color: #fff;
+    background-color: #ffeb3b;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .navbar-brand {
-    color: #d97706 !important;
+    color: #000000 !important;
     font-weight: 700;
 }
 
 .navbar .ms-auto .dropdown-toggle {
-    color: #d97706;
+    color: #000000;
 }
 
 .navbar .ms-auto .dropdown-toggle:hover {
-    color: #fca311;
+    color: #333333;
 }
 
 .notification-dropdown .dropdown-item {
