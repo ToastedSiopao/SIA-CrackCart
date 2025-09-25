@@ -1,0 +1,152 @@
+
+body {
+    background-color: #f8f9fa;
+    font-family: 'Poppins', sans-serif;
+}
+
+.sidebar {
+    background-color: #0d1b2a;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar .nav-link {
+    color: #e0e1dd;
+    font-weight: 500;
+    margin-bottom: .5rem;
+    transition: background-color 0.3s;
+}
+
+.sidebar .nav-link:hover {
+    background-color: #1b263b;
+    border-radius: 8px;
+}
+
+.sidebar .nav-link.active {
+    background-color: #415a77;
+    color: #fff;
+    border-radius: 8px;
+}
+
+.sidebar .nav-link i {
+    color: #778da9;
+}
+
+.sidebar .upgrade-box {
+    background-color: #1b263b;
+    border-radius: 12px;
+    padding: 20px;
+    color: #e0e1dd;
+    text-align: center;
+    margin-top: auto;
+    margin-bottom: 20px;
+}
+
+.sidebar .upgrade-box p {
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+}
+
+.sidebar .upgrade-box .btn {
+    background-color: #415a77;
+    color: #fff;
+    border: none;
+}
+
+.navbar {
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.navbar-brand {
+    color: #0d1b2a !important;
+    font-weight: 700;
+}
+
+.notification-dropdown .dropdown-item {
+    font-size: 0.9rem;
+}
+
+.category-card {
+    background-color: #fff;
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    padding: 30px;
+    text-align: center;
+    transition: all 0.3s;
+    height: 100%;
+}
+
+.category-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.category-card i {
+    font-size: 2.5rem;
+    margin-bottom: 15px;
+    display: block;
+    color: #415a77;
+}
+
+.category-card p {
+    color: #778da9;
+    font-weight: 500;
+}
+
+.category-card h5 {
+    color: #0d1b2a;
+    font-weight: 700;
+}
+
+.category-card.active {
+    background-color: #415a77;
+    color: #fff;
+}
+
+.category-card.active i,
+.category-card.active p,
+.category-card.active h5 {
+    color: #fff;
+}
+
+.welcome-card {
+    background-color: #fff;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.welcome-card h4 {
+    color: #0d1b2a;
+    font-weight: 700;
+}
+
+.welcome-card h6 {
+    color: #415a77;
+    font-weight: 500;
+}
+
+.offcanvas-start {
+    background-color: #0d1b2a;
+}
+
+.offcanvas-body .nav-link {
+    color: #e0e1dd;
+}
+
+.offcanvas-body .nav-link.active {
+    background-color: #415a77;
+    color: #fff;
+    border-radius: 8px;
+}
+
+.offcanvas-body .upgrade-box {
+    background-color: #1b263b;
+}
+
+.btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
