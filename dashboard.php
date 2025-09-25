@@ -15,7 +15,7 @@ $user_email = $_SESSION['user_email'];
 include("db_connect.php");
 
 // Dummy Data
-$total_orders = 12;
+$total_orders = 0;
 
 ?>
 <!DOCTYPE html>
@@ -75,7 +75,7 @@ $total_orders = 12;
       <div class="col-auto col-md-3 col-lg-2 px-3 sidebar d-none d-md-block">
         <ul class="nav flex-column mb-auto mt-4">
           <li><a href="dashboard.php" class="nav-link active"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a></li>
-          <li><a href="orders.php" class="nav-link"><i class="bi bi-cart3 me-2"></i>Make an Order</a></li>
+          <li><a href="order.php" class="nav-link"><i class="bi bi-cart3 me-2"></i>Make an Order</a></li>
           <li><a href="messages.php" class="nav-link"><i class="bi bi-chat-dots me-2"></i> Messages</a></li>
           <li><a href="history.php" class="nav-link"><i class="bi bi-clock-history me-2"></i> Order History</a></li>
           <li><a href="bills.php" class="nav-link"><i class="bi bi-receipt me-2"></i> Bills</a></li>

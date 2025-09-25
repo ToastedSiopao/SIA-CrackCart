@@ -219,7 +219,6 @@ if (!isset($_SESSION['user_id'])) {
                   <li><strong>Custom-molded, high-impact packaging</strong></li>
                   <li><strong>Real-time GPS tracking with temperature monitoring</strong></li>
                   <li><strong>Guaranteed 4-hour delivery window</strong></li>
-                  <li><strong>Insurance up to $10,000</strong></li>
                 </ul>
               </div>
             </div>

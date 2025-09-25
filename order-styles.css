@@ -1,47 +1,92 @@
-/* order-styles.css */
+
+body {
+    background-color: #fcfaf5;
+    font-family: 'Poppins', sans-serif;
+}
+
+.header-logo {
+    padding: 20px 0;
+    text-align: center;
+}
+
+.logo-img {
+    width: 150px;
+}
 
 .order-page {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  padding-top: 120px; /* Adjusted for header */
-  padding-bottom: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 20px;
 }
 
-.order-card {
-    background: rgba(255, 248, 240, 0.98);
-    backdrop-filter: blur(10px);
-    border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow);
-    border: 1px solid rgba(255, 213, 79, 0.3);
+.order-container {
+    background-color: #ffffff;
+    border: 1px solid #eee;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.07);
     padding: 40px;
-    margin-top: 20px;
-    margin-bottom: 40px;
     width: 100%;
-    max-width: 800px;
-    transition: var(--transition);
-}
-
-.order-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 15px 35px rgba(0,0,0,.15);
+    max-width: 700px;
+    margin-top: 20px;
 }
 
 .page-title {
-    color: var(--dark-color);
+    color: #333;
     font-weight: 700;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
     text-align: center;
 }
 
 .producer-info {
-    color: var(--primary-color);
-    font-weight: 600;
-    margin-bottom: 2rem;
     text-align: center;
+    margin-bottom: 2rem;
+    font-size: 1.1rem;
+    color: #555;
 }
 
 .producer-info strong {
-    color: var(--dark-color);
+    color: #000;
+}
+
+.form-label {
+    font-weight: 500;
+    color: #333;
+}
+
+.form-control, .form-select {
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    padding: 10px 15px;
+    height: 50px;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #ffeb3b;
+    box-shadow: 0 0 0 0.25rem rgba(255, 235, 59, 0.25);
+}
+
+textarea.form-control {
+    height: auto;
+}
+
+.btn-primary {
+    background-color: #ffeb3b;
+    border-color: #ffeb3b;
+    color: #000000;
+    font-weight: bold;
+    padding: 12px 30px;
+    border-radius: 50px;
+    transition: all 0.3s ease;
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.btn-primary:hover {
+    background-color: #fdd835;
+    border-color: #fdd835;
+    box-shadow: 0 5px 15px rgba(255, 235, 59, 0.4);
+    transform: translateY(-2px);
 }
