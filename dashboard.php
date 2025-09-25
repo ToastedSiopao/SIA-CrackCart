@@ -31,7 +31,7 @@ $total_orders = 12;
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
   <!-- Custom CSS -->
-  <link href="dashboard-styles.css" rel="stylesheet">
+  <link href="dashboard-styles.css?v=2.0" rel="stylesheet">
 </head>
 <body>
   <div class="container-fluid">

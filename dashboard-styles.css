@@ -1,43 +1,47 @@
 
 body {
-    background-color: #f8f9fa;
+    background-color: #fefae0;
     font-family: 'Poppins', sans-serif;
 }
 
 .sidebar {
-    background-color: #231F20; /* Dark background */
+    background-color: #fca311; /* Vibrant Orange-Yellow */
     min-height: 100vh;
     display: flex;
     flex-direction: column;
 }
 
 .sidebar .nav-link {
-    color: #FFFFFF; /* White text */
+    color: #ffffff;
     font-weight: 500;
     margin-bottom: .5rem;
     transition: background-color 0.3s;
 }
 
 .sidebar .nav-link:hover {
-    background-color: #343a40; /* Slightly lighter dark on hover */
+    background-color: #e89200; /* Darker shade on hover */
     border-radius: 8px;
 }
 
 .sidebar .nav-link.active {
-    background-color: #FFB703; /* Yellow for active */
-    color: #231F20; /* Dark text on yellow */
+    background-color: #ffffff;
+    color: #d97706;
     border-radius: 8px;
 }
 
 .sidebar .nav-link i {
-    color: #FFD60A; /* Lighter yellow for icons */
+    color: #fefae0;
+}
+
+.sidebar .nav-link.active i {
+    color: #d97706;
 }
 
 .sidebar .upgrade-box {
-    background-color: #FFB703; /* Yellow background */
+    background-color: #d97706; /* Deeper Orange */
     border-radius: 12px;
     padding: 20px;
-    color: #231F20; /* Dark text */
+    color: #ffffff;
     text-align: center;
     margin-top: auto;
     margin-bottom: 20px;
@@ -49,9 +53,10 @@ body {
 }
 
 .sidebar .upgrade-box .btn {
-    background-color: #FB8500; /* Orange accent for button */
-    color: #fff;
+    background-color: #fefae0; /* Light cream button */
+    color: #d97706;
     border: none;
+    font-weight: bold;
 }
 
 .navbar {
@@ -60,7 +65,7 @@ body {
 }
 
 .navbar-brand {
-    color: #231F20 !important;
+    color: #d97706 !important;
     font-weight: 700;
 }
 
@@ -88,63 +93,64 @@ body {
     font-size: 2.5rem;
     margin-bottom: 15px;
     display: block;
-    color: #FFB703; /* Yellow icons */
+    color: #fca311;
 }
 
 .category-card p {
-    color: #6c757d; /* Grey text */
+    color: #6c757d;
     font-weight: 500;
 }
 
 .category-card h5 {
-    color: #231F20;
+    color: #333;
     font-weight: 700;
 }
 
 .category-card.active {
-    background-color: #FFB703; /* Yellow for active card */
-    color: #231F20;
+    background-color: #fca311;
+    color: #fff;
 }
 
 .category-card.active i,
 .category-card.active p,
 .category-card.active h5 {
-    color: #231F20; /* Dark text on active card */
+    color: #fff;
 }
 
 .welcome-card {
-    background-color: #fff;
+    background: linear-gradient(to right, #fca311, #ffc300);
     border-radius: 15px;
     padding: 30px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    color: #fff;
 }
 
 .welcome-card h4 {
-    color: #231F20;
+    color: #fff;
     font-weight: 700;
 }
 
 .welcome-card h6 {
-    color: #FFB703; /* Yellow accent */
+    color: #fefae0;
     font-weight: 500;
 }
 
 .offcanvas-start {
-    background-color: #231F20; /* Dark background for offcanvas */
+    background-color: #fca311;
 }
 
 .offcanvas-body .nav-link {
-    color: #FFFFFF;
+    color: #ffffff;
 }
 
 .offcanvas-body .nav-link.active {
-    background-color: #FFB703;
-    color: #231F20;
+    background-color: #ffffff;
+    color: #d97706;
     border-radius: 8px;
 }
 
 .offcanvas-body .upgrade-box {
-    background-color: #FFB703;
+    background-color: #d97706;
 }
 
 .btn-close {
