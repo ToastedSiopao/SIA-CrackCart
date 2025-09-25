@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: sql101.infinityfree.com
--- Generation Time: Sep 22, 2025 at 11:32 PM
+-- Generation Time: Sep 25, 2025 at 02:13 AM
 -- Server version: 11.4.7-MariaDB
 -- PHP Version: 7.2.22
 
@@ -128,6 +128,18 @@ CREATE TABLE `NOTIFICATION` (
   `IS_READ` tinyint(1) DEFAULT 0,
   `CREATED_AT` timestamp NULL DEFAULT current_timestamp()
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+
+--
+-- Dumping data for table `NOTIFICATION`
+--
+
+INSERT INTO `NOTIFICATION` (`NOTIFICATION_ID`, `USER_ID`, `MESSAGE`, `IS_READ`, `CREATED_AT`) VALUES
+(1, 3, 'This is a test notification', 1, '2025-09-23 03:48:31'),
+(2, 3, 'Get 20% off your next delivery with code: CRACK20!', 0, '2025-09-23 03:51:10'),
+(3, NULL, 'Big news! We now deliver to all major cities. Check our updated service area.', 0, '2025-09-23 03:53:35'),
+(4, NULL, 'Limited time offer! Use code FREEDELIVERY for free delivery on your next order.', 0, '2025-09-23 03:54:14'),
+(5, NULL, 'Introducing real-time tracking! Now you can see exactly where your delivery is.', 0, '2025-09-23 03:54:14'),
+(6, NULL, 'Happy Holidays from CrackCart! We\'re offering special holiday discounts on all our services.', 0, '2025-09-23 03:54:14');
 
 -- --------------------------------------------------------
 
@@ -261,7 +273,7 @@ CREATE TABLE `USER` (
 
 INSERT INTO `USER` (`USER_ID`, `FIRST_NAME`, `MIDDLE_NAME`, `LAST_NAME`, `EMAIL`, `PHONE`, `PASSWORD`, `ROLE`, `HOUSE_NO`, `STREET_NAME`, `BARANGAY`, `CITY`, `CREATED_AT`, `UPDATED_AT`) VALUES
 (4, 'Rasheed Malachi', 'Ramirez', 'Salamat', 'rasheedmalachi@gmail.com', '', '$2y$10$befzVXETI53dfpYMhMBvUeXykYXzrIK96lTix/3QtQFUoLCEZ4zpW', 'customer', '138 A', 'Malumanay', 'UP Village', 'QC', '2025-09-22 12:09:06', '2025-09-22 12:09:06'),
-(3, 'Eduard Simon', 'Nemiada', 'Miana', 'simonmiana@gmail.com', '0995 633 6238', '$2y$10$3jY6/IMTlm5pYWuLy0q7..YJJWRlD3OzS2xOqO4jOi7u3g4kUdDGa', 'customer', '9', 'mapalad', 'Mariblo', 'Quezon City', '2025-09-22 11:25:05', '2025-09-22 11:25:05');
+(3, 'Eduard Simonadw', 'Nemiada', 'Miana', 'simonmiana@gmail.com', '0995 633 6238', '$2y$10$3jY6/IMTlm5pYWuLy0q7..YJJWRlD3OzS2xOqO4jOi7u3g4kUdDGa', 'customer', '9', 'mapalad', 'Mariblo', 'Quezon City', '2025-09-22 11:25:05', '2025-09-25 04:59:09');
 
 -- --------------------------------------------------------
 
@@ -438,7 +450,7 @@ ALTER TABLE `Locations`
 -- AUTO_INCREMENT for table `NOTIFICATION`
 --
 ALTER TABLE `NOTIFICATION`
-  MODIFY `NOTIFICATION_ID` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `NOTIFICATION_ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `orders`
