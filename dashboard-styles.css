@@ -1,51 +1,48 @@
 
 body {
-    background-color: #ffffff;
+    background-color: #f8f9fa;
     font-family: 'Poppins', sans-serif;
 }
 
 .sidebar {
-    background-color: #fca311; /* Vibrant Orange-Yellow */
+    background-color: #ffffff;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-}
-
-.sidebar .d-flex.align-items-center.text-decoration-none {
-    color: #ffffff;
+    border-right: 1px solid #dee2e6;
 }
 
 .sidebar .nav-link {
-    color: #ffffff;
+    color: #333;
     font-weight: 500;
     margin-bottom: .5rem;
     transition: background-color 0.3s;
 }
 
 .sidebar .nav-link:hover {
-    background-color: #e89200; /* Darker shade on hover */
+    background-color: #f1f3f5;
     border-radius: 8px;
 }
 
 .sidebar .nav-link.active {
-    background-color: #ffffff;
-    color: #d97706;
+    background-color: #ffeb3b;
+    color: #000000;
     border-radius: 8px;
 }
 
 .sidebar .nav-link i {
-    color: #ffffff;
+    color: #333;
 }
 
 .sidebar .nav-link.active i {
-    color: #d97706;
+    color: #000000;
 }
 
 .sidebar .upgrade-box {
-    background-color: #d97706; /* Deeper Orange */
+    background-color: #f1f3f5;
     border-radius: 12px;
     padding: 20px;
-    color: #ffffff;
+    color: #000000;
     text-align: center;
     margin-top: auto;
     margin-bottom: 20px;
@@ -105,7 +102,7 @@ body {
     font-size: 2.5rem;
     margin-bottom: 15px;
     display: block;
-    color: #fca311;
+    color: #ffc107;
 }
 
 .category-card p {
@@ -119,7 +116,7 @@ body {
 }
 
 .category-card.active {
-    background-color: #fca311;
+    background-color: #ffc107;
     color: #fff;
 }
 
@@ -130,41 +127,41 @@ body {
 }
 
 .welcome-card {
-    background: linear-gradient(to right, #fca311, #ffc300);
+    background: linear-gradient(to right, #ffeb3b, #ffc107);
     border-radius: 15px;
     padding: 30px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    color: #fff;
+    color: #000;
 }
 
 .welcome-card h4 {
-    color: #fff;
+    color: #000;
     font-weight: 700;
 }
 
 .welcome-card h6 {
-    color: #fff;
+    color: #000;
     font-weight: 500;
 }
 
 .offcanvas-start {
-    background-color: #fca311;
+    background-color: #ffffff;
 }
 
 .offcanvas-body .nav-link {
-    color: #ffffff;
+    color: #000000;
 }
 
 .offcanvas-body .nav-link.active {
-    background-color: #ffffff;
-    color: #d97706;
+    background-color: #ffeb3b;
+    color: #000000;
     border-radius: 8px;
 }
 
 .offcanvas-body .upgrade-box {
-    background-color: #d97706;
+    background-color: #f1f3f5;
 }
 
 .btn-close {
-    filter: invert(1) grayscale(100%) brightness(200%);
+    filter: none;
 }
