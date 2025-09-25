@@ -38,8 +38,8 @@ $total_orders = 12;
     <div class="row flex-nowrap">
       <!-- Sidebar -->
       <div class="col-auto col-md-3 col-lg-2 px-sm-2 px-0 sidebar">
-        <div class="d-flex flex-column align-items-center align-items-sm-start px-3 pt-2 text-white min-vh-100">
-            <a href="/" class="d-flex align-items-center pb-3 mb-md-0 me-md-auto text-white text-decoration-none">
+        <div class="d-flex flex-column align-items-center align-items-sm-start px-3 pt-2 min-vh-100">
+            <a href="/" class="d-flex align-items-center pb-3 mb-md-0 me-md-auto text-decoration-none">
                 <span class="fs-5 d-none d-sm-inline">CrackCart.</span>
             </a>
             <ul class="nav nav-pills flex-column mb-sm-auto mb-0 align-items-center align-items-sm-start" id="menu">
@@ -65,7 +65,7 @@ $total_orders = 12;
           <nav class="navbar navbar-expand-lg shadow-sm px-3 mb-4">
             <div class="container-fluid">
               <!-- Sidebar toggle (mobile only) -->
-              <button class="btn btn-outline-dark d-md-none me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasSidebar">
+              <button class="btn btn-outline-secondary d-md-none me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasSidebar">
                 <i class="bi bi-list"></i>
               </button>
 
@@ -76,7 +76,7 @@ $total_orders = 12;
               <div class="ms-auto d-flex align-items-center gap-4">
                 <!-- Notification Bell -->
                 <div class="dropdown">
-                  <a href="#" class="text-dark fs-5 dropdown-toggle" id="notificationBell" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <a href="#" class="fs-5 dropdown-toggle" id="notificationBell" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="bi bi-bell"></i>
                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notification-count"></span>
                   </a>
@@ -87,7 +87,7 @@ $total_orders = 12;
 
                 <!-- Username + Profile -->
                 <div class="dropdown">
-                  <a class="d-flex align-items-center text-dark text-decoration-none dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <a class="d-flex align-items-center text-decoration-none dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                     <span class="me-2 d-none d-sm-inline"><?php echo htmlspecialchars($user_name); ?></span>
                     <i class="bi bi-person-circle fs-4"></i>
                   </a>
@@ -104,7 +104,7 @@ $total_orders = 12;
 
         <div class="px-4">
             <div class="welcome-card mb-4">
-                <h6 class="text-secondary">Overview</h6>
+                <h6>Overview</h6>
                 <h4 class="mb-0">Welcome back, <?php echo htmlspecialchars($user_name); ?> 👋</h4>
             </div>
 
@@ -146,7 +146,7 @@ $total_orders = 12;
   <!-- Offcanvas Sidebar for Mobile -->
   <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasSidebar">
     <div class="offcanvas-header">
-      <h5 class="offcanvas-title text-white">CrackCart.</h5>
+      <h5 class="offcanvas-title">CrackCart.</h5>
       <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
     </div>
     <div class="offcanvas-body">
