@@ -1,6 +1,6 @@
 
 body {
-    background-color: #fefae0;
+    background-color: #ffeb3b;
     font-family: 'Poppins', sans-serif;
 }
 
@@ -9,6 +9,10 @@ body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+}
+
+.sidebar .d-flex.align-items-center.text-decoration-none {
+    color: #ffffff;
 }
 
 .sidebar .nav-link {
@@ -30,7 +34,7 @@ body {
 }
 
 .sidebar .nav-link i {
-    color: #fefae0;
+    color: #ffffff;
 }
 
 .sidebar .nav-link.active i {
@@ -53,8 +57,8 @@ body {
 }
 
 .sidebar .upgrade-box .btn {
-    background-color: #fefae0; /* Light cream button */
-    color: #d97706;
+    background-color: #ffeb3b;
+    color: #000000;
     border: none;
     font-weight: bold;
 }
@@ -67,6 +71,14 @@ body {
 .navbar-brand {
     color: #d97706 !important;
     font-weight: 700;
+}
+
+.navbar .ms-auto .dropdown-toggle {
+    color: #d97706;
+}
+
+.navbar .ms-auto .dropdown-toggle:hover {
+    color: #fca311;
 }
 
 .notification-dropdown .dropdown-item {
@@ -131,7 +143,7 @@ body {
 }
 
 .welcome-card h6 {
-    color: #fefae0;
+    color: #fff;
     font-weight: 500;
 }
 
