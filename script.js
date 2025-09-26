@@ -317,6 +317,80 @@ function initPhoneFormatting() {
   }
 }
 
+function initNotificationSystem() {
+  const notificationDropdown = document.getElementById('notificationDropdown');
+  const notificationList = document.getElementById('notification-list');
+  const notificationCount = document.getElementById('notification-count');
+
+  if (!notificationDropdown) return; // Exit if notification elements aren't on the page
+
+  function fetchNotifications() {
+    fetch('notifications.php')
+      .then(response => response.json())
+      .then(data => {
+        if (data.error) {
+          console.error('Error fetching notifications:', data.error);
+          return;
+        }
+
+        notificationList.innerHTML = ''; // Clear existing notifications
+        if (data.length > 0) {
+          notificationCount.textContent = data.length;
+          notificationCount.style.display = 'block';
+
+          data.forEach(notification => {
+            const listItem = document.createElement('li');
+            const link = document.createElement('a');
+            link.classList.add('dropdown-item');
+            link.href = '#';
+            link.innerHTML = `
+              <div class="d-flex justify-content-between">
+                <small>${notification.MESSAGE}</small>
+                <small class="text-muted">${new Date(notification.CREATED_AT).toLocaleTimeString()}</small>
+              </div>
+            `;
+            link.addEventListener('click', (e) => {
+              e.preventDefault();
+              markAsRead(notification.NOTIFICATION_ID);
+            });
+            listItem.appendChild(link);
+            notificationList.appendChild(listItem);
+          });
+        } else {
+          notificationCount.style.display = 'none';
+          const listItem = document.createElement('li');
+          listItem.innerHTML = '<a class="dropdown-item text-muted" href="#">No new notifications</a>';
+          notificationList.appendChild(listItem);
+        }
+      })
+      .catch(error => {
+        console.error('Fetch error:', error);
+        const listItem = document.createElement('li');
+        listItem.innerHTML = '<a class="dropdown-item text-danger" href="#">Error loading notifications</a>';
+        notificationList.appendChild(listItem);
+      });
+  }
+
+  function markAsRead(notificationId) {
+    fetch(`notifications.php?mark_as_read=${notificationId}`)
+      .then(response => response.json())
+      .then(data => {
+        // After marking as read, re-fetch notifications to update the list
+        fetchNotifications();
+      })
+      .catch(error => {
+        console.error('Error marking notification as read:', error);
+      });
+  }
+
+  // Fetch notifications when the page loads
+  fetchNotifications();
+
+  // Poll for new notifications every 10 minutes
+  setInterval(fetchNotifications, 600000);
+}
+
+
 // Initialize all functionality when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
   initPasswordToggle();
@@ -326,6 +400,7 @@ document.addEventListener('DOMContentLoaded', function() {
   initPasswordConfirmation();
   initEmailValidation();
   initPhoneFormatting();
+  initNotificationSystem();
   
   // Add smooth scrolling for anchor links
   document.querySelectorAll('a[href^="#"]').forEach(anchor => {
@@ -370,4 +445,4 @@ window.CrackCartAuth = {
   validatePassword,
   checkPasswordStrength,
   showFormFeedback
-}
+};

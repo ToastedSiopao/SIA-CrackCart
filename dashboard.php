@@ -48,9 +48,15 @@ $total_orders = 0;
       <!-- Right side -->
       <div class="ms-auto d-flex align-items-center gap-4">
         <!-- Notification Bell -->
-        <a href="#" class="text-dark fs-5">
-          <i class="bi bi-bell"></i>
-        </a>
+        <div class="dropdown">
+          <a href="#" class="text-dark fs-5" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-bell"></i>
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notification-count" style="display: none;"></span>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationDropdown" id="notification-list">
+            <!-- Notifications will be dynamically loaded here -->
+          </ul>
+        </div>
 
         <!-- Username + Profile -->
         <div class="dropdown">
@@ -154,5 +160,7 @@ $total_orders = 0;
 
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Custom JS -->
+  <script src="script.js?v=1.1"></script>
 </body>
 </html>
