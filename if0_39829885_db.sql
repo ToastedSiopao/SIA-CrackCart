@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: sql101.infinityfree.com
--- Generation Time: Sep 25, 2025 at 02:13 AM
+-- Generation Time: Oct 03, 2025 at 04:06 PM
 -- Server version: 11.4.7-MariaDB
 -- PHP Version: 7.2.22
 
@@ -135,7 +135,7 @@ CREATE TABLE `NOTIFICATION` (
 
 INSERT INTO `NOTIFICATION` (`NOTIFICATION_ID`, `USER_ID`, `MESSAGE`, `IS_READ`, `CREATED_AT`) VALUES
 (1, 3, 'This is a test notification', 1, '2025-09-23 03:48:31'),
-(2, 3, 'Get 20% off your next delivery with code: CRACK20!', 0, '2025-09-23 03:51:10'),
+(2, 3, 'Get 20% off your next delivery with code: CRACK20!', 1, '2025-09-23 03:51:10'),
 (3, NULL, 'Big news! We now deliver to all major cities. Check our updated service area.', 0, '2025-09-23 03:53:35'),
 (4, NULL, 'Limited time offer! Use code FREEDELIVERY for free delivery on your next order.', 0, '2025-09-23 03:54:14'),
 (5, NULL, 'Introducing real-time tracking! Now you can see exactly where your delivery is.', 0, '2025-09-23 03:54:14'),
@@ -273,7 +273,10 @@ CREATE TABLE `USER` (
 
 INSERT INTO `USER` (`USER_ID`, `FIRST_NAME`, `MIDDLE_NAME`, `LAST_NAME`, `EMAIL`, `PHONE`, `PASSWORD`, `ROLE`, `HOUSE_NO`, `STREET_NAME`, `BARANGAY`, `CITY`, `CREATED_AT`, `UPDATED_AT`) VALUES
 (4, 'Rasheed Malachi', 'Ramirez', 'Salamat', 'rasheedmalachi@gmail.com', '', '$2y$10$befzVXETI53dfpYMhMBvUeXykYXzrIK96lTix/3QtQFUoLCEZ4zpW', 'customer', '138 A', 'Malumanay', 'UP Village', 'QC', '2025-09-22 12:09:06', '2025-09-22 12:09:06'),
-(3, 'Eduard Simonadw', 'Nemiada', 'Miana', 'simonmiana@gmail.com', '0995 633 6238', '$2y$10$3jY6/IMTlm5pYWuLy0q7..YJJWRlD3OzS2xOqO4jOi7u3g4kUdDGa', 'customer', '9', 'mapalad', 'Mariblo', 'Quezon City', '2025-09-22 11:25:05', '2025-09-25 04:59:09');
+(7, 'Eduard Simon', 'Nemiada', 'Miana', 'simonmiana@gmail.com', '09956336238', '$2y$10$jIOLZFqQCAl24js9hYZtle8RcGhKU1ZKApqspK1PxStgb2FoHdRpW', 'customer', '9', 'Mapalad', 'Mariblo', 'Quezon City', '2025-10-03 17:45:48', '2025-10-03 17:45:48'),
+(5, 'Crack', 'Nemiada', 'Cart', 'crackcart.auth@gmail.com', '0995 633 6238', '$2y$10$IwU5AvKjNBEncZ8OeXyYTu67a/fKEKo2eYWEuIdRY.HsBhIuSrpFa', 'customer', '9', 'mapalad', 'Mariblo', 'Quezon City', '2025-09-25 08:02:11', '2025-09-25 08:02:11'),
+(6, 'q3rq', 'qr3rq', 'qr3rq', 'qkramirez04@tip.edu.ph', '125135135', '$2y$10$ukVSWkly5c4s9UKZZNMPMekPgv.jNIDiSBirIJ5g48KTGElahPAB6', 'customer', '51351', '5135feas', '151fae', '154fdfg', '2025-10-03 08:19:37', '2025-10-03 08:19:37'),
+(8, 'Eduard Simon', 'Nemiada', 'Miana', 'qesnmiana@tip.edu.ph', '09956336238', '$2y$10$E0I0s1y/JPV4j7pb6ZNk1ObKdmc99Don4U7bbHhoDKxY5KJxe2P1u', 'customer', '9', 'Mapalad', 'Mariblo', 'simonmiana@gmail.com', '2025-10-03 19:12:17', '2025-10-03 19:12:17');
 
 -- --------------------------------------------------------
 
@@ -492,7 +495,7 @@ ALTER TABLE `Tracking_Event`
 -- AUTO_INCREMENT for table `USER`
 --
 ALTER TABLE `USER`
-  MODIFY `USER_ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `USER_ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `Vehicle`
