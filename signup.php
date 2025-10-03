@@ -101,7 +101,7 @@
               <label class="form-label visually-hidden">Phone</label>
               <div class="input-group">
                 <span class="input-group-text"><i class="fas fa-phone"></i></span>
-                <input type="tel" class="form-control" name="phone" placeholder="Phone (Optional)">
+                <input type="tel" class="form-control" name="phone" placeholder="Phone" required>
               </div>
             </div>
             
@@ -109,14 +109,14 @@
               <label class="form-label visually-hidden">House No.</label>
               <div class="input-group">
                 <span class="input-group-text"><i class="fas fa-home"></i></span>
-                <input type="text" class="form-control" name="houseNo" placeholder="House No. (Optional)">
+                <input type="text" class="form-control" name="houseNo" placeholder="House No." required>
               </div>
             </div>
             <div class="mb-2">
               <label class="form-label visually-hidden">Street</label>
               <div class="input-group">
                 <span class="input-group-text"><i class="fas fa-road"></i></span>
-                <input type="text" class="form-control" name="streetName" placeholder="Street (Optional)">
+                <input type="text" class="form-control" name="streetName" placeholder="Street" required>
               </div>
             </div>
 
@@ -124,7 +124,7 @@
               <label class="form-label visually-hidden">Barangay</label>
               <div class="input-group">
                 <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
-                <input type="text" class="form-control" name="barangay" placeholder="Barangay (Optional)">
+                <input type="text" class="form-control" name="barangay" placeholder="Barangay" required>
               </div>
             </div>
             <div class="mb-2">

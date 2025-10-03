@@ -34,6 +34,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $errors[] = ['field' => 'email', 'message' => 'Invalid email format'];
     }
+    if (empty($phone)) {
+        $errors[] = ['field' => 'phone', 'message' => 'Phone number is required'];
+    }
+    if (empty($houseNo)) {
+        $errors[] = ['field' => 'houseNo', 'message' => 'House number is required'];
+    }
+    if (empty($streetName)) {
+        $errors[] = ['field' => 'streetName', 'message' => 'Street name is required'];
+    }
+    if (empty($barangay)) {
+        $errors[] = ['field' => 'barangay', 'message' => 'Barangay is required'];
+    }
     if (empty($city)) {
         $errors[] = ['field' => 'city', 'message' => 'City is required'];
     }
