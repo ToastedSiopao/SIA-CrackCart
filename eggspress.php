@@ -196,6 +196,14 @@ if (!isset($_SESSION['user_id'])) {
                   <li>Standard packaging</li>
                   <li>24-hour delivery window</li>
                 </ul>
+                <form action="cart_functions.php" method="post">
+                    <input type="hidden" name="service_tier" value="Standard Hatch">
+                    <input type="hidden" name="price" value="10.00">
+                    <div class="input-group mb-3">
+                        <input type="number" class="form-control" name="quantity" value="1" min="1">
+                        <button class="btn btn-primary" type="submit" name="add_to_shipment">Book Shipment</button>
+                    </div>
+                </form>
               </div>
             </div>
             <div class="col-md-4 d-flex">
@@ -208,6 +216,14 @@ if (!isset($_SESSION['user_id'])) {
                   <li><strong>Real-time GPS tracking</strong></li>
                   <li><strong>12-hour delivery window</strong></li>
                 </ul>
+                <form action="cart_functions.php" method="post">
+                    <input type="hidden" name="service_tier" value="Golden Yolks">
+                    <input type="hidden" name="price" value="20.00">
+                    <div class="input-group mb-3">
+                        <input type="number" class="form-control" name="quantity" value="1" min="1">
+                        <button class="btn btn-primary" type="submit" name="add_to_shipment">Book Shipment</button>
+                    </div>
+                </form>
               </div>
             </div>
             <div class="col-md-4 d-flex">
@@ -220,6 +236,14 @@ if (!isset($_SESSION['user_id'])) {
                   <li><strong>Real-time GPS tracking with temperature monitoring</strong></li>
                   <li><strong>Guaranteed 4-hour delivery window</strong></li>
                 </ul>
+                <form action="cart_functions.php" method="post">
+                    <input type="hidden" name="service_tier" value="The Fabergé">
+                    <input type="hidden" name="price" value="50.00">
+                    <div class="input-group mb-3">
+                        <input type="number" class="form-control" name="quantity" value="1" min="1">
+                        <button class="btn btn-primary" type="submit" name="add_to_shipment">Book Shipment</button>
+                    </div>
+                </form>
               </div>
             </div>
           </div>
