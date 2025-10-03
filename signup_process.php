@@ -1,4 +1,4 @@
- <?php
+<?php
 require_once 'error_handler.php';
 
 header('Content-Type: application/json');
@@ -6,45 +6,71 @@ header('Content-Type: application/json');
 include("db_connect.php");
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Get form data
-    $firstName = mysqli_real_escape_string($conn, $_POST['firstName']);
-    $middleName = mysqli_real_escape_string($conn, $_POST['middleName'] ?? '');
-    $lastName = mysqli_real_escape_string($conn, $_POST['lastName']);
-    $email = mysqli_real_escape_string($conn, $_POST['email']);
-    $phone = mysqli_real_escape_string($conn, $_POST['phone'] ?? '');
-    $houseNo = mysqli_real_escape_string($conn, $_POST['houseNo'] ?? '');
-    $streetName = mysqli_real_escape_string($conn, $_POST['streetName'] ?? '');
-    $barangay = mysqli_real_escape_string($conn, $_POST['barangay'] ?? '');
-    $city = mysqli_real_escape_string($conn, $_POST['city']);
-    $password = $_POST['password'];
-    $confirmPassword = $_POST['confirmPassword'];
+    // Sanitize and retrieve form data
+    $firstName = trim($_POST['firstName'] ?? '');
+    $middleName = trim($_POST['middleName'] ?? '');
+    $lastName = trim($_POST['lastName'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+    $phone = trim($_POST['phone'] ?? '');
+    $houseNo = trim($_POST['houseNo'] ?? '');
+    $streetName = trim($_POST['streetName'] ?? '');
+    $barangay = trim($_POST['barangay'] ?? '');
+    $city = trim($_POST['city'] ?? '');
+    $password = $_POST['password'] ?? '';
+    $confirmPassword = $_POST['confirmPassword'] ?? '';
 
-    // Validation
-    if ($password !== $confirmPassword) {
-        echo json_encode(['error' => ['message' => 'Passwords do not match']]);
-        exit();
+    $errors = [];
+
+    // Validation for required fields
+    if (empty($firstName)) {
+        $errors[] = ['field' => 'firstName', 'message' => 'First name is required'];
+    }
+    if (empty($lastName)) {
+        $errors[] = ['field' => 'lastName', 'message' => 'Last name is required'];
+    }
+    if (empty($email)) {
+        $errors[] = ['field' => 'email', 'message' => 'Email is required'];
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $errors[] = ['field' => 'email', 'message' => 'Invalid email format'];
+    }
+    if (empty($city)) {
+        $errors[] = ['field' => 'city', 'message' => 'City is required'];
     }
 
-    if (strlen($password) < 8) {
-        echo json_encode(['error' => ['message' => 'Password must be at least 8 characters long']]);
-        exit();
+    // Password validation
+    if (empty($password)) {
+        $errors[] = ['field' => 'password', 'message' => 'Password is required'];
+    } elseif (strlen($password) < 8) {
+        $errors[] = ['field' => 'password', 'message' => 'Password must be at least 8 characters long'];
     }
 
-    if (empty($firstName) || empty($lastName) || empty($email) || empty($city)) {
-        echo json_encode(['error' => ['message' => 'Please fill in all required fields']]);
-        exit();
+    if (empty($confirmPassword)) {
+        $errors[] = ['field' => 'confirmPassword', 'message' => 'Please confirm your password'];
+    } elseif ($password !== $confirmPassword) {
+        $errors[] = ['field' => 'confirmPassword', 'message' => 'Passwords do not match'];
     }
 
-    $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+    // If there are validation errors, return them
+    if (!empty($errors)) {
+        echo json_encode(['error' => $errors]);
+        exit();
+    }
 
     // Check if email already exists
-    $checkEmail = "SELECT * FROM USER WHERE EMAIL='$email'";
-    $result = mysqli_query($conn, $checkEmail);
-
-    if (mysqli_num_rows($result) > 0) {
-        echo json_encode(['error' => ['message' => 'Email already registered. Please login.']]);
+    $stmt = $conn->prepare("SELECT USER_ID FROM USER WHERE EMAIL = ?");
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $stmt->store_result();
+    if ($stmt->num_rows > 0) {
+        $errors[] = ['field' => 'email', 'message' => 'Email already registered. Please login.'];
+        echo json_encode(['error' => $errors]);
+        $stmt->close();
         exit();
     }
+    $stmt->close();
+
+    // Hash the password
+    $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
     // Insert into database
     $sql = "INSERT INTO USER (
@@ -60,27 +86,31 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         CITY, 
         ROLE,
         CREATED_AT
-    ) VALUES (
-        '$firstName', 
-        '$middleName', 
-        '$lastName', 
-        '$email', 
-        '$phone', 
-        '$hashedPassword', 
-        '$houseNo', 
-        '$streetName', 
-        '$barangay', 
-        '$city', 
-        'customer',
-        NOW()
-    )";
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'customer', NOW())";
 
-    if (mysqli_query($conn, $sql)) {
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("ssssssssss", 
+        $firstName, 
+        $middleName, 
+        $lastName, 
+        $email, 
+        $phone, 
+        $hashedPassword, 
+        $houseNo, 
+        $streetName, 
+        $barangay, 
+        $city
+    );
+
+    if ($stmt->execute()) {
         echo json_encode(['success' => true]);
-        exit();
     } else {
-        echo json_encode(['error' => ['message' => 'Error creating account: ' . mysqli_error($conn)]]);
-        exit();
+        // Generic error for database insertion failure
+        $errors[] = ['message' => 'Error creating account. Please try again later.'];
+        echo json_encode(['error' => $errors]);
     }
+
+    $stmt->close();
+    $conn->close();
 }
 ?>

@@ -1,4 +1,4 @@
- <?php
+<?php
 require_once 'error_handler.php';
 require 'vendor/autoload.php';
 
@@ -11,15 +11,31 @@ session_start();
 include("db_connect.php");
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $email = mysqli_real_escape_string($conn, $_POST['email'] ?? '');
+    $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
 
-    // Find active user by email - updated to match USER table structure
-    $sql = "SELECT * FROM USER WHERE EMAIL='$email' LIMIT 1";
-    $result = mysqli_query($conn, $sql);
+    $errors = [];
 
-    if ($result && mysqli_num_rows($result) === 1) {
-        $user = mysqli_fetch_assoc($result);
+    if (empty($email)) {
+        $errors[] = ['field' => 'email', 'message' => 'Email is required'];
+    }
+    if (empty($password)) {
+        $errors[] = ['field' => 'password', 'message' => 'Password is required'];
+    }
+
+    if (!empty($errors)) {
+        echo json_encode(['error' => $errors]);
+        exit();
+    }
+
+    // Find active user by email
+    $stmt = $conn->prepare("SELECT * FROM USER WHERE EMAIL = ? LIMIT 1");
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result && $result->num_rows === 1) {
+        $user = $result->fetch_assoc();
 
         if (password_verify($password, $user['PASSWORD'])) {
             // Generate 6-digit 2FA code
@@ -27,7 +43,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             // Save temporary values in session
             $_SESSION['2fa_code'] = (string)$two_fa_code;
-            $_SESSION['2fa_user_id'] = $user['USER_ID']; 
+            $_SESSION['2fa_user_id'] = $user['USER_ID'];
 
             // Send code by email
             $mail = new PHPMailer(true);
@@ -58,17 +74,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 // Tell frontend login succeeded → redirect to 2FA page
                 echo json_encode(['success' => true, 'two_factor' => true]);
                 exit();
-
             } catch (Exception $e) {
-                echo json_encode(['error' => ['message' => "Mailer Error: {$mail->ErrorInfo}"]]);
+                echo json_encode(['error' => [['message' => "Mailer Error: {$mail->ErrorInfo}"]]]);
                 exit();
             }
         } else {
-            echo json_encode(['error' => ['message' => 'Invalid email or password']]);
+            // Generic error for invalid credentials to prevent user enumeration
+            echo json_encode(['error' => [['field' => 'password','message' => 'Invalid email or password']]]);
             exit();
         }
     } else {
-        echo json_encode(['error' => ['message' => 'Invalid email or password']]);
+        // Generic error for invalid credentials to prevent user enumeration
+        echo json_encode(['error' => [['field' => 'email', 'message' => 'Invalid email or password']]]);
         exit();
     }
 }
