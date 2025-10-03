@@ -67,27 +67,25 @@
 
           <form id="signupForm" novalidate>
             <!-- Name Fields -->
-            <div class="row">
-              <div class="col-md-4 mb-2">
-                <label class="form-label visually-hidden">First Name</label>
-                <div class="input-group">
-                  <span class="input-group-text"><i class="fas fa-user"></i></span>
-                  <input type="text" class="form-control" name="firstName" placeholder="First name" required>
-                </div>
+            <div class="mb-2">
+              <label class="form-label visually-hidden">First Name</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-user"></i></span>
+                <input type="text" class="form-control" name="firstName" placeholder="First name" required>
               </div>
-              <div class="col-md-4 mb-2">
-                <label class="form-label visually-hidden">Middle Name</label>
-                <div class="input-group">
-                  <span class="input-group-text"><i class="fas fa-user"></i></span>
-                  <input type="text" class="form-control" name="middleName" placeholder="Middle name">
-                </div>
+            </div>
+            <div class="mb-2">
+              <label class="form-label visually-hidden">Middle Name</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-user"></i></span>
+                <input type="text" class="form-control" name="middleName" placeholder="Middle name">
               </div>
-              <div class="col-md-4 mb-2">
-                <label class="form-label visually-hidden">Last Name</label>
-                <div class="input-group">
-                  <span class="input-group-text"><i class="fas fa-user"></i></span>
-                  <input type="text" class="form-control" name="lastName" placeholder="Last name" required>
-                </div>
+            </div>
+            <div class="mb-2">
+              <label class="form-label visually-hidden">Last Name</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-user"></i></span>
+                <input type="text" class="form-control" name="lastName" placeholder="Last name" required>
               </div>
             </div>
 
@@ -107,37 +105,33 @@
               </div>
             </div>
             
-            <div class="row">
-              <div class="col-md-6 mb-2">
-                <label class="form-label visually-hidden">House No.</label>
-                <div class="input-group">
-                  <span class="input-group-text"><i class="fas fa-home"></i></span>
-                  <input type="text" class="form-control" name="houseNo" placeholder="House No. (Optional)">
-                </div>
+            <div class="mb-2">
+              <label class="form-label visually-hidden">House No.</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-home"></i></span>
+                <input type="text" class="form-control" name="houseNo" placeholder="House No. (Optional)">
               </div>
-              <div class="col-md-6 mb-2">
-                <label class="form-label visually-hidden">Street</label>
-                <div class="input-group">
-                  <span class="input-group-text"><i class="fas fa-road"></i></span>
-                  <input type="text" class="form-control" name="streetName" placeholder="Street (Optional)">
-                </div>
+            </div>
+            <div class="mb-2">
+              <label class="form-label visually-hidden">Street</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-road"></i></span>
+                <input type="text" class="form-control" name="streetName" placeholder="Street (Optional)">
               </div>
             </div>
 
-            <div class="row">
-              <div class="col-md-6 mb-2">
-                <label class="form-label visually-hidden">Barangay</label>
-                <div class="input-group">
-                  <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
-                  <input type="text" class="form-control" name="barangay" placeholder="Barangay (Optional)">
-                </div>
+            <div class="mb-2">
+              <label class="form-label visually-hidden">Barangay</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
+                <input type="text" class="form-control" name="barangay" placeholder="Barangay (Optional)">
               </div>
-              <div class="col-md-6 mb-2">
-                <label class="form-label visually-hidden">City</label>
-                <div class="input-group">
-                  <span class="input-group-text"><i class="fas fa-city"></i></span>
-                  <input type="text" class="form-control" name="city" placeholder="City" required>
-                </div>
+            </div>
+            <div class="mb-2">
+              <label class="form-label visually-hidden">City</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-city"></i></span>
+                <input type="text" class="form-control" name="city" placeholder="City" required>
               </div>
             </div>
 
