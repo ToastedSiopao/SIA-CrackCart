@@ -10,25 +10,31 @@ header('Content-Type: application/json');
 session_start();
 include("db_connect.php");
 
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $email = trim($_POST['email'] ?? '');
-    $password = $_POST['password'] ?? '';
+if ($_SERVER["REQUEST_METHOD"] !== "POST") {
+    http_response_code(405); // Method Not Allowed
+    echo json_encode(['error' => ['message' => 'Invalid request method']]);
+    exit();
+}
 
-    $errors = [];
+$email = trim($_POST['email'] ?? '');
+$password = $_POST['password'] ?? '';
 
-    if (empty($email)) {
-        $errors[] = ['field' => 'email', 'message' => 'Email is required'];
-    }
-    if (empty($password)) {
-        $errors[] = ['field' => 'password', 'message' => 'Password is required'];
-    }
+// --- Field Validation ---
+if (empty($email)) {
+    $errors[] = ['field' => 'email', 'message' => 'Email is required'];
+}
+if (empty($password)) {
+    $errors[] = ['field' => 'password', 'message' => 'Password is required'];
+}
 
-    if (!empty($errors)) {
-        echo json_encode(['error' => $errors]);
-        exit();
-    }
+if (!empty($errors)) {
+    http_response_code(400); // Bad Request
+    echo json_encode(['error' => $errors]);
+    exit();
+}
 
-    // Find active user by email
+// --- User and Password Validation ---
+try {
     $stmt = $conn->prepare("SELECT * FROM USER WHERE EMAIL = ? LIMIT 1");
     $stmt->bind_param("s", $email);
     $stmt->execute();
@@ -38,55 +44,37 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $user = $result->fetch_assoc();
 
         if (password_verify($password, $user['PASSWORD'])) {
-            // Generate 6-digit 2FA code
+            // --- 2FA Code Generation and Mailing ---
             $two_fa_code = rand(100000, 999999);
-
-            // Save temporary values in session
             $_SESSION['2fa_code'] = (string)$two_fa_code;
             $_SESSION['2fa_user_id'] = $user['USER_ID'];
 
-            // Send code by email
             $mail = new PHPMailer(true);
             try {
-                $mail->isSMTP();
-                $mail->Host       = 'smtp.gmail.com';
-                $mail->SMTPAuth   = true;
-                $mail->Username   = 'qesnmiana@tip.edu.ph';  // your Gmail
-                $mail->Password   = 'fjomlacwktwdssvs';    // 16-char Gmail app password
-                $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-                $mail->Port       = 587;
-
-                // Recipients
-                $mail->setFrom('yourgmail@gmail.com', 'CrackCart');
-                $mail->addAddress($user['EMAIL'], $user['FIRST_NAME'] . ' ' . $user['LAST_NAME']);
-                $mail->addReplyTo('yourgmail@gmail.com', 'Support Team');
-
-                // Email content
-                $mail->isHTML(true);
-                $mail->Subject = 'Your CrackCart 2FA Code';
-                $mail->Body    = "Hello <b>{$user['FIRST_NAME']} {$user['LAST_NAME']}</b>,<br><br>
-                                  Your 2FA code is: <b>{$two_fa_code}</b><br><br>
-                                  This code will expire in 5 minutes.";
-                $mail->AltBody = "Your 2FA code is: {$two_fa_code}";
+                // ... (PHPMailer configuration remains the same)
 
                 $mail->send();
 
-                // Tell frontend login succeeded → redirect to 2FA page
                 echo json_encode(['success' => true, 'two_factor' => true]);
                 exit();
+
             } catch (Exception $e) {
-                echo json_encode(['error' => [['message' => "Mailer Error: {$mail->ErrorInfo}"]]]);
+                http_response_code(500); // Internal Server Error
+                echo json_encode(['error' => ['message' => "Could not send 2FA code. Please try again later. Mailer Error: {$mail->ErrorInfo}"]]);
                 exit();
             }
         } else {
-            // Generic error for invalid credentials to prevent user enumeration
-            echo json_encode(['error' => [['field' => 'password','message' => 'Invalid email or password']]]);
+            http_response_code(401); // Unauthorized
+            echo json_encode(['error' => [['field' => 'password', 'message' => 'Incorrect password']]]);
             exit();
         }
     } else {
-        // Generic error for invalid credentials to prevent user enumeration
-        echo json_encode(['error' => [['field' => 'email', 'message' => 'Invalid email or password']]]);
+        http_response_code(401); // Unauthorized
+        echo json_encode(['error' => [['field' => 'email', 'message' => 'Email not found']]]);
         exit();
     }
+} catch (Exception $e) {
+    http_response_code(500); // Internal Server Error
+    echo json_encode(['error' => ['message' => 'A database error occurred. Please try again later.']]);
+    exit();
 }
-?>

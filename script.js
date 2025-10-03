@@ -71,173 +71,148 @@ function initPasswordStrength() {
   }
 }
 
-// Form validation
-function validateEmail(email) {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-}
-
-function validatePhone(phone) {
-  const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
-  return phone === '' || phoneRegex.test(phone.replace(/\D/g, ''));
-}
-
-function validatePassword(password) {
-  return password.length >= 8;
-}
-
 // Login form handler
 function initLoginForm() {
   const loginForm = document.getElementById('loginForm');
-  
-  if (loginForm) {
-    loginForm.addEventListener('submit', function(e) {
-      e.preventDefault();
-      
-      const email = document.getElementById('loginEmail').value;
-      const password = document.getElementById('loginPassword').value;
-      const submitBtn = this.querySelector('button[type="submit"]');
-      
-      // Reset validation
-      this.classList.remove('was-validated');
-      
-      // Validate fields
-      let isValid = true;
-      
-      if (!validateEmail(email)) {
-        document.getElementById('loginEmail').classList.add('is-invalid');
-        isValid = false;
-      } else {
-        document.getElementById('loginEmail').classList.remove('is-invalid');
-        document.getElementById('loginEmail').classList.add('is-valid');
+  if (!loginForm) return;
+
+  loginForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const formData = new FormData(this);
+
+    // Show loading state
+    submitBtn.classList.add('loading');
+    submitBtn.disabled = true;
+
+    fetch('login_process.php', {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.error) {
+        handleFormErrors(data.error, this);
+      } else if (data.success && data.two_factor) {
+        window.location.href = '2fa_page.html';
+      } else if (data.success) {
+        window.location.href = 'dashboard.php'; 
       }
-      
-      if (!password) {
-        document.getElementById('loginPassword').classList.add('is-invalid');
-        isValid = false;
-      } else {
-        document.getElementById('loginPassword').classList.remove('is-invalid');
-        document.getElementById('loginPassword').classList.add('is-valid');
-      }
-      
-      if (isValid) {
-        // Show loading state
-        submitBtn.classList.add('loading');
-        submitBtn.disabled = true;
-        
-        // Simulate login process
-        setTimeout(() => {
-          alert('Login successful! (This is a demo)');
-          submitBtn.classList.remove('loading');
-          submitBtn.disabled = false;
-        }, 2000);
-      } else {
-        this.classList.add('was-validated');
-      }
+    })
+    .catch(error => {
+      showFormFeedback('danger', 'An unexpected error occurred. Please try again.');
+    })
+    .finally(() => {
+      // Hide loading state
+      submitBtn.classList.remove('loading');
+      submitBtn.disabled = false;
     });
-  }
+  });
 }
+
+// 2FA form handler
+function initTwoFactorForm() {
+  const twoFactorForm = document.getElementById('twoFactorForm');
+  if (!twoFactorForm) return;
+
+  twoFactorForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const formData = new FormData(this);
+
+    // Show loading state
+    submitBtn.classList.add('loading');
+    submitBtn.disabled = true;
+
+    fetch('verify_2fa.php', {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.error) {
+        handleFormErrors(data.error, this);
+      } else if (data.success) {
+        window.location.href = 'dashboard.php';
+      }
+    })
+    .catch(error => {
+      showFormFeedback('danger', 'An unexpected error occurred. Please try again.');
+    })
+    .finally(() => {
+      // Hide loading state
+      submitBtn.classList.remove('loading');
+      submitBtn.disabled = false;
+    });
+  });
+}
+
 
 // Signup form handler
 function initSignupForm() {
   const signupForm = document.getElementById('signupForm');
-  
-  if (signupForm) {
-    signupForm.addEventListener('submit', function(e) {
-      e.preventDefault();
-      
-      const fullName = document.getElementById('fullName').value;
-      const email = document.getElementById('signupEmail').value;
-      const phone = document.getElementById('phone').value;
-      const password = document.getElementById('signupPassword').value;
-      const confirmPassword = document.getElementById('confirmPassword').value;
-      const agreeTerms = document.getElementById('agreeTerms').checked;
-      const submitBtn = this.querySelector('button[type="submit"]');
-      
-      // Reset validation
-      this.classList.remove('was-validated');
-      
-      // Validate fields
-      let isValid = true;
-      
-      if (!fullName.trim()) {
-        document.getElementById('fullName').classList.add('is-invalid');
-        isValid = false;
-      } else {
-        document.getElementById('fullName').classList.remove('is-invalid');
-        document.getElementById('fullName').classList.add('is-valid');
-      }
-      
-      if (!validateEmail(email)) {
-        document.getElementById('signupEmail').classList.add('is-invalid');
-        isValid = false;
-      } else {
-        document.getElementById('signupEmail').classList.remove('is-invalid');
-        document.getElementById('signupEmail').classList.add('is-valid');
-      }
-      
-      if (!validatePhone(phone)) {
-        document.getElementById('phone').classList.add('is-invalid');
-        isValid = false;
-      } else {
-        document.getElementById('phone').classList.remove('is-invalid');
-        document.getElementById('phone').classList.add('is-valid');
-      }
-      
-      if (!validatePassword(password)) {
-        document.getElementById('signupPassword').classList.add('is-invalid');
-        isValid = false;
-      } else {
-        document.getElementById('signupPassword').classList.remove('is-invalid');
-        document.getElementById('signupPassword').classList.add('is-valid');
-      }
-      
-      if (password !== confirmPassword) {
-        document.getElementById('confirmPassword').classList.add('is-invalid');
-        isValid = false;
-      } else {
-        document.getElementById('confirmPassword').classList.remove('is-invalid');
-        document.getElementById('confirmPassword').classList.add('is-valid');
-      }
-      
-      if (!agreeTerms) {
-        document.getElementById('agreeTerms').classList.add('is-invalid');
-        isValid = false;
-      } else {
-        document.getElementById('agreeTerms').classList.remove('is-invalid');
-        document.getElementById('agreeTerms').classList.add('is-valid');
-      }
-      
-      if (isValid) {
-        // Show loading state
-        submitBtn.classList.add('loading');
-        submitBtn.disabled = true;
-        
-        // Create user object based on database schema
-        const userData = {
-          full_name: fullName,
-          email: email,
-          phone: phone || null,
-          password: password, // In real app, this should be hashed
-          role: 'customer', // Default role
-          status: 'active' // Default status
-        };
-        
-        // Simulate signup process
+  if (!signupForm) return;
+
+  signupForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const formData = new FormData(this);
+    
+    submitBtn.classList.add('loading');
+    submitBtn.disabled = true;
+
+    fetch('signup_process.php', {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.error) {
+        handleFormErrors(data.error, this);
+      } else if (data.success) {
+        showFormFeedback('success', 'Account created successfully! Redirecting to login...');
         setTimeout(() => {
-          alert('Account created successfully! (This is a demo)\n\nUser data:\n' + JSON.stringify(userData, null, 2));
-          submitBtn.classList.remove('loading');
-          submitBtn.disabled = false;
-          
-          // Redirect to login page
-          window.location.href = 'index.html';
-        }, 2000);
-      } else {
-        this.classList.add('was-validated');
+          window.location.href = 'login.php';
+        }, 3000);
       }
+    })
+    .catch(error => {
+      showFormFeedback('danger', 'An unexpected error occurred. Please try again.');
+    })
+    .finally(() => {
+      submitBtn.classList.remove('loading');
+      submitBtn.disabled = false;
     });
+  });
+}
+
+// Handle form errors from server
+function handleFormErrors(errors, form) {
+  // Clear previous errors
+  form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+  form.querySelectorAll('.invalid-feedback').forEach(el => el.remove());
+
+  if (Array.isArray(errors)) {
+      errors.forEach(error => {
+        if (error.field) {
+          const inputField = form.querySelector(`[name="${error.field}"]`);
+          if (inputField) {
+            inputField.classList.add('is-invalid');
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'invalid-feedback';
+            errorDiv.textContent = error.message;
+            inputField.parentNode.appendChild(errorDiv);
+          }
+        } else {
+          // Display general error messages
+          showFormFeedback('danger', error.message);
+        }
+    });
+  } else if (errors.message) {
+      showFormFeedback('danger', errors.message);
   }
 }
+
 
 // Real-time password confirmation validation
 function initPasswordConfirmation() {
@@ -262,58 +237,6 @@ function initPasswordConfirmation() {
     
     password.addEventListener('input', checkPasswordMatch);
     confirmPassword.addEventListener('input', checkPasswordMatch);
-  }
-}
-
-// Real-time email validation
-function initEmailValidation() {
-  const emailFields = document.querySelectorAll('input[type="email"]');
-  
-  emailFields.forEach(field => {
-    field.addEventListener('input', function() {
-      if (this.value === '') {
-        this.classList.remove('is-valid', 'is-invalid');
-        return;
-      }
-      
-      if (validateEmail(this.value)) {
-        this.classList.remove('is-invalid');
-        this.classList.add('is-valid');
-      } else {
-        this.classList.remove('is-valid');
-        this.classList.add('is-invalid');
-      }
-    });
-  });
-}
-
-// Phone number formatting
-function initPhoneFormatting() {
-  const phoneField = document.getElementById('phone');
-  
-  if (phoneField) {
-    phoneField.addEventListener('input', function() {
-      // Remove all non-digit characters
-      let value = this.value.replace(/\D/g, '');
-      
-      // Format phone number (US format)
-      if (value.length >= 6) {
-        value = value.replace(/(\d{3})(\d{3})(\d+)/, '($1) $2-$3');
-      } else if (value.length >= 3) {
-        value = value.replace(/(\d{3})(\d+)/, '($1) $2');
-      }
-      
-      this.value = value;
-      
-      // Validate
-      if (this.value === '' || validatePhone(this.value)) {
-        this.classList.remove('is-invalid');
-        this.classList.add('is-valid');
-      } else {
-        this.classList.remove('is-valid');
-        this.classList.add('is-invalid');
-      }
-    });
   }
 }
 
@@ -397,9 +320,8 @@ document.addEventListener('DOMContentLoaded', function() {
   initPasswordStrength();
   initLoginForm();
   initSignupForm();
+  initTwoFactorForm();
   initPasswordConfirmation();
-  initEmailValidation();
-  initPhoneFormatting();
   initNotificationSystem();
   
   // Add smooth scrolling for anchor links
@@ -418,31 +340,34 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Handle form submission feedback
 function showFormFeedback(type, message) {
-  const alert = document.createElement('div');
-  alert.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
-  alert.style.top = '100px';
-  alert.style.right = '20px';
-  alert.style.zIndex = '1060';
-  alert.innerHTML = `
-    ${message}
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-  `;
-  
-  document.body.appendChild(alert);
-  
-  // Auto-remove after 5 seconds
-  setTimeout(() => {
-    if (alert.parentNode) {
-      alert.remove();
+    const feedbackContainer = document.getElementById('formFeedback');
+    if (!feedbackContainer) {
+        console.error('No #formFeedback container found on the page.');
+        return;
     }
-  }, 5000);
+
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show`;
+    alert.role = 'alert';
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+
+    // Clear previous feedback and append the new one
+    feedbackContainer.innerHTML = '';
+    feedbackContainer.appendChild(alert);
+
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.remove();
+        }
+    }, 5000);
 }
+
 
 // Export functions for potential use in other scripts
 window.CrackCartAuth = {
-  validateEmail,
-  validatePhone,
-  validatePassword,
-  checkPasswordStrength,
   showFormFeedback
 };

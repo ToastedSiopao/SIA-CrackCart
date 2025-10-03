@@ -6,59 +6,7 @@
   <title>CrackCart - Login</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-  <style>
-    /* Add your login page styles here */
-    .login-page {
-      background: url("assets/eggBG.png") no-repeat center center fixed;
-      background-size: cover;
-      height: 100vh;
-    }
-    .header-logo {
-      display: flex;
-      justify-content: center;
-      padding: 20px 0;
-    }
-    .logo-img {
-      height: 80px;
-    }
-    .login-container {
-      background: white;
-      border-radius: 15px;
-      padding: 30px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    }
-    .truck-logo {
-      height: 60px;
-      margin-bottom: 15px;
-    }
-    .login-title {
-      color: #020200;
-      font-weight: 700;
-    }
-    .carousel-container {
-      background: rgba(255,255,255,0.9);
-      border-radius: 15px;
-      padding: 30px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    }
-    .carousel-content {
-      text-align: center;
-      padding: 20px;
-    }
-    .carousel-content i {
-      font-size: 2.5rem;
-      color: #ffc107;
-    }
-    .btn-primary {
-      background: linear-gradient(135deg, #f8ff95 0%, #e9ff6f 100%);
-      border: none;
-      color: #000;
-      font-weight: 600;
-    }
-    .btn-primary:hover {
-      background: linear-gradient(135deg, #feffbd 0%, #f8ffbe 100%);
-    }
-  </style>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body class="login-page">
   <!-- Header Logo -->
@@ -115,7 +63,7 @@
           </div>
 
           <!-- Error/Success Messages -->
-          <div id="message-container"></div>
+          <div id="formFeedback"></div>
 
           <form id="loginForm" novalidate>
             <div class="mb-3">
@@ -123,9 +71,6 @@
               <div class="input-group">
                 <span class="input-group-text"><i class="fas fa-envelope"></i></span>
                 <input type="email" class="form-control" id="loginEmail" name="email" placeholder="Enter your email" required>
-                <div class="invalid-feedback">
-                  Please provide a valid email address.
-                </div>
               </div>
             </div>
 
@@ -137,9 +82,6 @@
                 <button class="btn btn-outline-secondary" type="button" id="togglePassword">
                   <i class="fas fa-eye"></i>
                 </button>
-                <div class="invalid-feedback">
-                  Please provide your password.
-                </div>
               </div>
             </div>
 
@@ -151,7 +93,8 @@
             </div>
 
             <button type="submit" class="btn btn-primary w-100 mb-3">
-              <i class="fas fa-sign-in-alt me-2"></i>LOGIN
+              <span class="loading-spinner"></span>
+              <span class="button-text">LOGIN</span>
             </button>
 
             <div class="text-center">
@@ -173,54 +116,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script>
-    // Toggle password visibility
-    document.getElementById('togglePassword').addEventListener('click', function() {
-      const passwordInput = document.getElementById('loginPassword');
-      const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-      passwordInput.setAttribute('type', type);
-      this.querySelector('i').classList.toggle('fa-eye');
-      this.querySelector('i').classList.toggle('fa-eye-slash');
-    });
-
-    // Form submission and error handling
-    document.getElementById('loginForm').addEventListener('submit', async function(event) {
-      event.preventDefault();
-      event.stopPropagation();
-
-      if (!this.checkValidity()) {
-        this.classList.add('was-validated');
-        return;
-      }
-
-      const formData = new FormData(this);
-      const messageContainer = document.getElementById('message-container');
-
-      try {
-        const response = await fetch('login_process.php', {
-          method: 'POST',
-          body: formData
-        });
-
-        const result = await response.json();
-
-        if (result.error) {
-          let errorMessage = '<div class="alert alert-danger">' + result.error.message + '</div>';
-          if (result.error.file && result.error.line) {
-            errorMessage += '<div class="alert alert-warning">Error in ' + result.error.file + ' on line ' + result.error.line + '</div>';
-          }
-          messageContainer.innerHTML = errorMessage;
-        } else if (result.success && result.two_factor) {
-    messageContainer.innerHTML = '<div class="alert alert-success">Login successful! Redirecting...</div>';
-    setTimeout(() => {
-        window.location.href = "2fa.php"; 
-    }, 1000);
-}
-
-      } catch (error) {
-        messageContainer.innerHTML = '<div class="alert alert-danger">An unexpected error occurred. Please try again.</div>';
-      }
-    });
-  </script>
+  <script src="script.js"></script>
 </body>
 </html>
