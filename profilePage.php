@@ -89,6 +89,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['save'])) {
         }
     }
 }
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -100,60 +101,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['save'])) {
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <!-- Bootstrap Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-  <style>
-    body { background-color: #f4f0f2; font-family: Arial, sans-serif; }
-    .sidebar { background-color: #fff; min-height: 100vh; }
-    .sidebar .nav-link { color: #333; font-weight: 500; margin-bottom: .3rem; }
-    .sidebar .nav-link.active { background-color: #ffb703; color: #fff; border-radius: 8px; }
-    .upgrade-box { background: linear-gradient(45deg, #ffb703, #ff9e00); border-radius: 12px; padding: 15px; color: #fff; text-align: center; margin-top: 20px; }
-    .navbar-yellow { background-color: #ffeb3b; }
-    .profile-card { border-radius: 12px; background: #fff; padding: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-    .account-info { background-color: #f8f9fa; border-radius: 8px; padding: 15px; margin-top: 20px; }
-  </style>
+  <link href="dashboard-styles.css?v=2.4" rel="stylesheet">
+
 </head>
 <body>
-  <!-- Top Navbar -->
-  <nav class="navbar navbar-expand-lg navbar-yellow shadow-sm px-3">
-    <div class="container-fluid">
-        <h5 class="offcanvas-title">CrackCart.</h5>
-      <div class="ms-auto d-flex align-items-center gap-4">
-        <a href="#" class="text-dark fs-5"><i class="bi bi-bell"></i></a>
-        <div class="dropdown">
-          <a class="d-flex align-items-center text-dark text-decoration-none dropdown-toggle" href="#" data-bs-toggle="dropdown">
-            <span class="me-2"><?php echo htmlspecialchars($_SESSION['user_first_name'] . ' ' . $_SESSION['user_last_name']); ?></span>
-            <i class="bi bi-person-circle fs-4"></i>
-          </a>
-          <ul class="dropdown-menu dropdown-menu-end">
-            <li><a class="dropdown-item" href="profilePage.php">Profile</a></li>
-            <li><a class="dropdown-item" href="#">Settings</a></li>
-            <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item" href="logout.php">Logout</a></li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </nav>
+  <?php include 'navbar.php'; ?>
 
   <div class="container-fluid">
     <div class="row flex-nowrap">
-      <!-- Sidebar -->
-      <div class="col-auto col-md-3 col-lg-2 px-3 sidebar d-none d-md-block">
-        <ul class="nav flex-column mb-auto mt-4">
-          <li><a href="dashboard.php" class="nav-link"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a></li>
-          <li><a href="order.php" class="nav-link"><i class="bi bi-cart3 me-2"></i>Make an Order</a></li>
-          <li><a href="eggspress.php" class="nav-link"><i class="bi bi-truck me-2"></i> Eggspress</a></li>
-          <li><a href="messages.php" class="nav-link"><i class="bi bi-chat-dots me-2"></i> Messages</a></li>
-          <li><a href="history.php" class="nav-link"><i class="bi bi-clock-history me-2"></i> Order History</a></li>
-          <li><a href="bills.php" class="nav-link"><i class="bi bi-receipt me-2"></i> Bills</a></li>
-          <li><a href="profilePage.php" class="nav-link active"><i class="bi bi-gear me-2"></i> Setting</a></li>
-          <li><a href="producers.php" class="nav-link"><i class="bi bi-egg me-2"></i> Producers</a></li>
-
-        </ul>
-        <div class="upgrade-box">
-          <p>Upgrade your Account to Get Free Voucher</p>
-          <button class="btn btn-light btn-sm">Upgrade</button>
-        </div>
-      </div>
+      <?php include 'sidebar.php'; ?>
+      <?php include 'offcanvas_sidebar.php'; ?>
 
       <!-- Main Content -->
       <div class="col p-4">
@@ -335,4 +292,4 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['save'])) {
     });
   </script>
 </body>
-</html
+</html>
