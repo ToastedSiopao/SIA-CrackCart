@@ -1,6 +1,7 @@
 <?php
 require_once 'error_handler.php';
 require 'vendor/autoload.php';
+require_once 'config.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
@@ -57,15 +58,35 @@ try {
             $_SESSION['2fa_code'] = (string)$two_fa_code;
             $_SESSION['2fa_user_id'] = $user['USER_ID'];
 
-            try {
-                // (PHPMailer code remains the same as before)
+            $mail = new PHPMailer(true);
 
+            try {
+                //Server settings
+                $mail->isSMTP();
+                $mail->Host       = 'smtp-relay.brevo.com';
+                $mail->SMTPAuth   = true;
+                $mail->Username   = SMTP_USER;
+                $mail->Password   = SMTP_PASS;
+                $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                $mail->Port       = 587;
+
+                //Recipients
+                $mail->setFrom('crackcart.auth@gmail.com', 'CrackCart Security');
+                $mail->addAddress($email);
+
+                //Content
+                $mail->isHTML(true);
+                $mail->Subject = 'Your Two-Factor Authentication Code';
+                $mail->Body    = "Your 2FA code is: <b>{$two_fa_code}</b>. It will expire in 5 minutes.";
+                $mail->AltBody = "Your 2FA code is: {$two_fa_code}. It will expire in 5 minutes.";
+
+                $mail->send();
                 echo json_encode(['success' => true, 'two_factor' => true]);
                 exit();
 
             } catch (Exception $e) {
                 http_response_code(500);
-                echo json_encode(['error' => ['message' => "Could not send 2FA code."]]);
+                echo json_encode(['error' => ['message' => "Could not send 2FA code. Mailer Error: {$mail->ErrorInfo}"]]);
                 exit();
             }
         } else {
