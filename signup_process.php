@@ -18,6 +18,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $city = trim($_POST['city'] ?? '');
     $password = $_POST['password'] ?? '';
     $confirmPassword = $_POST['confirmPassword'] ?? '';
+    $agreeTerms = $_POST['agreeTerms'] ?? '';
 
     $errors = [];
 
@@ -48,6 +49,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $errors[] = ['field' => 'confirmPassword', 'message' => 'Please confirm your password'];
     } elseif ($password !== $confirmPassword) {
         $errors[] = ['field' => 'confirmPassword', 'message' => 'Passwords do not match'];
+    }
+
+    if (empty($agreeTerms)) {
+        $errors[] = ['field' => 'agreeTerms', 'message' => 'You must agree to the Terms of Service and Privacy Policy'];
     }
 
     // If there are validation errors, return them

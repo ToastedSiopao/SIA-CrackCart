@@ -158,9 +158,9 @@
             </div>
 
             <div class="mb-3 form-check">
-              <input type="checkbox" class="form-check-input" id="agreeTerms" required>
+              <input type="checkbox" class="form-check-input" id="agreeTerms" name="agreeTerms" required>
               <label class="form-check-label" for="agreeTerms">
-                I agree to the <a href="#">Terms of Service</a> & <a href="#">Privacy Policy</a>
+                I agree to the <a href="terms.php" target="_blank">Terms of Service</a> & <a href="terms.php" target="_blank">Privacy Policy</a>
               </label>
             </div>
 
