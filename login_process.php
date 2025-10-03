@@ -51,7 +51,26 @@ try {
 
             $mail = new PHPMailer(true);
             try {
-                // ... (PHPMailer configuration remains the same)
+                $mail->isSMTP();
+                $mail->Host       = 'smtp.gmail.com';
+                $mail->SMTPAuth   = true;
+                $mail->Username   = 'qesnmiana@tip.edu.ph';
+                $mail->Password   = 'fjomlacwktwdssvs';
+                $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                $mail->Port       = 587;
+
+                // Recipients
+                $mail->setFrom('yourgmail@gmail.com', 'CrackCart');
+                $mail->addAddress($email, $user['FIRST_NAME'] . ' ' . $user['LAST_NAME']);
+                $mail->addReplyTo('yourgmail@gmail.com', 'Support Team');
+
+                // Email content
+                $mail->isHTML(true);
+                $mail->Subject = 'Your CrackCart 2FA Code';
+                $mail->Body    = "Hello <b>{$user['FIRST_NAME']} {$user['LAST_NAME']}</b>,<br><br>
+                                  Your 2FA code is: <b>{$two_fa_code}</b><br><br>
+                                  This code will expire in 5 minutes.";
+                $mail->AltBody = "Your 2FA code is: {$two_fa_code}";
 
                 $mail->send();
 
