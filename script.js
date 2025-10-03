@@ -89,15 +89,22 @@ function initLoginForm() {
       method: 'POST',
       body: formData
     })
-    .then(response => response.json())
-    .then(data => {
-      if (data.error) {
-        handleFormErrors(data.error, this);
-      } else if (data.success && data.two_factor) {
-        window.location.href = '2fa_page.html';
-      } else if (data.success) {
-        window.location.href = 'dashboard.php'; 
-      }
+    .then(async response => {
+        const data = await response.json();
+        if (!response.ok) {
+            if (response.status === 429) {
+                handleLockout(data.error.message, loginForm);
+            } else {
+                handleFormErrors(data.error, loginForm);
+            }
+            return;
+        }
+
+        if (data.success && data.two_factor) {
+            window.location.href = '2fa.php';
+        } else if (data.success) {
+            window.location.href = 'dashboard.php'; 
+        }
     })
     .catch(error => {
       showFormFeedback('danger', 'An unexpected error occurred. Please try again.');
@@ -108,6 +115,41 @@ function initLoginForm() {
       submitBtn.disabled = false;
     });
   });
+}
+
+function handleLockout(message, form) {
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const emailField = form.querySelector('[name="email"]');
+    const passwordField = form.querySelector('[name="password"]');
+
+    // Extract remaining seconds from the message
+    const remaining = parseInt(message.match(/\d+/)[0]);
+    if (isNaN(remaining)) return;
+
+    // Disable form fields
+    submitBtn.disabled = true;
+    emailField.disabled = true;
+    passwordField.disabled = true;
+
+    // Start countdown
+    let countdown = remaining;
+    const intervalId = setInterval(() => {
+        const minutes = Math.floor(countdown / 60);
+        const seconds = countdown % 60;
+        const timeLeft = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        
+        showFormFeedback('warning', `Too many failed attempts. Please try again in ${timeLeft}.`);
+        
+        if (countdown <= 0) {
+            clearInterval(intervalId);
+            // Re-enable form fields
+            submitBtn.disabled = false;
+            emailField.disabled = false;
+            passwordField.disabled = false;
+            showFormFeedback('success', 'You can now try to log in again.');
+        }
+        countdown--;
+    }, 1000);
 }
 
 // 2FA form handler
@@ -358,12 +400,14 @@ function showFormFeedback(type, message) {
     feedbackContainer.innerHTML = '';
     feedbackContainer.appendChild(alert);
 
-    // Auto-remove after 5 seconds
-    setTimeout(() => {
-        if (alert.parentNode) {
-            alert.remove();
-        }
-    }, 5000);
+    // Auto-remove after 5 seconds if it's not a countdown
+    if (!message.includes('Please try again in')) {
+        setTimeout(() => {
+            if (alert.parentNode) {
+                alert.remove();
+            }
+        }, 5000);
+    }
 }
 
 
