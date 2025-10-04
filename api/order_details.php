@@ -1,4 +1,5 @@
 <?php
+include "../error_handler.php";
 session_start();
 header("Content-Type: application/json");
 include("../db_connect.php");
@@ -19,7 +20,7 @@ if ($order_id === 0) {
 }
 
 // Fetch order details
-$stmt = $conn->prepare("SELECT po.*, a.street, a.city, a.state, a.zip_code, a.country FROM product_orders po JOIN Address a ON po.shipping_address_id = a.address_id WHERE po.order_id = ? AND po.user_id = ?");
+$stmt = $conn->prepare("SELECT po.*, a.address_line1 AS street, a.city, a.state, a.zip_code, a.country FROM product_orders po JOIN user_addresses a ON po.shipping_address_id = a.address_id WHERE po.order_id = ? AND po.user_id = ?");
 $stmt->bind_param("ii", $order_id, $user_id);
 $stmt->execute();
 $result = $stmt->get_result();
