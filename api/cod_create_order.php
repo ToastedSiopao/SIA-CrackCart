@@ -32,14 +32,14 @@ try {
     // 1. Create the order
     $payment_method = 'Cash on Delivery';
     $order_status = 'Processing';
-    $stmt = $conn->prepare("INSERT INTO orders (user_id, total_amount, payment_method, status, shipping_address_id) VALUES (?, ?, ?, ?, ?)");
+    $stmt = $conn->prepare("INSERT INTO product_orders (user_id, total_amount, payment_method, status, shipping_address_id) VALUES (?, ?, ?, ?, ?)");
     $stmt->bind_param("idssi", $user_id, $total_amount, $payment_method, $order_status, $shipping_address_id);
     $stmt->execute();
     $order_id = $stmt->insert_id;
     $stmt->close();
 
     // 2. Add items to the order_items table
-    $stmt = $conn->prepare("INSERT INTO order_items (order_id, producer_id, product_type, quantity, price) VALUES (?, ?, ?, ?, ?)");
+    $stmt = $conn->prepare("INSERT INTO product_order_items (order_id, producer_id, product_type, quantity, price) VALUES (?, ?, ?, ?, ?)");
     foreach ($product_cart as $item) {
         $stmt->bind_param("issid", $order_id, $item['producer_id'], $item['product_type'], $item['quantity'], $item['price']);
         $stmt->execute();
