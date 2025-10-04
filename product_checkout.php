@@ -97,25 +97,36 @@ if (!isset($_SESSION['user_id'])) {
                 <div class="alert alert-warning"> 
                     You have no saved addresses. <a href="addresses.php">Please add an address</a> before proceeding.
                 </div>`;
-              // Disable payment buttons if no address
               if(paypal.Buttons) paypal.Buttons().close();
               return;
           }
-          const addressHtml = addresses.map((addr, index) => {
-              const isDefault = index === 0; // First address is default for now
+          let defaultAddress = addresses.find(addr => addr.is_default);
+          // If no default is explicitly set, use the first one.
+          if (!defaultAddress && addresses.length > 0) {
+              defaultAddress = addresses[0];
+          }
+
+          const addressHtml = addresses.map(addr => {
+              const isChecked = defaultAddress && addr.address_id === defaultAddress.address_id;
               return `
                 <div class="form-check card card-body mb-2">
-                    <input class="form-check-input" type="radio" name="shippingAddress" id="addr-${addr.address_id}" value="${addr.address_id}" ${isDefault ? 'checked' : ''}>
+                    <input class="form-check-input" type="radio" name="shippingAddress" id="addr-${addr.address_id}" value="${addr.address_id}" ${isChecked ? 'checked' : ''}>
                     <label class="form-check-label w-100" for="addr-${addr.address_id}">
-                        <strong>${addr.address_type.charAt(0).toUpperCase() + addr.address_type.slice(1)} Address</strong><br>
-                        ${addr.address_line1}, ${addr.address_line2}<br>
+                        <strong>${addr.is_default ? 'Default Shipping Address' : 'Shipping Address'}</strong><br>
+                        ${addr.address_line1}${addr.address_line2 ? ', ' + addr.address_line2 : ''}<br>
                         ${addr.city}, ${addr.state}, ${addr.country} - ${addr.zip_code}
                     </label>
                 </div>
-              `
+              `;
           }).join('');
+          
           addressSelectionContainer.innerHTML = addressHtml;
-          selectedAddressId = addresses[0].address_id;
+          
+          if (defaultAddress) {
+            selectedAddressId = defaultAddress.address_id;
+          } else {
+            selectedAddressId = null;
+          }
       };
 
       const renderOrderSummary = (data) => {
