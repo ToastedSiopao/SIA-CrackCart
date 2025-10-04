@@ -20,29 +20,8 @@ if (!isset($_SESSION['user_id'])) {
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
   <!-- Font Awesome for icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="dashboard-styles.css?v=2.5" rel="stylesheet">
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f8f9fa;
-    }
-    .sidebar {
-      background-color: #fff;
-      min-height: 100vh;
-      border-right: 1px solid #eee;
-    }
-    .sidebar .nav-link {
-      color: #333;
-      font-weight: 500;
-      margin-bottom: .3rem;
-    }
-    .sidebar .nav-link.active {
-      background-color: #ffb703;
-      color: #fff;
-      border-radius: 8px;
-    }
-    .navbar-yellow {
-      background-color: #ffeb3b;
-    }
     .hero-section {
       background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSUILGauMpq_eRsL7_h1Nv86l6uxmh2pSoQqg&s') no-repeat center center;
       background-size: cover;
@@ -144,14 +123,6 @@ if (!isset($_SESSION['user_id'])) {
                   <li>Standard packaging</li>
                   <li>24-hour delivery window</li>
                 </ul>
-                <form action="cart_functions.php" method="post">
-                    <input type="hidden" name="service_tier" value="Standard Hatch">
-                    <input type="hidden" name="price" value="10.00">
-                    <div class="input-group mb-3">
-                        <input type="number" class="form-control" name="quantity" value="1" min="1">
-                        <button class="btn btn-primary" type="submit" name="add_to_shipment">Book Shipment</button>
-                    </div>
-                </form>
               </div>
             </div>
             <div class="col-md-4 d-flex">
@@ -164,14 +135,6 @@ if (!isset($_SESSION['user_id'])) {
                   <li><strong>Real-time GPS tracking</strong></li>
                   <li><strong>12-hour delivery window</strong></li>
                 </ul>
-                <form action="cart_functions.php" method="post">
-                    <input type="hidden" name="service_tier" value="Golden Yolks">
-                    <input type="hidden" name="price" value="20.00">
-                    <div class="input-group mb-3">
-                        <input type="number" class="form-control" name="quantity" value="1" min="1">
-                        <button class="btn btn-primary" type="submit" name="add_to_shipment">Book Shipment</button>
-                    </div>
-                </form>
               </div>
             </div>
             <div class="col-md-4 d-flex">
@@ -184,14 +147,6 @@ if (!isset($_SESSION['user_id'])) {
                   <li><strong>Real-time GPS tracking with temperature monitoring</strong></li>
                   <li><strong>Guaranteed 4-hour delivery window</strong></li>
                 </ul>
-                <form action="cart_functions.php" method="post">
-                    <input type="hidden" name="service_tier" value="The Fabergé">
-                    <input type="hidden" name="price" value="50.00">
-                    <div class="input-group mb-3">
-                        <input type="number" class="form-control" name="quantity" value="1" min="1">
-                        <button class="btn btn-primary" type="submit" name="add_to_shipment">Book Shipment</button>
-                    </div>
-                </form>
               </div>
             </div>
           </div>
@@ -279,7 +234,7 @@ if (!isset($_SESSION['user_id'])) {
           <div class="container">
             <h2>Ready to Ship with Confidence?</h2>
             <p class="lead my-4">Get a free, no-obligation quote for your next egg shipment.</p>
-            <a href="#" class="btn">Get a Free Quote</a>
+            <a href="order.php" class="btn">Get a Free Quote</a>
           </div>
         </section>
       </div>

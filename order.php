@@ -32,13 +32,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Make an Order - CrackCart</title>
   <!-- Bootstrap CSS -->
-  <link href="https.cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <!-- Bootstrap Icons -->
-  <link href="https.cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
   <!-- Google Fonts -->
-  <link href="https.fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
   <!-- Custom CSS -->
-  <link href="dashboard-styles.css?v=2.4" rel="stylesheet">
+  <link href="dashboard-styles.css?v=2.5" rel="stylesheet">
+  <link href="order-styles.css" rel="stylesheet">
 </head>
 <body>
   <?php include("navbar.php"); ?>
@@ -49,51 +50,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <?php include("offcanvas_sidebar.php"); ?>
 
       <!-- Main Content -->
-      <div class="col p-4">
-        <div class="card shadow-sm border-0 p-4">
-          <h6 class="text-warning">Order</h6>
-          <h4 class="mb-4">Place Your Order</h4>
+      <main class="col ps-md-2 pt-2">
+        <div class="container">
+          <div class="row justify-content-center">
+            <div class="col-md-8">
+              <div class="card shadow-sm border-0 p-4">
+                <div class="card-body">
+                  <h2 class="card-title text-center mb-4">Place Your Order</h2>
 
-          <?php if (!empty($success_message)): ?>
-            <div class="alert alert-success"><?php echo $success_message; ?></div>
-          <?php endif; ?>
+                  <?php if (!empty($success_message)): ?>
+                    <div class="alert alert-success"><?php echo $success_message; ?></div>
+                  <?php endif; ?>
 
-          <form method="post" action="">
-            <div class="row g-3">
-              <div class="col-md-6">
-                <label for="product" class="form-label">Select Product</label>
-                <select class="form-select" id="product" name="product" required>
-                  <option value="" disabled selected>Choose...</option>
-                  <option value="Egg Tray">Egg Tray</option>
-                  <option value="Fresh Eggs">Fresh Eggs</option>
-                  <option value="Organic Eggs">Organic Eggs</option>
-                </select>
-              </div>
-              <div class="col-md-6">
-                <label for="quantity" class="form-label">Quantity</label>
-                <input type="number" class="form-control" id="quantity" name="quantity" min="1" required>
-              </div>
-              <div class="col-12">
-                <label for="address" class="form-label">Delivery Address</label>
-                <input type="text" class="form-control" id="address" name="address" placeholder="Enter your delivery address" required>
-              </div>
-              <div class="col-12">
-                <label for="notes" class="form-label">Additional Notes</label>
-                <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Any special instructions?"></textarea>
-              </div>
-              <div class="col-12 text-center mt-4">
-                <button type="submit" class="btn btn-warning btn-lg px-5">
-                  <i class="bi bi-check-circle me-2"></i>Submit Order
-                </button>
+                  <form method="post" action="">
+                    <div class="mb-3">
+                      <label for="product" class="form-label">Select Product</label>
+                      <select class="form-select" id="product" name="product" required>
+                        <option value="" disabled selected>Choose...</option>
+                        <option value="Egg Tray">Egg Tray</option>
+                        <option value="Fresh Eggs">Fresh Eggs</option>
+                        <option value="Organic Eggs">Organic Eggs</option>
+                      </select>
+                    </div>
+                    <div class="mb-3">
+                      <label for="quantity" class="form-label">Quantity</label>
+                      <input type="number" class="form-control" id="quantity" name="quantity" min="1" required>
+                    </div>
+                    <div class="mb-3">
+                      <label for="address" class="form-label">Delivery Address</label>
+                      <input type="text" class="form-control" id="address" name="address" placeholder="Enter your delivery address" required>
+                    </div>
+                    <div class="mb-3">
+                      <label for="notes" class="form-label">Additional Notes</label>
+                      <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Any special instructions?"></textarea>
+                    </div>
+                    <div class="d-grid">
+                      <button type="submit" class="btn btn-warning btn-lg">
+                        <i class="bi bi-check-circle me-2"></i>Submit Order
+                      </button>
+                    </div>
+                  </form>
+                </div>
               </div>
             </div>
-          </form>
+          </div>
         </div>
-      </div>
+      </main>
 
     </div>
   </div>
 
-  <script src="https.cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

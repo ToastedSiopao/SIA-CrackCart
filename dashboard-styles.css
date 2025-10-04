@@ -165,3 +165,63 @@ body {
 .btn-close {
     filter: none;
 }
+
+.producer-card {
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    background: #fff;
+    padding: 20px;
+    transition: 0.3s ease-in-out;
+    height: 100%;
+    position: relative;
+  }
+  .producer-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transform: translateY(-5px);
+  }
+  .producer-logo {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 15px;
+  }
+  .btn-producer {
+    background-color: #ffb703;
+    color: #fff;
+    border-radius: 8px;
+    padding: 6px 14px;
+    border: none;
+  }
+  .btn-producer:hover {
+    background-color: #ffa502;
+    color: #fff;
+  }
+  .price-tag {
+    background: #28a745;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    margin-right: 5px;
+    margin-bottom: 5px;
+    display: inline-block;
+  }
+  .price-list {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+  }
+  .navbar-yellow {
+    background-color: #ffeb3b;
+  }
+  .search-box {
+    margin-bottom: 20px;
+  }
+  .filter-buttons {
+    margin-bottom: 20px;
+  }
+  .filter-btn {
+    margin-right: 10px;
+    margin-bottom: 10px;
+  }

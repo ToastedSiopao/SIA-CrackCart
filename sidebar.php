@@ -17,3 +17,15 @@
           <button class="btn btn-light btn-sm">Upgrade</button>
         </div>
       </div>
+      <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const links = document.querySelectorAll(".sidebar .nav-link");
+            const currentPage = window.location.pathname.split("/").pop();
+
+            links.forEach(link => {
+                if (link.getAttribute("href") === currentPage) {
+                    link.classList.add("active");
+                }
+            });
+        });
+      </script>
