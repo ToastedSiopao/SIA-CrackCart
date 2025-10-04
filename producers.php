@@ -9,8 +9,6 @@ $user_id = $_SESSION['user_id'];
 $user_name = $_SESSION['user_name'];
 
 include("../db_connect.php");
-
-// This page will now be powered by the API, but we keep the PHP structure.
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -20,7 +18,7 @@ include("../db_connect.php");
   <title>CrackCart Producers</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-  <link href="dashboard-styles.css?v=2.5" rel="stylesheet">
+  <link href="dashboard-styles.css?v=2.7" rel="stylesheet">
 </head>
 <body>
   <?php include("navbar.php"); ?>
@@ -31,7 +29,7 @@ include("../db_connect.php");
       <?php include("offcanvas_sidebar.php"); ?>
 
       <div class="col p-4">
-        <h3 class="mb-4 text-warning fw-bold">Producers</h3>
+        <h3 class="mb-4 text-warning fw-bold">Choose a Producer</h3>
 
         <div class="row g-4" id="producersContainer">
           <!-- Producers will be loaded here by JavaScript -->
@@ -40,8 +38,37 @@ include("../db_connect.php");
     </div>
   </div>
 
+  <!-- Order Modal -->
+<div class="modal fade" id="orderModal" tabindex="-1" aria-labelledby="orderModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="orderModalLabel">Order from [Producer Name]</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="orderForm">
+          <input type="hidden" id="producerId" name="producer_id">
+          <div class="mb-3">
+            <label for="productSelect" class="form-label">Egg Type</label>
+            <select class="form-select" id="productSelect" name="product" required>
+              <!-- Product options will be populated here -->
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="quantityInput" class="form-label">Quantity (Trays)</label>
+            <input type="number" class="form-control" id="quantityInput" name="quantity" min="1" value="1" required>
+          </div>
+          <button type="submit" class="btn btn-warning w-100">Add to Cart</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+
   <!-- Toast for notifications -->
-  <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+  <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100">
     <div id="cartToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
       <div class="toast-header">
         <strong class="me-auto">CrackCart</strong>
@@ -58,6 +85,11 @@ include("../db_connect.php");
     document.addEventListener('DOMContentLoaded', function() {
       const producersContainer = document.getElementById('producersContainer');
       const cartToast = new bootstrap.Toast(document.getElementById('cartToast'));
+      const orderModal = new bootstrap.Modal(document.getElementById('orderModal'));
+      const orderModalLabel = document.getElementById('orderModalLabel');
+      const productSelect = document.getElementById('productSelect');
+      const producerIdInput = document.getElementById('producerId');
+      const orderForm = document.getElementById('orderForm');
 
       // Fetch producers from the API
       fetch('api/producers.php')
@@ -72,26 +104,21 @@ include("../db_connect.php");
                     <img src="${producer.logo}" class="producer-logo" alt="${producer.name}">
                     <h5 class="fw-bold">${producer.name}</h5>
                     <p class="text-muted">${producer.location}</p>
-                    <div class="price-list">
-                      <h6 class="fw-bold mb-2">Products:</h6>
+                    <div class="price-list mb-3">
+                      <h6 class="fw-bold mb-2">Available Products:</h6>
                       ${producer.products.map(product => `
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                          <div>
-                            <span class="small">${product.type}</span>
-                            <span class="price-tag">₱${product.price.toFixed(2)}</span>
-                          </div>
-                          <button class="btn btn-success btn-sm add-to-cart-btn" 
-                                  data-producer-id="${producer.producer_id}"
-                                  data-product-type="${product.type}"
-                                  data-price="${product.price}">
-                            <i class="bi bi-cart-plus"></i>
-                          </button>
+                        <div class="d-flex justify-content-between">
+                          <span class="small">${product.type}</span>
+                          <span class="price-tag small">₱${product.price.toFixed(2)} / tray</span>
                         </div>
                       `).join('')}
                     </div>
-                    <a href="${producer.url}" target="_blank" class="btn btn-producer mt-3">
-                      <i class="bi bi-link me-1"></i>Visit Page
-                    </a>
+                    <button class="btn btn-warning order-btn" 
+                            data-producer-id="${producer.producer_id}"
+                            data-producer-name="${producer.name}"
+                            data-products='${JSON.stringify(producer.products)}'>
+                      Order From Here
+                    </button>
                   </div>
                 </div>
               `;
@@ -100,38 +127,59 @@ include("../db_connect.php");
           }
         });
 
-      // Event delegation for add to cart buttons
+      // Event delegation for "Order From Here" buttons
       producersContainer.addEventListener('click', function(e) {
-        if (e.target.classList.contains('add-to-cart-btn') || e.target.closest('.add-to-cart-btn')) {
-          const button = e.target.closest('.add-to-cart-btn');
+        if (e.target.classList.contains('order-btn')) {
+          const button = e.target;
           const producerId = button.dataset.producerId;
-          const productType = button.dataset.productType;
-          const price = button.dataset.price;
+          const producerName = button.dataset.producerName;
+          const products = JSON.parse(button.dataset.products);
 
-          const cartData = {
-            producer_id: producerId,
-            product_type: productType,
-            price: parseFloat(price),
-            quantity: 1 // Default quantity
-          };
-
-          fetch('api/cart.php', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(cartData)
-          })
-          .then(response => response.json())
-          .then(data => {
-            if (data.status === 'success') {
-              cartToast.show(); // Show success notification
-              // Optionally, update a cart icon counter here
-            } else {
-              alert('Error: ' + data.message);
-            }
+          // Populate and show the modal
+          orderModalLabel.textContent = `Order from ${producerName}`;
+          producerIdInput.value = producerId;
+          
+          productSelect.innerHTML = ''; // Clear previous options
+          products.forEach(product => {
+            const option = document.createElement('option');
+            option.value = JSON.stringify({ type: product.type, price: product.price });
+            option.textContent = `${product.type} - ₱${product.price.toFixed(2)}`;
+            productSelect.appendChild(option);
           });
+          
+          orderModal.show();
         }
+      });
+
+      // Handle form submission inside the modal
+      orderForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const producerId = producerIdInput.value;
+        const quantity = document.getElementById('quantityInput').value;
+        const selectedProduct = JSON.parse(productSelect.value);
+
+        const cartData = {
+          producer_id: producerId,
+          product_type: selectedProduct.type,
+          price: selectedProduct.price,
+          quantity: parseInt(quantity)
+        };
+
+        fetch('api/cart.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(cartData)
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.status === 'success') {
+            orderModal.hide();
+            cartToast.show();
+          } else {
+            alert('Error: ' + data.message);
+          }
+        });
       });
     });
   </script>
