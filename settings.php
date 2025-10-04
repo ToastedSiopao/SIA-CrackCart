@@ -48,7 +48,7 @@ $user_name = $_SESSION['user_name'];
                 <i class="bi bi-geo-alt-fill fs-1 text-warning"></i>
                 <h5 class="card-title mt-3">Manage Addresses</h5>
                 <p class="card-text">Add, edit, or remove your shipping and billing addresses.</p>
-                <a href="address.php" class="btn btn-warning">Go to Addresses</a>
+                <a href="addresses.php" class="btn btn-warning">Go to Addresses</a>
               </div>
             </div>
           </div>

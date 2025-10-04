@@ -25,7 +25,7 @@ switch ($method) {
     case 'POST':
         $data = json_decode(file_get_contents('php://input'), true);
         $address_line1 = $data['address_line1'];
-        $address_line2 = $data['address_line2'];
+        $address_line2 = $data['address_line2'] ?? null;
         $city = $data['city'];
         $state = $data['state'];
         $zip_code = $data['zip_code'];
@@ -76,14 +76,14 @@ switch ($method) {
             }
         } else {
             $address_line1 = $data['address_line1'];
-            $address_line2 = $data['address_line2'];
+            $address_line2 = $data['address_line2'] ?? null;
             $city = $data['city'];
             $state = $data['state'];
             $zip_code = $data['zip_code'];
             $country = $data['country'];
 
             $stmt = $conn->prepare("UPDATE user_addresses SET address_line1 = ?, address_line2 = ?, city = ?, state = ?, zip_code = ?, country = ? WHERE address_id = ? AND user_id = ?");
-            $stmt->bind_param("ssssssii", $address_line1, $address_line2, $city, $state, $zip_code, $country, $address_id, $user_.id);
+            $stmt->bind_param("ssssssii", $address_line1, $address__line2, $city, $state, $zip_code, $country, $address_id, $user_id);
             if ($stmt->execute()) {
                 echo json_encode(['status' => 'success', 'message' => 'Address updated successfully.']);
             } else {
