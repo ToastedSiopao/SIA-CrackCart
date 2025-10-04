@@ -131,14 +131,19 @@ if (!isset($_SESSION['user_id'])) {
           const itemsHtml = data.items.map(item => `
               <li class="list-group-item d-flex justify-content-between align-items-center">
                   <div>
-                      ${item.product_type} (x${item.quantity})
+                      ${item.product_type}
                       <p class="mb-0">₱${parseFloat(item.price).toFixed(2)} each</p>
                   </div>
                   <div class="d-flex align-items-center">
-                    <span class="me-3">₱${(parseFloat(item.price) * item.quantity).toFixed(2)}</span>
-                    <button class="btn btn-sm btn-outline-danger remove-item-btn" data-cart-item-key="${item.cart_item_key}">
-                        <i class="fas fa-trash"></i>
-                    </button>
+                      <div class="input-group input-group-sm" style="width: 120px;">
+                          <button class="btn btn-outline-secondary quantity-btn" data-action="decrease" data-cart-item-key="${item.cart_item_key}">-</button>
+                          <input type="text" class="form-control text-center" value="${item.quantity}" readonly>
+                          <button class="btn btn-outline-secondary quantity-btn" data-action="increase" data-cart-item-key="${item.cart_item_key}">+</button>
+                      </div>
+                      <span class="me-3 ms-3">₱${(parseFloat(item.price) * item.quantity).toFixed(2)}</span>
+                      <button class="btn btn-sm btn-outline-danger remove-item-btn" data-cart-item-key="${item.cart_item_key}">
+                          <i class="fas fa-trash"></i>
+                      </button>
                   </div>
               </li>`).join('');
 
@@ -164,7 +169,7 @@ if (!isset($_SESSION['user_id'])) {
           setupPaymentListeners();
           renderPaymentMethod();
       };
-      
+
       const handleRemoveItem = async (event) => {
           const button = event.target.closest('.remove-item-btn');
           if (!button) return;
@@ -196,8 +201,66 @@ if (!isset($_SESSION['user_id'])) {
               showAlert('danger', 'Could not connect to the server to remove item.');
           }
       };
+
+      const handleQuantityChange = async (event) => {
+          const button = event.target.closest('.quantity-btn');
+          if (!button) return;
+
+          const cartItemKey = button.dataset.cartItemKey;
+          const action = button.dataset.action;
+          
+          const item = cartData.items.find(i => i.cart_item_key === cartItemKey);
+          if (!item) return;
+
+          let newQuantity = parseInt(item.quantity, 10);
+
+          if (action === 'increase') {
+              newQuantity++;
+          } else if (action === 'decrease') {
+              newQuantity--;
+          }
+          
+          if (newQuantity <= 0) {
+              if (confirm('Do you want to remove this item from the cart?')) {
+                  await updateCartQuantity(cartItemKey, 0);
+              }
+          } else {
+              await updateCartQuantity(cartItemKey, newQuantity);
+          }
+      };
+
+      const updateCartQuantity = async (cartItemKey, quantity) => {
+          try {
+              const response = await fetch('api/cart.php', {
+                  method: 'POST', // Changed from PUT to POST
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                      _method: 'PUT', // Method override
+                      cart_item_key: cartItemKey,
+                      quantity: quantity
+                  })
+              });
+              const result = await response.json();
+              if (result.status === 'success') {
+                  await fetchCartAndAddresses();
+              } else {
+                  showAlert('danger', result.message || 'Could not update cart.');
+              }
+          } catch (error) {
+              showAlert('danger', 'Could not connect to the server to update cart.');
+          }
+      };
       
-      orderSummaryContainer.addEventListener('click', handleRemoveItem);
+      orderSummaryContainer.addEventListener('click', (event) => {
+          const removeButton = event.target.closest('.remove-item-btn');
+          const quantityButton = event.target.closest('.quantity-btn');
+
+          if (removeButton) {
+              handleRemoveItem(event);
+          } else if (quantityButton) {
+              handleQuantityChange(event);
+          }
+      });
 
       function setupPaymentListeners() {
         document.querySelectorAll('input[name="paymentMethod"]').forEach(elem => {
