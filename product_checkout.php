@@ -1,10 +1,6 @@
 <?php
-session_start();
+require_once 'session_handler.php';
 include("api/paypal_config.php"); 
-if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
-    exit();
-}
 ?>
 <!DOCTYPE html>
 <html lang="en">

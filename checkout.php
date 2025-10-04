@@ -1,12 +1,7 @@
 <?php
-session_start();
+require_once 'session_handler.php';
 include('cart_functions.php');
 include('db_connect.php'); // Include the database connection
-
-if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
-    exit;
-}
 
 $shipment = isset($_SESSION['shipment']) ? $_SESSION['shipment'] : array();
 

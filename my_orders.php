@@ -1,9 +1,5 @@
 <?php
-session_start();
-if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
-    exit();
-}
+require_once 'session_handler.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -13,7 +9,7 @@ if (!isset($_SESSION['user_id'])) {
     <title>My Orders - CrackCart</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="dashboard-styles.css?v=2.7" rel="stylesheet">
+    <link href="dashboard-styles.css?v=2.8" rel="stylesheet">
 </head>
 <body>
     <?php include("navbar.php"); ?>
@@ -33,7 +29,27 @@ if (!isset($_SESSION['user_id'])) {
                         <div class="col-12">
                             <div class="card">
                                 <div class="card-body">
-                                    <div id="orders-container" class="table-responsive">
+                                    <ul class="nav nav-tabs" id="orderTabs">
+                                        <li class="nav-item">
+                                            <a class="nav-link active" href="#" data-status-filter="all">All</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link" href="#" data-status-filter="topay">To Pay</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link" href="#" data-status-filter="toship">To Ship</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link" href="#" data-status-filter="toreceive">To Receive</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link" href="#" data-status-filter="completed">Completed</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link" href="#" data-status-filter="cancelled">Cancelled</a>
+                                        </li>
+                                    </ul>
+                                    <div id="orders-container" class="table-responsive mt-3">
                                         <div class="text-center"><div class="spinner-border"></div></div>
                                     </div>
                                 </div>
@@ -50,6 +66,8 @@ if (!isset($_SESSION['user_id'])) {
     document.addEventListener('DOMContentLoaded', function() {
         const ordersContainer = document.getElementById('orders-container');
         const alertContainer = document.getElementById('orders-alert-container');
+        const orderTabs = document.getElementById('orderTabs');
+        let allOrders = [];
 
         const showAlert = (type, message) => {
             alertContainer.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
@@ -64,7 +82,8 @@ if (!isset($_SESSION['user_id'])) {
                 const result = await response.json();
 
                 if (result.status === 'success') {
-                    renderOrders(result.data);
+                    allOrders = result.data;
+                    renderOrders('all');
                 } else {
                     ordersContainer.innerHTML = `<div class="alert alert-danger">${result.message || 'Could not load your orders.'}</div>`;
                 }
@@ -73,9 +92,33 @@ if (!isset($_SESSION['user_id'])) {
             }
         };
 
-        const renderOrders = (orders) => {
-            if (orders.length === 0) {
-                ordersContainer.innerHTML = '<p class="text-center">You have not placed any orders yet.</p>';
+        const renderOrders = (filter) => {
+            let filteredOrders = allOrders;
+
+            if (filter !== 'all') {
+                filteredOrders = allOrders.filter(order => {
+                    const status = order.status.toLowerCase();
+                    if (filter === 'topay') {
+                        return status === 'pending';
+                    }
+                    if (filter === 'toship') {
+                        return status === 'processing' || status === 'paid';
+                    }
+                    if (filter === 'toreceive') {
+                        return status === 'shipped';
+                    }
+                    if (filter === 'completed') {
+                        return status === 'delivered';
+                    }
+                    if (filter === 'cancelled') {
+                        return status === 'cancelled' || status === 'failed';
+                    }
+                    return false;
+                });
+            }
+
+            if (filteredOrders.length === 0) {
+                ordersContainer.innerHTML = '<p class="text-center">No orders found in this category.</p>';
                 return;
             }
 
@@ -91,14 +134,15 @@ if (!isset($_SESSION['user_id'])) {
                         </tr>
                     </thead>
                     <tbody>
-                        ${orders.map(order => `
+                        ${filteredOrders.map(order => `
                             <tr>
-                                <td>${order.order_id}</td>
+                                <td><a href="view_order.php?order_id=${order.order_id}">${order.order_id}</a></td>
                                 <td>${new Date(order.order_date).toLocaleDateString()}</td>
                                 <td>₱${parseFloat(order.total_amount).toFixed(2)}</td>
                                 <td><span class="badge bg-${getStatusClass(order.status)}">${order.status}</span></td>
                                 <td>
-                                    ${order.status.toLowerCase() === 'processing' || order.status.toLowerCase() === 'paid' ?
+                                    <a href="view_order.php?order_id=${order.order_id}" class="btn btn-sm btn-info">View</a>
+                                    ${order.status.toLowerCase() === 'processing' || order.status.toLowerCase() === 'paid' || order.status.toLowerCase() === 'pending' ?
                                     `<button class="btn btn-sm btn-danger cancel-btn" data-order-id="${order.order_id}">Cancel</button>` :
                                     ''}
                                 </td>
@@ -112,6 +156,8 @@ if (!isset($_SESSION['user_id'])) {
 
         const getStatusClass = (status) => {
             switch (status.toLowerCase()) {
+                case 'pending':
+                    return 'warning';
                 case 'paid':
                 case 'processing':
                     return 'info';
@@ -127,6 +173,17 @@ if (!isset($_SESSION['user_id'])) {
                     return 'light';
             }
         };
+        
+        orderTabs.addEventListener('click', (event) => {
+            event.preventDefault();
+            if (event.target.tagName === 'A') {
+                orderTabs.querySelectorAll('.nav-link').forEach(tab => tab.classList.remove('active'));
+                event.target.classList.add('active');
+
+                const filter = event.target.dataset.statusFilter;
+                renderOrders(filter);
+            }
+        });
 
         ordersContainer.addEventListener('click', async (event) => {
             if (event.target.classList.contains('cancel-btn')) {

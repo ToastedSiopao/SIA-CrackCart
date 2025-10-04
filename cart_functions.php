@@ -1,5 +1,4 @@
 <?php
-session_start();
 
 if (!isset($_SESSION['shipment'])) {
     $_SESSION['shipment'] = array();

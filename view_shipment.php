@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once 'session_handler.php';
 include('cart_functions.php');
 
 $shipment = isset($_SESSION['shipment']) ? $_SESSION['shipment'] : array();
