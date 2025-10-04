@@ -1,24 +1,34 @@
 <?php
 session_start();
-include('api/paypal_helpers.php');
-include('api/paypal_config.php');
 
+// Redirect if user is not logged in
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit();
 }
 
-$order_id = isset($_GET['order_id']) ? intval($_GET['order_id']) : 0;
+// Get the Order ID. Prioritize the ID from the session (set after checkout),
+// but fall back to the URL query string. This makes the page versatile.
+$order_id = 0;
+if (isset($_SESSION['last_order_id'])) {
+    $order_id = $_SESSION['last_order_id'];
+    // Unset session variables to prevent showing the same confirmation on refresh
+    unset($_SESSION['last_order_id']);
+    unset($_SESSION['last_order_details']);
+} elseif (isset($_GET['order_id'])) {
+    $order_id = intval($_GET['order_id']);
+}
+
+// If no Order ID is found, redirect to a safe page
 if ($order_id === 0) {
     header("Location: producers.php");
     exit();
 }
 
+include('api/paypal_helpers.php');
+include('api/paypal_config.php');
 $access_token = get_paypal_access_token(PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET);
 
-if (!$access_token) {
-    die("Could not retrieve PayPal access token.");
-}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -76,14 +86,17 @@ if (!$access_token) {
             headerHtml = `
                 <div class="text-center mb-4">
                     <h2 class="text-success">Thank You For Your Order!</h2>
-                    <p class="lead">Your order has been placed successfully.</p>
+                    <p class="lead">Your payment was successful and your order has been placed.</p>
                     <p>Order ID: <strong>#${order.order_id}</strong></p>
                 </div>
             `;
-            actionButtonsHtml = `
-                <div class="text-center mt-4">
-                    <a href="producers.php" class="btn btn-primary">Continue Shopping</a>
-                    <a href="order_history.php" class="btn btn-secondary">View Order History</a>
+        } else if (order.status === 'processing') {
+            headerHtml = `
+                <div class="text-center mb-4">
+                    <h2 class="text-info">Your Order is Being Processed!</h2>
+                    <p class="lead">We have received your order and will begin preparing it for shipment.</p>
+                    <p>Payment is due upon delivery (Cash on Delivery).</p>
+                    <p>Order ID: <strong>#${order.order_id}</strong></p>
                 </div>
             `;
         } else if (order.status === 'failed') {
@@ -94,13 +107,14 @@ if (!$access_token) {
                     <p>Order ID: <strong>#${order.order_id}</strong></p>
                 </div>
             `;
-            actionButtonsHtml = `
-                <div class="text-center mt-4">
-                    <a href="product_checkout.php" class="btn btn-warning">Retry Payment</a>
-                    <a href="order_history.php" class="btn btn-secondary">View Order History</a>
-                </div>
-            `;
         }
+
+        actionButtonsHtml = `
+            <div class="text-center mt-4">
+                <a href="producers.php" class="btn btn-primary">Continue Shopping</a>
+                <a href="my_orders.php" class="btn btn-secondary">View My Orders</a>
+            </div>
+        `;
 
         confirmationContainer.innerHTML = `
             ${headerHtml}
@@ -139,13 +153,22 @@ if (!$access_token) {
       };
 
       fetch(`api/order_details.php?order_id=${orderId}`)
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
         .then(result => {
           if (result.status === 'success') {
             renderOrderDetails(result.data);
           } else {
             confirmationContainer.innerHTML = `<div class="alert alert-danger">Error: ${result.message}</div>`;
           }
+        })
+        .catch(error => {
+            confirmationContainer.innerHTML = `<div class="alert alert-danger">Could not load order details. Please check your connection or contact support.</div>`;
+            console.error('Fetch error:', error);
         });
     });
   </script>

@@ -10,7 +10,7 @@ include("api/paypal_config.php");
   <title>Checkout - CrackCart</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-  <link href="dashboard-styles.css?v=2.6" rel="stylesheet">
+  <link href="dashboard-styles.css?v=2.9" rel="stylesheet">
   <script src="https://www.paypal.com/sdk/js?client-id=<?php echo PAYPAL_CLIENT_ID; ?>&currency=PHP"></script>
 </head>
 <body>
@@ -22,10 +22,10 @@ include("api/paypal_config.php");
       <?php include("offcanvas_sidebar.php"); ?>
 
       <main class="col ps-md-2 pt-2">
-        <div class="container">
+        <div class="container" id="main-checkout-container">
           <h2 class="text-center mb-4">Checkout</h2>
           <div id="checkout-alert-container"></div>
-          <div class="row g-5">
+          <div class="row g-5" id="checkout-content">
             <div class="col-md-7">
               <h4 class="mb-3">Shipping Information</h4>
               <div id="address-selection">
@@ -49,13 +49,44 @@ include("api/paypal_config.php");
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', async function() {
+      const mainContainer = document.getElementById('main-checkout-container');
+      const checkoutContent = document.getElementById('checkout-content');
       const orderSummaryContainer = document.getElementById('order-summary');
       const addressSelectionContainer = document.getElementById('address-selection');
       const alertContainer = document.getElementById('checkout-alert-container');
       let selectedAddressId = null;
       let cartData = null;
-      let selectedPaymentMethod = 'paypal'; 
+      let selectedPaymentMethod = 'paypal';
+
+      // Check user status before proceeding with checkout
+      const checkUserStatus = async () => {
+          try {
+              const response = await fetch('api/user_status_check.php');
+              if (response.status === 403) { // 403 Forbidden indicates a lock
+                  const result = await response.json();
+                  mainContainer.innerHTML = `<div class="alert alert-warning"><h3>Account Locked</h3><p>${result.message}</p></div>`;
+                  return false; // User is locked
+              }
+              if (!response.ok) {
+                  // Handle other non-OK responses that aren't a lock
+                  const result = await response.json();
+                  showAlert('danger', result.message || 'Could not verify your account status. Please try again later.');
+                  return false;
+              }
+              return true; // User is not locked
+          } catch (error) {
+              showAlert('danger', 'Could not connect to verify your account status. Please check your connection and try again.');
+              checkoutContent.innerHTML = ''; // Clear the checkout form
+              return false;
+          }
+      };
+
+      const isUserActive = await checkUserStatus();
+      if (!isUserActive) {
+        checkoutContent.innerHTML = ''; // Ensure checkout form is cleared if user is not active
+        return; 
+      }
 
       const fetchCartAndAddresses = async () => {
           try {
@@ -102,6 +133,7 @@ include("api/paypal_config.php");
 
           const addressHtml = addresses.map(addr => {
               const isChecked = defaultAddress && addr.address_id === defaultAddress.address_id;
+              if (isChecked) selectedAddressId = addr.address_id;
               return `
                 <div class="form-check card card-body mb-2">
                     <input class="form-check-input" type="radio" name="shippingAddress" id="addr-${addr.address_id}" value="${addr.address_id}" ${isChecked ? 'checked' : ''}>
@@ -115,12 +147,14 @@ include("api/paypal_config.php");
           }).join('');
           
           addressSelectionContainer.innerHTML = addressHtml;
-          if (defaultAddress) selectedAddressId = defaultAddress.address_id;
+          addressSelectionContainer.addEventListener('change', (e) => {
+            if(e.target.name === 'shippingAddress') selectedAddressId = e.target.value;
+          });
       };
 
       const renderOrderSummary = (data) => {
           if (!data || !data.items || data.items.length === 0) {
-              orderSummaryContainer.innerHTML = '<p class="text-center">Your cart is empty.</p>';
+              mainContainer.innerHTML = '<div class="alert alert-info text-center">Your cart is empty. <a href="producers.php">Continue shopping</a>.</div>';
               return;
           }
 
@@ -128,7 +162,7 @@ include("api/paypal_config.php");
               <li class="list-group-item d-flex justify-content-between align-items-center">
                   <div>
                       ${item.product_type}
-                      <p class="mb-0">₱${parseFloat(item.price).toFixed(2)} each</p>
+                      <p class="mb-0 text-muted" style="font-size: 0.9em;">₱${parseFloat(item.price).toFixed(2)} each</p>
                   </div>
                   <div class="d-flex align-items-center">
                       <div class="input-group input-group-sm" style="width: 120px;">
@@ -136,7 +170,7 @@ include("api/paypal_config.php");
                           <input type="text" class="form-control text-center" value="${item.quantity}" readonly>
                           <button class="btn btn-outline-secondary quantity-btn" data-action="increase" data-cart-item-key="${item.cart_item_key}">+</button>
                       </div>
-                      <span class="me-3 ms-3">₱${(parseFloat(item.price) * item.quantity).toFixed(2)}</span>
+                      <span class="fw-bold me-3 ms-3">₱${(parseFloat(item.price) * item.quantity).toFixed(2)}</span>
                       <button class="btn btn-sm btn-outline-danger remove-item-btn" data-cart-item-key="${item.cart_item_key}">
                           <i class="fas fa-trash"></i>
                       </button>
@@ -146,7 +180,7 @@ include("api/paypal_config.php");
           orderSummaryContainer.innerHTML = `
               <h5 class="card-title">Order Summary</h5>
               <ul class="list-group list-group-flush">${itemsHtml}
-                  <li class="list-group-item d-flex justify-content-between align-items-center fw-bold">
+                  <li class="list-group-item d-flex justify-content-between align-items-center fw-bold fs-5">
                       Subtotal <span>₱${parseFloat(data.subtotal).toFixed(2)}</span>
                   </li>
               </ul>
@@ -165,37 +199,24 @@ include("api/paypal_config.php");
           setupPaymentListeners();
           renderPaymentMethod();
       };
+      
+      orderSummaryContainer.addEventListener('click', (event) => {
+          const removeButton = event.target.closest('.remove-item-btn');
+          const quantityButton = event.target.closest('.quantity-btn');
+
+          if (removeButton) {
+              handleRemoveItem(event);
+          } else if (quantityButton) {
+              handleQuantityChange(event);
+          }
+      });
 
       const handleRemoveItem = async (event) => {
           const button = event.target.closest('.remove-item-btn');
-          if (!button) return;
+          if (!button || !confirm('Are you sure you want to remove this item?')) return;
 
           const cartItemKey = button.dataset.cartItemKey;
-          if (!cartItemKey) return;
-          
-          if (!confirm('Are you sure you want to remove this item?')) {
-              return;
-          }
-
-          try {
-              const response = await fetch('api/cart.php', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ 
-                      _method: 'DELETE',
-                      cart_item_key: cartItemKey 
-                  })
-              });
-              const result = await response.json();
-              if (result.status === 'success') {
-                  showAlert('success', 'Item removed successfully.');
-                  fetchCartAndAddresses();
-              } else {
-                  showAlert('danger', result.message || 'Could not remove item.');
-              }
-          } catch (error) {
-              showAlert('danger', 'Could not connect to the server to remove item.');
-          }
+          await updateCartQuantity(cartItemKey, 0); // Removing is same as setting quantity to 0
       };
 
       const handleQuantityChange = async (event) => {
@@ -209,12 +230,7 @@ include("api/paypal_config.php");
           if (!item) return;
 
           let newQuantity = parseInt(item.quantity, 10);
-
-          if (action === 'increase') {
-              newQuantity++;
-          } else if (action === 'decrease') {
-              newQuantity--;
-          }
+          newQuantity = (action === 'increase') ? newQuantity + 1 : newQuantity - 1;
           
           if (newQuantity <= 0) {
               if (confirm('Do you want to remove this item from the cart?')) {
@@ -228,17 +244,17 @@ include("api/paypal_config.php");
       const updateCartQuantity = async (cartItemKey, quantity) => {
           try {
               const response = await fetch('api/cart.php', {
-                  method: 'POST', // Changed from PUT to POST
+                  method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
-                      _method: 'PUT', // Method override
+                      _method: 'PUT',
                       cart_item_key: cartItemKey,
                       quantity: quantity
                   })
               });
               const result = await response.json();
               if (result.status === 'success') {
-                  await fetchCartAndAddresses();
+                  fetchCartAndAddresses(); // Refresh everything
               } else {
                   showAlert('danger', result.message || 'Could not update cart.');
               }
@@ -247,17 +263,6 @@ include("api/paypal_config.php");
           }
       };
       
-      orderSummaryContainer.addEventListener('click', (event) => {
-          const removeButton = event.target.closest('.remove-item-btn');
-          const quantityButton = event.target.closest('.quantity-btn');
-
-          if (removeButton) {
-              handleRemoveItem(event);
-          } else if (quantityButton) {
-              handleQuantityChange(event);
-          }
-      });
-
       function setupPaymentListeners() {
         document.querySelectorAll('input[name="paymentMethod"]').forEach(elem => {
             elem.addEventListener('change', (event) => {
@@ -273,7 +278,7 @@ include("api/paypal_config.php");
             paymentContainer.innerHTML = '<div id="paypal-button-container"></div>';
             renderPayPalButton();
         } else { // Cash on Delivery
-            paymentContainer.innerHTML = '<button id="cod-place-order" class="btn btn-primary w-100">Place Order</button>';
+            paymentContainer.innerHTML = '<button id="cod-place-order" class="btn btn-primary w-100">Place Order (COD)</button>';
             document.getElementById('cod-place-order').addEventListener('click', handleCodOrder);
         }
       }
@@ -288,32 +293,28 @@ include("api/paypal_config.php");
         placeOrderBtn.innerHTML = '<div class="spinner-border spinner-border-sm"></div><span class="ms-2">Placing Order...</span>';
         
         try {
-            const response = await fetch('api/cod_create_order.php', {
+            const response = await fetch('api/checkout.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    address_id: selectedAddressId,
-                    cart: cartData.items
+                    shipping_address_id: selectedAddressId,
+                    payment_method: 'cod'
                 })
             });
             const result = await response.json();
             if (result.status === 'success') {
-                window.location.href = `order_confirmation.php?order_id=${result.order_id}`;
+                window.location.href = 'order_confirmation.php';
             } else {
                 showAlert('danger', result.message || 'Could not place order.');
                 placeOrderBtn.disabled = false;
-                placeOrderBtn.innerText = 'Place Order';
+                placeOrderBtn.innerText = 'Place Order (COD)';
             }
         } catch(e) {
             showAlert('danger', 'Could not connect to the server to place order.');
             placeOrderBtn.disabled = false;
-            placeOrderBtn.innerText = 'Place Order';
+            placeOrderBtn.innerText = 'Place Order (COD)';
         }
       }
-
-      addressSelectionContainer.addEventListener('change', (e) => {
-        if(e.target.name === 'shippingAddress') selectedAddressId = e.target.value;
-      });
 
       function renderPayPalButton() {
           if (paypal.Buttons.instances) {
@@ -329,11 +330,12 @@ include("api/paypal_config.php");
                       .then(res => res.json())
                       .then(data => {
                           if(data.id) return data.id;
+                          showAlert('danger', 'Could not create PayPal order. Please try again.');
                           throw new Error(data.error || 'Could not create PayPal order.');
                       });
               },
               onApprove: (data, actions) => {
-                  document.getElementById('payment-message').innerHTML = '<div class="d-flex justify-content-center align-items-center"><div class="spinner-border spinner-border-sm"></div><span class="ms-2">Processing...</span></div>';
+                  document.getElementById('payment-container').innerHTML = '<div class="d-flex justify-content-center align-items-center"><div class="spinner-border spinner-border-sm"></div><span class="ms-2">Processing Payment...</span></div>';
                   return fetch('api/paypal_capture_order.php', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
@@ -342,16 +344,21 @@ include("api/paypal_config.php");
                   .then(res => res.json())
                   .then(result => {
                       if (result.status === 'success') {
-                          window.location.href = `order_confirmation.php?order_id=${result.order_id}`;
+                          window.location.href = 'order_confirmation.php';
                       } else {
                           showAlert('danger', result.message || 'Payment failed.');
+                          renderPaymentMethod(); // Re-render payment options on failure
                       }
                   });
               },
-              onError: (err) => showAlert('danger', 'An error occurred with the payment gateway.')
+              onError: (err) => {
+                showAlert('danger', 'An error occurred with the payment gateway. Please try another payment method.');
+                renderPaymentMethod();
+              }
           }).render('#paypal-button-container');
       }
 
+      // Initial data fetch
       fetchCartAndAddresses();
   });
   </script>

@@ -1,7 +1,7 @@
 <?php
 session_start();
-header('Content-Type: application/json');
-include('../db_connect.php');
+header("Content-Type: application/json");
+include("../db_connect.php");
 
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
@@ -9,63 +9,89 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    echo json_encode(['status' => 'error', 'message' => 'Method not allowed.']);
+    exit();
+}
+
 $user_id = $_SESSION['user_id'];
 $data = json_decode(file_get_contents('php://input'), true);
+$order_id = $data['order_id'] ?? 0;
 
-if (!isset($data['order_id'])) {
+if (empty($order_id)) {
     http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Order ID is required.']);
     exit();
 }
 
-$order_id = $data['order_id'];
+$conn->begin_transaction();
 
-if ($conn) {
-    $conn->begin_transaction();
-    try {
-        // First, verify the order belongs to the user and get its current status
-        $stmt = $conn->prepare("SELECT status FROM product_orders WHERE order_id = ? AND user_id = ? FOR UPDATE");
-        $stmt->bind_param("ii", $order_id, $user_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
+try {
+    // Check the current status of the order
+    $stmt = $conn->prepare("SELECT status FROM product_orders WHERE order_id = ? AND user_id = ?");
+    $stmt->bind_param("ii", $order_id, $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
 
-        if ($result->num_rows === 0) {
-            throw new Exception('Order not found or you do not have permission to cancel it.', 404);
-        }
-
-        $order = $result->fetch_assoc();
-        $current_status = strtolower($order['status']);
-
-        // Check if the order is in a cancellable state
-        if ($current_status !== 'processing' && $current_status !== 'paid') {
-            throw new Exception("This order cannot be cancelled as it is already {$current_status}.", 400);
-        }
-
-        // Update the order status to 'cancelled'
-        $update_stmt = $conn->prepare("UPDATE product_orders SET status = 'cancelled' WHERE order_id = ?");
-        $update_stmt->bind_param("i", $order_id);
-        
-        if (!$update_stmt->execute()) {
-            throw new Exception('Failed to update the order status.', 500);
-        }
-
-        // Here you could add logic to refund the payment if it was pre-paid
-        // and add the stock back into inventory. For this example, we just change the status.
-
-        $conn->commit();
-        echo json_encode(['status' => 'success', 'message' => 'Order has been successfully cancelled.']);
-        $update_stmt->close();
-
-    } catch (Exception $e) {
-        $conn->rollback();
-        $code = $e->getCode() > 0 ? $e->getCode() : 500;
-        http_response_code($code);
-        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+    if ($result->num_rows === 0) {
+        throw new Exception('Order not found or you do not have permission to cancel it.', 404);
     }
-    $stmt->close();
-    $conn->close();
-} else {
-    http_response_code(503);
-    echo json_encode(['status' => 'error', 'message' => 'Database connection failed.']);
+
+    $order = $result->fetch_assoc();
+    $current_status = strtolower($order['status']);
+
+    // MODIFIED: Allow cancellation for 'pending', 'processing', or 'paid' statuses.
+    $cancellable_statuses = ['pending', 'processing', 'paid'];
+    if (!in_array($current_status, $cancellable_statuses)) {
+        throw new Exception("This order cannot be cancelled as its status is '{$current_status}'.", 400);
+    }
+
+    // Update the order status to 'cancelled'
+    $update_stmt = $conn->prepare("UPDATE product_orders SET status = 'cancelled' WHERE order_id = ?");
+    $update_stmt->bind_param("i", $order_id);
+    
+    if (!$update_stmt->execute()) {
+        throw new Exception('Failed to update the order status.', 500);
+    }
+    $update_stmt->close();
+
+    // --- Fraud Detection Logic ---
+    // Count recent cancellations by this user
+    $seven_days_ago = date('Y-m-d H:i:s', strtotime('-7 days'));
+    $cancel_count_stmt = $conn->prepare("SELECT COUNT(*) as cancellation_count FROM product_orders WHERE user_id = ? AND status = 'cancelled' AND created_at >= ?");
+    $cancel_count_stmt->bind_param("is", $user_id, $seven_days_ago);
+    $cancel_count_stmt->execute();
+    $cancel_result = $cancel_count_stmt->get_result()->fetch_assoc();
+    $cancellations = $cancel_result['cancellation_count'];
+
+    $message = 'Order has been successfully cancelled.'; // Default message
+
+    // If the user has 3 or more cancellations in the last 7 days, lock their account
+    if ($cancellations >= 3) {
+        $lock_duration = 7; // Lock for 7 days
+        $lock_expires_at = date('Y-m-d H:i:s', strtotime("+{$lock_duration} days"));
+
+        $lock_stmt = $conn->prepare("UPDATE USER SET ACCOUNT_STATUS = 'LOCKED', LOCK_EXPIRES_AT = ? WHERE USER_ID = ?");
+        $lock_stmt->bind_param("si", $lock_expires_at, $user_id);
+        $lock_stmt->execute();
+        $lock_stmt->close();
+        
+        $message = 'Order has been successfully cancelled. Your account has been temporarily locked due to excessive cancellations.';
+    }
+    $cancel_count_stmt->close();
+    // --- End of Fraud Logic ---
+
+    $conn->commit();
+
+    http_response_code(200);
+    echo json_encode(['status' => 'success', 'message' => $message]);
+
+} catch (Exception $e) {
+    $conn->rollback();
+    http_response_code($e->getCode() ?: 500);
+    echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
 }
+
+$conn->close();
 ?>

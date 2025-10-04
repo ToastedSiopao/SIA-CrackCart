@@ -131,8 +131,16 @@ $order_id = $_GET['order_id'];
             
             const itemsHtml = order.items.map(item => `
                 <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <span>${item.product_name} - ₱${parseFloat(item.price).toFixed(2)} x ${item.quantity}</span>
-                    ${isCompleted ? `<button class="btn btn-primary btn-sm review-btn" data-product-id="${item.product_id}" data-order-id="${order.order_id}">Leave a Review</button>` : ''}
+                    <div>
+                        <p class="mb-0">${item.product_name}</p>
+                        <small class="text-muted">₱${parseFloat(item.price).toFixed(2)} x ${item.quantity}</small>
+                    </div>
+                    ${isCompleted ? `
+                    <div class="btn-group">
+                        <button class="btn btn-outline-primary btn-sm review-btn" data-product-id="${item.product_id}" data-order-id="${order.order_id}">Leave a Review</button>
+                        <a href="request_return.php?order_id=${order.order_id}" class="btn btn-outline-secondary btn-sm">Request Return</a>
+                    </div>
+                    ` : ''}
                 </li>
             `).join('');
 

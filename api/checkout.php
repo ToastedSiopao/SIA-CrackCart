@@ -3,6 +3,7 @@ session_start();
 header("Content-Type: application/json");
 include("../db_connect.php");
 
+// 1. AUTHENTICATION & VALIDATION
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
     echo json_encode(['status' => 'error', 'message' => 'User not logged in.']);
@@ -24,24 +25,36 @@ if (empty($product_cart)) {
     exit();
 }
 
+// 2. GETTING DATA FROM THE REQUEST
 $data = json_decode(file_get_contents('php://input'), true);
-$shipping_address_id = $data['shipping_address_id'] ?? 1;
-$simulate_failure = $data['simulate_failure'] ?? false; // New flag
+$shipping_address_id = $data['shipping_address_id'] ?? 1; // Default to 1 if not provided
+$payment_method = $data['payment_method'] ?? 'card'; // Default to 'card'
 
+// 3. DETERMINE ORDER STATUS BASED ON PAYMENT METHOD
+$order_status = '';
+if ($payment_method === 'cod') {
+    $order_status = 'processing'; // For Cash on Delivery, admin needs to fulfill it
+} elseif ($payment_method === 'card') {
+    $order_status = 'paid'; // For card payments, assume it's paid
+} else {
+    http_response_code(400);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid payment method.']);
+    exit();
+}
+
+// 4. CALCULATE TOTAL
 $subtotal = 0;
 foreach ($product_cart as $item) {
     $subtotal += $item['price'] * $item['quantity'];
 }
 
-$order_status = $simulate_failure ? 'failed' : 'paid'; // Determine order status
-
-// Start transaction
+// 5. DATABASE TRANSACTION
 $conn->begin_transaction();
 
 try {
     // Insert into product_orders table
-    $stmt = $conn->prepare("INSERT INTO product_orders (user_id, total_amount, status, shipping_address_id) VALUES (?, ?, ?, ?)");
-    $stmt->bind_param("idsi", $user_id, $subtotal, $order_status, $shipping_address_id);
+    $stmt = $conn->prepare("INSERT INTO product_orders (user_id, total_amount, status, shipping_address_id, payment_method) VALUES (?, ?, ?, ?, ?)");
+    $stmt->bind_param("idsis", $user_id, $subtotal, $order_status, $shipping_address_id, $payment_method);
     $stmt->execute();
     $order_id = $stmt->insert_id;
 
@@ -52,18 +65,22 @@ try {
         $stmt_items->execute();
     }
 
-    // Commit transaction
     $conn->commit();
 
-    if ($order_status === 'failed') {
-        http_response_code(201); // Still created, but with failed status
-        echo json_encode(['status' => 'failure', 'message' => 'Order placed but payment failed.', 'order_id' => $order_id]);
-    } else {
-        // Clear the cart on success
-        unset($_SESSION['product_cart']);
-        http_response_code(201);
-        echo json_encode(['status' => 'success', 'message' => 'Order placed successfully.', 'order_id' => $order_id]);
-    }
+    // 6. PREPARE SESSION FOR CONFIRMATION PAGE
+    $_SESSION['last_order_id'] = $order_id;
+    $_SESSION['last_order_details'] = [
+        'order_id' => $order_id,
+        'total_amount' => $subtotal,
+        'items' => $product_cart // Pass the cart items
+    ];
+
+    // Clear the cart from the session
+    unset($_SESSION['product_cart']);
+
+    // 7. SEND SUCCESS RESPONSE
+    http_response_code(201);
+    echo json_encode(['status' => 'success', 'message' => 'Order placed successfully.', 'order_id' => $order_id]);
 
 } catch (Exception $e) {
     $conn->rollback();
