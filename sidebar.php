@@ -5,7 +5,7 @@
           <li><a href="product_checkout.php" class="nav-link"><i class="bi bi-cart-check me-2"></i> Cart</a></li>
           <li><a href="eggspress.php" class="nav-link"><i class="bi bi-truck me-2"></i> Eggspress</a></li>
           <li><a href="messages.php" class="nav-link"><i class="bi bi-chat-dots me-2"></i> Messages</a></li>
-          <li><a href="history.php" class="nav-link"><i class="bi bi-clock-history me-2"></i> Order History</a></li>
+          <li><a href="order_history.php" class="nav-link"><i class="bi bi-clock-history me-2"></i> Order History</a></li>
           <li><a href="bills.php" class="nav-link"><i class="bi bi-receipt me-2"></i> Bills</a></li>
           <li><a href="settings.php" class="nav-link"><i class="bi bi-gear me-2"></i> Setting</a></li>
           <li><a href="view_shipment.php" class="nav-link"><i class="bi bi-box-seam me-2"></i> View Shipment</a></li>
