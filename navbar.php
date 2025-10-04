@@ -27,6 +27,7 @@ $user_name = $_SESSION['user_name'] ?? 'Guest';
           <ul class="dropdown-menu dropdown-menu-end">
             <li><a class="dropdown-item" href="profilePage.php">Profile</a></li>
             <li><a class="dropdown-item" href="my_orders.php">My Orders</a></li>
+            <li><a class="dropdown-item" href="contact.php">Contact Us</a></li>
             <li><a class="dropdown-item" href="profilePage.php">Settings</a></li>
             <li><hr class="dropdown-divider"></li>
             <li><a class="dropdown-item" href="logout.php">Logout</a></li>
