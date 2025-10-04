@@ -1,6 +1,6 @@
 <?php
 session_start();
-include("api/paypal_config.php"); // Include PayPal config for Client ID
+include("api/paypal_config.php"); 
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit();
@@ -58,6 +58,7 @@ if (!isset($_SESSION['user_id'])) {
       const alertContainer = document.getElementById('checkout-alert-container');
       let selectedAddressId = null;
       let cartData = null;
+      let selectedPaymentMethod = 'paypal'; 
 
       const fetchCartAndAddresses = async () => {
           try {
@@ -97,14 +98,10 @@ if (!isset($_SESSION['user_id'])) {
                 <div class="alert alert-warning"> 
                     You have no saved addresses. <a href="addresses.php">Please add an address</a> before proceeding.
                 </div>`;
-              if(paypal.Buttons) paypal.Buttons().close();
               return;
           }
           let defaultAddress = addresses.find(addr => addr.is_default);
-          // If no default is explicitly set, use the first one.
-          if (!defaultAddress && addresses.length > 0) {
-              defaultAddress = addresses[0];
-          }
+          if (!defaultAddress && addresses.length > 0) defaultAddress = addresses[0];
 
           const addressHtml = addresses.map(addr => {
               const isChecked = defaultAddress && addr.address_id === defaultAddress.address_id;
@@ -121,97 +118,107 @@ if (!isset($_SESSION['user_id'])) {
           }).join('');
           
           addressSelectionContainer.innerHTML = addressHtml;
-          
-          if (defaultAddress) {
-            selectedAddressId = defaultAddress.address_id;
-          } else {
-            selectedAddressId = null;
-          }
+          if (defaultAddress) selectedAddressId = defaultAddress.address_id;
       };
 
       const renderOrderSummary = (data) => {
           if (!data || !data.items || data.items.length === 0) {
               orderSummaryContainer.innerHTML = '<p class="text-center">Your cart is empty.</p>';
-              if(paypal.Buttons) paypal.Buttons().close(); // Remove PayPal buttons if cart is empty
               return;
           }
           const itemsHtml = data.items.map(item => `
               <li class="list-group-item d-flex justify-content-between align-items-center">
-                  <div>
-                      ${item.product_type} (x${item.quantity})
-                      <button class="btn btn-sm btn-outline-danger remove-item-btn" 
-                              data-producer-id="${item.producer_id}" 
-                              data-product-type="${item.product_type}">Remove</button>
-                  </div>
+                  <div>${item.product_type} (x${item.quantity})</div>
                   <span>₱${(item.price * item.quantity).toFixed(2)}</span>
               </li>`).join('');
 
           orderSummaryContainer.innerHTML = `
               <h5 class="card-title">Order Summary</h5>
-              <ul class="list-group list-group-flush">
-                  ${itemsHtml}
+              <ul class="list-group list-group-flush">${itemsHtml}
                   <li class="list-group-item d-flex justify-content-between align-items-center fw-bold">
-                      Subtotal
-                      <span>₱${data.subtotal.toFixed(2)}</span>
+                      Subtotal <span>₱${data.subtotal.toFixed(2)}</span>
                   </li>
               </ul>
-              <h5 class="mt-4">Payment</h5>
-              <div id="paypal-button-container" class="mt-3"></div>
+              <h5 class="mt-4">Payment Method</h5>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="paymentMethod" id="paypalRadio" value="paypal" checked>
+                <label class="form-check-label" for="paypalRadio">PayPal</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="paymentMethod" id="codRadio" value="cod">
+                <label class="form-check-label" for="codRadio">Cash on Delivery</label>
+              </div>
+              <div id="payment-container" class="mt-3"></div>
               <div id="payment-message" class="mt-2"></div>
           `;
-          renderPayPalButton();
+          setupPaymentListeners();
+          renderPaymentMethod();
       };
       
-      addressSelectionContainer.addEventListener('change', (e) => {
-        if(e.target.name === 'shippingAddress') {
-            selectedAddressId = e.target.value;
-        }
-      });
+      function setupPaymentListeners() {
+        document.querySelectorAll('input[name="paymentMethod"]').forEach(elem => {
+            elem.addEventListener('change', (event) => {
+                selectedPaymentMethod = event.target.value;
+                renderPaymentMethod();
+            });
+        });
+      }
 
-      orderSummaryContainer.addEventListener('click', e => {
-          if (e.target.classList.contains('remove-item-btn')) {
-              const button = e.target;
-              const producerId = button.dataset.producerId;
-              const productType = button.dataset.productType;
-              
-              button.disabled = true; // Prevent double clicks
-              
-              fetch('api/remove_from_cart.php', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ producer_id: producerId, product_type: productType })
-              })
-              .then(res => res.json())
-              .then(result => {
-                  if (result.status === 'success') {
-                      showAlert('success', 'Item removed from cart.');
-                      renderOrderSummary(result.data);
-                  } else {
-                      showAlert('danger', result.message || 'Error removing item.');
-                      button.disabled = false;
-                  }
-              })
-              .catch(() => {
-                  showAlert('danger', 'Could not connect to the server.');
-                  button.disabled = false;
-              });
-          }
+      function renderPaymentMethod() {
+        const paymentContainer = document.getElementById('payment-container');
+        if (selectedPaymentMethod === 'paypal') {
+            paymentContainer.innerHTML = '<div id="paypal-button-container"></div>';
+            renderPayPalButton();
+        } else { // Cash on Delivery
+            paymentContainer.innerHTML = '<button id="cod-place-order" class="btn btn-primary w-100">Place Order</button>';
+            document.getElementById('cod-place-order').addEventListener('click', handleCodOrder);
+        }
+      }
+
+      async function handleCodOrder() {
+        if (!selectedAddressId) {
+            showAlert('warning', 'Please select a shipping address first.');
+            return;
+        }
+        const placeOrderBtn = document.getElementById('cod-place-order');
+        placeOrderBtn.disabled = true;
+        placeOrderBtn.innerHTML = '<div class="spinner-border spinner-border-sm"></div><span class="ms-2">Placing Order...</span>';
+        
+        try {
+            const response = await fetch('api/cod_create_order.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ shipping_address_id: selectedAddressId })
+            });
+            const result = await response.json();
+            if (result.status === 'success') {
+                window.location.href = `order_confirmation.php?order_id=${result.order_id}`;
+            } else {
+                showAlert('danger', result.message || 'Could not place order.');
+                placeOrderBtn.disabled = false;
+                placeOrderBtn.innerText = 'Place Order';
+            }
+        } catch(e) {
+            showAlert('danger', 'Could not connect to the server to place order.');
+            placeOrderBtn.disabled = false;
+            placeOrderBtn.innerText = 'Place Order';
+        }
+      }
+
+      addressSelectionContainer.addEventListener('change', (e) => {
+        if(e.target.name === 'shippingAddress') selectedAddressId = e.target.value;
       });
 
       function renderPayPalButton() {
-          const paymentMessage = document.getElementById('payment-message');
-          // Close existing buttons before rendering new ones
           if (paypal.Buttons.instances) {
               paypal.Buttons.instances.forEach(instance => instance.close());
           }
-
           paypal.Buttons({
-              createOrder: function(data, actions) {
+              createOrder: (data, actions) => {
                   if (!selectedAddressId) {
-                      showAlert('warning', 'Please select or add a shipping address first.');
+                      showAlert('warning', 'Please select a shipping address first.');
                       return Promise.reject(new Error("No shipping address selected"));
                   }
-                  paymentMessage.innerHTML = ''; 
                   return fetch('api/paypal_create_order.php', { method: 'POST' })
                       .then(res => res.json())
                       .then(data => {
@@ -219,28 +226,23 @@ if (!isset($_SESSION['user_id'])) {
                           throw new Error(data.error || 'Could not create PayPal order.');
                       });
               },
-              onApprove: function(data, actions) {
-                  paymentMessage.innerHTML = '<div class="d-flex justify-content-center align-items-center"><div class="spinner-border spinner-border-sm"></div><span class="ms-2">Processing payment...</span></div>';
+              onApprove: (data, actions) => {
+                  document.getElementById('payment-message').innerHTML = '<div class="d-flex justify-content-center align-items-center"><div class="spinner-border spinner-border-sm"></div><span class="ms-2">Processing...</span></div>';
                   return fetch('api/paypal_capture_order.php', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ 
-                          orderID: data.orderID,
-                          shipping_address_id: selectedAddressId
-                      })
+                      body: JSON.stringify({ orderID: data.orderID, shipping_address_id: selectedAddressId })
                   })
                   .then(res => res.json())
                   .then(result => {
                       if (result.status === 'success') {
                           window.location.href = `order_confirmation.php?order_id=${result.order_id}`;
                       } else {
-                          showAlert('danger', result.message || 'Payment failed. Please try again.');
+                          showAlert('danger', result.message || 'Payment failed.');
                       }
                   });
               },
-              onError: function(err) {
-                showAlert('danger', 'An error occurred with the payment gateway. Please try refreshing the page.');
-              }
+              onError: (err) => showAlert('danger', 'An error occurred with the payment gateway.')
           }).render('#paypal-button-container');
       }
 
