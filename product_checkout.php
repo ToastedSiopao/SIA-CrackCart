@@ -188,7 +188,10 @@ if (!isset($_SESSION['user_id'])) {
             const response = await fetch('api/cod_create_order.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ shipping_address_id: selectedAddressId })
+                body: JSON.stringify({
+                    address_id: selectedAddressId,
+                    cart: cartData.items
+                })
             });
             const result = await response.json();
             if (result.status === 'success') {

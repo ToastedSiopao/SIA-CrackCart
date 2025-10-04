@@ -130,15 +130,24 @@ session_start();
       });
 
       cartContainer.addEventListener('click', function(e) {
-        if (e.target.closest('.remove-item')) {
-          const button = e.target.closest('.remove-item');
-          const cartItemKey = button.dataset.cartItemKey;
+        let target = e.target;
+        // Correctly identify the button, even if the icon is clicked.
+        const removeItemButton = target.closest('.remove-item');
+        if (removeItemButton) {
+          const cartItemKey = removeItemButton.dataset.cartItemKey;
 
           fetch('api/cart.php', {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ cart_item_key: cartItemKey })
-          }).then(() => fetchCart());
+          }).then(response => response.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    fetchCart(); // Refresh cart on successful removal
+                } else {
+                    alert(data.message || "Could not remove item.");
+                }
+            });
         }
       });
 

@@ -1,67 +1,76 @@
 <?php
+include "../error_handler.php";
 session_start();
-header('Content-Type: application/json');
+header("Content-Type: application/json");
+include("../db_connect.php");
 
-include('../db_connect.php');
-
-if (!isset($_SESSION['user_id']) || empty($_SESSION['product_cart'])) {
-    http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'Invalid request.']);
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    echo json_encode(['status' => 'error', 'message' => 'Method not allowed']);
     exit();
 }
 
-$data = json_decode(file_get_contents('php://input'), true);
+if (!isset($_SESSION['user_id'])) {
+    http_response_code(401);
+    echo json_encode(['status' => 'error', 'message' => 'User not logged in']);
+    exit();
+}
+
 $user_id = $_SESSION['user_id'];
-$shipping_address_id = $data['shipping_address_id'] ?? null;
+$data = json_decode(file_get_contents('php://input'), true);
 
-if (!$shipping_address_id) {
+$address_id = $data['address_id'] ?? null;
+$cart = $data['cart'] ?? [];
+
+if (empty($address_id) || empty($cart)) {
     http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'Shipping address is required.']);
+    echo json_encode(['status' => 'error', 'message' => 'Missing address or cart items']);
     exit();
 }
 
-$product_cart = $_SESSION['product_cart'];
+// Calculate total amount
 $total_amount = 0;
-foreach ($product_cart as $item) {
+foreach ($cart as $item) {
     $total_amount += $item['price'] * $item['quantity'];
 }
 
+// Use a transaction to ensure atomicity
 $conn->begin_transaction();
 
 try {
-    // 1. Create the order
-    $payment_method = 'Cash on Delivery';
-    $order_status = 'Processing';
-    $stmt = $conn->prepare("INSERT INTO product_orders (user_id, total_amount, payment_method, status, shipping_address_id) VALUES (?, ?, ?, ?, ?)");
-    $stmt->bind_param("idssi", $user_id, $total_amount, $payment_method, $order_status, $shipping_address_id);
-    $stmt->execute();
-    $order_id = $stmt->insert_id;
-    $stmt->close();
+    // Create an entry in the Payment table
+    $stmt_payment = $conn->prepare("INSERT INTO Payment (amount, currency, method, status) VALUES (?, 'PHP', 'cod', 'pending')");
+    $stmt_payment->bind_param("d", $total_amount);
+    $stmt_payment->execute();
+    $payment_id = $stmt_payment->insert_id;
 
-    // 2. Add items to the order_items table
-    $stmt = $conn->prepare("INSERT INTO product_order_items (order_id, producer_id, product_type, quantity, price) VALUES (?, ?, ?, ?, ?)");
-    foreach ($product_cart as $item) {
-        $stmt->bind_param("iisid", $order_id, $item['producer_id'], $item['product_type'], $item['quantity'], $item['price']);
-        $stmt->execute();
+    // Create the order in the product_orders table
+    $stmt_order = $conn->prepare("INSERT INTO product_orders (user_id, total_amount, status, shipping_address_id, payment_id) VALUES (?, ?, 'pending', ?, ?)");
+    $stmt_order->bind_param("idis", $user_id, $total_amount, $address_id, $payment_id);
+    $stmt_order->execute();
+    $order_id = $stmt_order->insert_id;
+
+    // Update the Payment table with the order_id
+    $stmt_update_payment = $conn->prepare("UPDATE Payment SET order_id = ? WHERE payment_id = ?");
+    $stmt_update_payment->bind_param("ii", $order_id, $payment_id);
+    $stmt_update_payment->execute();
+
+    // Add items to the product_order_items table
+    $stmt_items = $conn->prepare("INSERT INTO product_order_items (order_id, producer_id, product_type, quantity, price_per_item) VALUES (?, ?, ?, ?, ?)");
+    foreach ($cart as $item) {
+        $stmt_items->bind_param("iisid", $order_id, $item['producer_id'], $item['type'], $item['quantity'], $item['price']);
+        $stmt_items->execute();
     }
-    $stmt->close();
 
-    // 3. Commit transaction
     $conn->commit();
 
-    // 4. Clear the cart from the session
-    unset($_SESSION['product_cart']);
-
-    // 5. Return success
     echo json_encode(['status' => 'success', 'order_id' => $order_id]);
 
 } catch (Exception $e) {
     $conn->rollback();
     http_response_code(500);
-    error_log("COD Order Creation Error: " . $e->getMessage());
-    echo json_encode(['status' => 'error', 'message' => 'Failed to create order. Please try again.']);
+    echo json_encode(['status' => 'error', 'message' => 'Order placement failed: ' . $e->getMessage()]);
 }
 
 $conn->close();
-
 ?>
