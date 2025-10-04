@@ -1,3 +1,8 @@
+<?php
+if (isset($_GET['reason']) && $_GET['reason'] === 'inactive') {
+    echo "<script>alert('You have been logged out due to inactivity.');</script>";
+}
+?>
  <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -76,7 +81,7 @@
 
             <div class="mb-3">
               <label for="loginPassword" class="form-label">Password</label>
-              <div class="input-group">
+              <div class.input-group">
                 <span class="input-group-text"><i class="fas fa-lock"></i></span>
                 <input type="password" class="form-control" id="loginPassword" name="password" placeholder="Enter your password" required>
                 <button class="btn btn-outline-secondary" type="button" id="togglePassword">

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: sql101.infinityfree.com
--- Generation Time: Oct 04, 2025 at 03:32 AM
+-- Generation Time: Oct 04, 2025 at 10:10 AM
 -- Server version: 11.4.7-MariaDB
 -- PHP Version: 7.2.22
 
@@ -170,8 +170,18 @@ CREATE TABLE `Payment` (
   `currency` varchar(10) DEFAULT NULL,
   `method` varchar(50) DEFAULT NULL,
   `status` varchar(20) DEFAULT NULL,
-  `paid_at` date DEFAULT NULL
+  `paid_at` date DEFAULT NULL,
+  `transaction_id` varchar(255) DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+
+--
+-- Dumping data for table `Payment`
+--
+
+INSERT INTO `Payment` (`payment_id`, `booking_id`, `order_id`, `amount`, `currency`, `method`, `status`, `paid_at`, `transaction_id`) VALUES
+(1, NULL, 7, '205.00', 'PHP', 'cod', 'pending', NULL, NULL),
+(2, NULL, 8, '205.00', 'PHP', 'paypal', 'completed', NULL, '82G15045GP0068238'),
+(3, NULL, 9, '615.00', 'PHP', 'cod', 'pending', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -249,8 +259,24 @@ CREATE TABLE `product_orders` (
   `payment_id` int(11) DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `paypal_order_id` varchar(255) DEFAULT NULL
+  `paypal_order_id` varchar(255) DEFAULT NULL,
+  `cancellation_reason` text DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+
+--
+-- Dumping data for table `product_orders`
+--
+
+INSERT INTO `product_orders` (`order_id`, `user_id`, `order_date`, `total_amount`, `status`, `shipping_address_id`, `payment_id`, `created_at`, `updated_at`, `paypal_order_id`, `cancellation_reason`) VALUES
+(1, 8, '2025-10-04 02:22:36', '205.00', 'cancelled', 1, NULL, '2025-10-04 09:22:36', '2025-10-04 10:05:31', '6', NULL),
+(2, 8, '2025-10-04 02:34:40', '205.00', 'cancelled', 1, NULL, '2025-10-04 09:34:40', '2025-10-04 10:05:29', '7', NULL),
+(3, 8, '2025-10-04 02:39:50', '205.00', 'cancelled', 1, NULL, '2025-10-04 09:39:50', '2025-10-04 10:05:27', '6', NULL),
+(4, 8, '2025-10-04 02:44:35', '205.00', 'cancelled', 1, NULL, '2025-10-04 09:44:35', '2025-10-04 10:05:25', '9', NULL),
+(5, 8, '2025-10-04 03:43:54', '205.00', 'cancelled', 1, NULL, '2025-10-04 10:43:54', '2025-10-04 10:54:55', '85', NULL),
+(6, 8, '2025-10-04 03:54:48', '2665.00', 'cancelled', 1, NULL, '2025-10-04 10:54:48', '2025-10-04 10:54:57', '57', NULL),
+(7, 8, '2025-10-04 05:31:13', '205.00', 'pending', 1, 1, '2025-10-04 12:31:13', '2025-10-04 12:31:13', NULL, NULL),
+(8, 8, '2025-10-04 05:36:22', '205.00', 'cancelled', 1, 2, '2025-10-04 12:36:22', '2025-10-04 12:36:51', '1UB14343G42883930', NULL),
+(9, 8, '2025-10-04 05:37:55', '615.00', 'pending', 1, 3, '2025-10-04 12:37:55', '2025-10-04 12:37:55', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -265,6 +291,37 @@ CREATE TABLE `product_order_items` (
   `product_type` varchar(255) NOT NULL,
   `quantity` int(11) NOT NULL,
   `price_per_item` decimal(10,2) NOT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+
+--
+-- Dumping data for table `product_order_items`
+--
+
+INSERT INTO `product_order_items` (`order_item_id`, `order_id`, `producer_id`, `product_type`, `quantity`, `price_per_item`) VALUES
+(1, 1, 6, 'White Eggs (Large)', 1, '205.00'),
+(2, 2, 6, 'White Eggs (Large)', 1, '205.00'),
+(3, 3, 6, 'White Eggs (Large)', 1, '205.00'),
+(4, 4, 6, 'White Eggs (Large)', 1, '205.00'),
+(5, 5, 6, 'White Eggs (Large)', 1, '205.00'),
+(6, 6, 6, 'White Eggs (Large)', 13, '205.00'),
+(7, 7, 6, 'White Eggs (Large)', 1, '205.00'),
+(8, 8, 6, 'White Eggs (Large)', 1, '205.00'),
+(9, 9, 6, 'White Eggs (Large)', 3, '205.00');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `product_reviews`
+--
+
+CREATE TABLE `product_reviews` (
+  `review_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `order_id` int(11) NOT NULL,
+  `product_type` varchar(255) NOT NULL,
+  `rating` tinyint(1) NOT NULL,
+  `review_text` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 -- --------------------------------------------------------
@@ -347,6 +404,13 @@ CREATE TABLE `user_addresses` (
   `address_type` varchar(50) DEFAULT 'shipping',
   `is_default` tinyint(1) NOT NULL DEFAULT 0
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+
+--
+-- Dumping data for table `user_addresses`
+--
+
+INSERT INTO `user_addresses` (`address_id`, `user_id`, `address_line1`, `address_line2`, `city`, `state`, `zip_code`, `country`, `address_type`, `is_default`) VALUES
+(1, 8, '9 Mapalad', '', 'Quezon City', 'Metro Manila', '1104', 'Philippines', 'shipping', 0);
 
 -- --------------------------------------------------------
 
@@ -464,6 +528,14 @@ ALTER TABLE `product_order_items`
   ADD KEY `producer_id` (`producer_id`);
 
 --
+-- Indexes for table `product_reviews`
+--
+ALTER TABLE `product_reviews`
+  ADD PRIMARY KEY (`review_id`),
+  ADD KEY `user_id` (`user_id`),
+  ADD KEY `order_id` (`order_id`);
+
+--
 -- Indexes for table `Rate_Card`
 --
 ALTER TABLE `Rate_Card`
@@ -547,7 +619,7 @@ ALTER TABLE `orders`
 -- AUTO_INCREMENT for table `Payment`
 --
 ALTER TABLE `Payment`
-  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `PRICE`
@@ -565,13 +637,19 @@ ALTER TABLE `PRODUCER`
 -- AUTO_INCREMENT for table `product_orders`
 --
 ALTER TABLE `product_orders`
-  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT for table `product_order_items`
 --
 ALTER TABLE `product_order_items`
-  MODIFY `order_item_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `order_item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+
+--
+-- AUTO_INCREMENT for table `product_reviews`
+--
+ALTER TABLE `product_reviews`
+  MODIFY `review_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `Rate_Card`
@@ -595,7 +673,7 @@ ALTER TABLE `USER`
 -- AUTO_INCREMENT for table `user_addresses`
 --
 ALTER TABLE `user_addresses`
-  MODIFY `address_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `address_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `Vehicle`
