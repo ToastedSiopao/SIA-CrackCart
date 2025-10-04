@@ -1,33 +1,23 @@
 <?php
 header('Content-Type: application/json');
-include('../../db_connect.php');
-include('../../error_handler.php');
+include '../../db_connect.php';
 
-session_start();
-if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-    http_response_code(403);
-    echo json_encode(['status' => 'error', 'message' => 'Access denied.']);
-    exit();
-}
+$query = "SELECT p.PRICE_ID, p.TYPE, pr.NAME AS PRODUCER_NAME, p.PRICE, p.PER, p.STATUS, p.STOCK 
+          FROM PRICE p 
+          JOIN PRODUCER pr ON p.PRODUCER_ID = pr.PRODUCER_ID 
+          ORDER BY p.PRICE_ID DESC";
 
-if ($conn) {
-    try {
-        $query = "SELECT p.PRICE_ID, p.TYPE, p.PRICE, p.PER, pr.NAME as PRODUCER_NAME FROM PRICE p JOIN PRODUCER pr ON p.PRODUCER_ID = pr.PRODUCER_ID ORDER BY p.PRICE_ID DESC";
-        $result = $conn->query($query);
+$result = $conn->query($query);
 
-        if ($result) {
-            $products = $result->fetch_all(MYSQLI_ASSOC);
-            echo json_encode(['status' => 'success', 'data' => $products]);
-        } else {
-            throw new Exception('Failed to fetch products.');
-        }
-    } catch (Exception $e) {
-        http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+if ($result) {
+    $products = [];
+    while ($row = $result->fetch_assoc()) {
+        $products[] = $row;
     }
-    $conn->close();
+    echo json_encode(['status' => 'success', 'data' => $products]);
 } else {
-    http_response_code(503);
-    echo json_encode(['status' => 'error', 'message' => 'Database connection failed.']);
+    echo json_encode(['status' => 'error', 'message' => 'Could not fetch products.']);
 }
+
+$conn->close();
 ?>

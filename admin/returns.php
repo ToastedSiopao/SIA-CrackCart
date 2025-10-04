@@ -1,6 +1,6 @@
 <?php
 session_start();
-// Security check: ensure the user is an admin
+// Security check
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
     header("Location: index.php?error=Please log in to access the admin panel.");
     exit();
@@ -8,21 +8,24 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role
 
 include '../db_connect.php';
 
-// Fetch all returns with user information
-$query = "SELECT r.return_id, r.order_id, CONCAT(u.FIRST_NAME, ' ', u.LAST_NAME) AS customer_name, r.status, r.requested_at
-          FROM returns r
-          JOIN USER u ON r.user_id = u.USER_ID
-          ORDER BY r.requested_at DESC";
+// Fetch all returns with customer information
+$query = "SELECT pr.return_id, pr.order_id, pr.return_status, pr.created_at, CONCAT(u.FIRST_NAME, ' ', u.LAST_NAME) AS customer_name
+          FROM product_returns pr
+          JOIN product_orders po ON pr.order_id = po.order_id
+          JOIN USER u ON po.user_id = u.USER_ID
+          ORDER BY pr.created_at DESC";
+
 $result = $conn->query($query);
 
 $user_name = $_SESSION['user_first_name'] ?? 'Admin';
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Return Management - CrackCart</title>
+    <title>Manage Returns - CrackCart</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
@@ -38,31 +41,33 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
 
             <main class="col p-4 main-content">
                 <div class="card shadow-sm border-0 p-4">
-                    <h4 class="mb-4">Return Management</h4>
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="mb-0">Manage Returns</h4>
+                    </div>
 
                     <div class="table-responsive">
                         <table class="table table-striped table-hover">
                             <thead>
                                 <tr>
-                                    <th scope="col">Return ID</th>
-                                    <th scope="col">Order ID</th>
-                                    <th scope="col">Customer</th>
-                                    <th scope="col">Date Requested</th>
-                                    <th scope="col">Status</th>
-                                    <th scope="col">Actions</th>
+                                    <th>Return ID</th>
+                                    <th>Order ID</th>
+                                    <th>Customer</th>
+                                    <th>Status</th>
+                                    <th>Date Requested</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php if ($result && $result->num_rows > 0): ?>
-                                    <?php while($row = $result->fetch_assoc()): ?>
+                                    <?php while ($row = $result->fetch_assoc()): ?>
                                         <tr>
                                             <td><?php echo htmlspecialchars($row['return_id']); ?></td>
-                                            <td><?php echo htmlspecialchars($row['order_id']); ?></td>
+                                            <td><a href="order_details.php?order_id=<?php echo $row['order_id']; ?>"><?php echo htmlspecialchars($row['order_id']); ?></a></td>
                                             <td><?php echo htmlspecialchars($row['customer_name']); ?></td>
-                                            <td><?php echo date("M j, Y, g:i a", strtotime($row['requested_at'])); ?></td>
-                                            <td><span class="badge bg-warning text-dark"><?php echo htmlspecialchars(ucfirst($row['status'])); ?></span></td>
+                                            <td><span class="badge bg-info"><?php echo ucfirst(htmlspecialchars($row['return_status'])); ?></span></td>
+                                            <td><?php echo date("M d, Y, h:i A", strtotime($row['created_at'])); ?></td>
                                             <td>
-                                                <a href="return_details.php?return_id=<?php echo $row['return_id']; ?>" class="btn btn-primary btn-sm">View Details</a>
+                                                <a href="return_details.php?return_id=<?php echo $row['return_id']; ?>" class="btn btn-sm btn-primary">View Details</a>
                                             </td>
                                         </tr>
                                     <?php endwhile; ?>
@@ -82,6 +87,3 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-<?php
-$conn->close();
-?>

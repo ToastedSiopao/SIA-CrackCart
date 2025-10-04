@@ -2,19 +2,22 @@
 session_start();
 // Security check: ensure the user is an admin
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-    // If not an admin, redirect to the login page
     header("Location: index.php?error=Please log in to access the admin panel.");
     exit();
 }
 
-include '../db_connect.php'; // Ensure the path to db_connect is correct
+include '../db_connect.php';
 
-// Fetch all orders with user information
+// Corrected table name from 'orders' to 'product_orders'
 $query = "SELECT o.order_id, CONCAT(u.FIRST_NAME, ' ', u.LAST_NAME) AS customer_name, o.order_date, o.total_amount, o.status 
-          FROM orders o
+          FROM product_orders o
           JOIN USER u ON o.user_id = u.USER_ID
           ORDER BY o.order_date DESC";
 $result = $conn->query($query);
+
+if (!$result) {
+    $error_message = "Error fetching orders: " . $conn->error;
+}
 
 $user_name = $_SESSION['user_first_name'] ?? 'Admin';
 
@@ -42,6 +45,10 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
                 <div class="card shadow-sm border-0 p-4">
                     <h4 class="mb-4">Order Management</h4>
 
+                    <?php if (isset($error_message)): ?>
+                        <div class="alert alert-danger"><?php echo $error_message; ?></div>
+                    <?php endif; ?>
+
                     <div class="table-responsive">
                         <table class="table table-striped table-hover">
                             <thead>
@@ -62,7 +69,16 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
                                             <td><?php echo htmlspecialchars($row['customer_name']); ?></td>
                                             <td><?php echo date("M j, Y, g:i a", strtotime($row['order_date'])); ?></td>
                                             <td>$<?php echo number_format($row['total_amount'], 2); ?></td>
-                                            <td><span class="badge bg-info text-dark"><?php echo htmlspecialchars(ucfirst($row['status'])); ?></span></td>
+                                            <td>
+                                                <?php
+                                                $status = strtolower($row['status']);
+                                                $badge_class = 'bg-secondary'; // Default
+                                                if ($status == 'paid') $badge_class = 'bg-success';
+                                                else if ($status == 'pending') $badge_class = 'bg-warning text-dark';
+                                                else if (in_array($status, ['cancelled', 'failed'])) $badge_class = 'bg-danger';
+                                                ?>
+                                                <span class="badge <?php echo $badge_class; ?>"><?php echo htmlspecialchars(ucfirst($row['status'])); ?></span>
+                                            </td>
                                             <td>
                                                 <a href="order_details.php?order_id=<?php echo $row['order_id']; ?>" class="btn btn-primary btn-sm">View Details</a>
                                             </td>
@@ -85,5 +101,6 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
 </body>
 </html>
 <?php
+if(isset($result) && $result) $result->close();
 $conn->close();
 ?>

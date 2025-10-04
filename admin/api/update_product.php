@@ -1,55 +1,41 @@
 <?php
 header('Content-Type: application/json');
-include('../../db_connect.php');
+include '../../db_connect.php';
 
-session_start();
-if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-    http_response_code(403);
-    echo json_encode(['status' => 'error', 'message' => 'Access denied.']);
-    exit();
-}
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $product_id = intval($_POST['product_id'] ?? 0);
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    http_response_code(405);
-    echo json_encode(['status' => 'error', 'message' => 'Invalid request method.']);
-    exit();
-}
+    if ($product_id <= 0) {
+        echo json_encode(['status' => 'error', 'message' => 'Invalid product ID.']);
+        exit;
+    }
+    
+    // Basic validation
+    if (empty($_POST['product_name']) || empty($_POST['producer_id']) || !isset($_POST['price'])) {
+        echo json_encode(['status' => 'error', 'message' => 'Missing required fields.']);
+        exit;
+    }
 
-// Basic validation
-$product_id = intval($_POST['product_id'] ?? 0);
-$product_name = trim($_POST['product_name'] ?? '');
-$producer_id = intval($_POST['producer_id'] ?? 0);
-$price = floatval($_POST['price'] ?? 0);
-$unit = trim($_POST['unit'] ?? 'per tray');
+    $product_name = $_POST['product_name'];
+    $producer_id = intval($_POST['producer_id']);
+    $price = floatval($_POST['price']);
+    $unit = $_POST['unit'] ?? 'per tray';
+    $status = $_POST['status'] ?? 'active';
+    $stock = intval($_POST['stock'] ?? 0);
 
-if ($product_id <= 0 || empty($product_name) || $producer_id <= 0 || $price <= 0) {
-    http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'Invalid data provided.']);
-    exit();
-}
+    $query = "UPDATE PRICE SET PRODUCER_ID = ?, TYPE = ?, PRICE = ?, PER = ?, STATUS = ?, STOCK = ? WHERE PRICE_ID = ?";
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("isdssii", $producer_id, $product_name, $price, $unit, $status, $stock, $product_id);
 
-if ($conn) {
-    try {
-        $stmt = $conn->prepare("UPDATE PRICE SET PRODUCER_ID = ?, TYPE = ?, PRICE = ?, PER = ? WHERE PRICE_ID = ?");
-        $stmt->bind_param("isdsi", $producer_id, $product_name, $price, $unit, $product_id);
-
-        if ($stmt->execute()) {
-             if ($stmt->affected_rows > 0) {
-                echo json_encode(['status' => 'success', 'message' => 'Product updated successfully.']);
-            } else {
-                echo json_encode(['status' => 'success', 'message' => 'No changes were made to the product.']);
-            }
-        } else {
-            throw new Exception('Failed to update the product.');
-        }
-    } catch (Exception $e) {
-        http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+    if ($stmt->execute()) {
+        echo json_encode(['status' => 'success', 'message' => 'Product updated successfully!']);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Database error: Could not update product.']);
     }
     $stmt->close();
-    $conn->close();
 } else {
-    http_response_code(503);
-    echo json_encode(['status' => 'error', 'message' => 'Database connection failed.']);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid request method.']);
 }
+
+$conn->close();
 ?>

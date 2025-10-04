@@ -1,39 +1,14 @@
 <?php
 session_start();
-// Security check: ensure the user is an admin
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
     header("Location: index.php?error=Please log in to access the admin panel.");
     exit();
 }
 
-include '../db_connect.php';
+$product_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+$is_editing = $product_id > 0;
+$page_title = $is_editing ? "Edit Product" : "Add Product";
 
-$price_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
-$product = [
-    'TYPE' => '', 
-    'PRODUCER_NAME' => '', 
-    'PRICE' => '', 
-    'PER' => '',
-    'STATUS' => 'active',
-    'STOCK' => 0
-];
-$page_title = "Add New Product";
-$action = 'api/create_product.php'; // Action for new product
-
-if ($price_id > 0) {
-    $page_title = "Edit Product";
-    $action = 'api/update_product.php'; // Action for updating a product
-    $stmt = $conn->prepare("SELECT * FROM PRICE WHERE PRICE_ID = ?");
-    $stmt->bind_param("i", $price_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    if ($result->num_rows > 0) {
-        $product = $result->fetch_assoc();
-    }
-    $stmt->close();
-}
-
-$conn->close();
 $user_name = $_SESSION['user_first_name'] ?? 'Admin';
 
 ?>
@@ -44,8 +19,6 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $page_title; ?> - CrackCart</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
     <link href="admin-styles.css?v=1.0" rel="stylesheet">
 </head>
 <body>
@@ -63,92 +36,130 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
                         <a href="products.php" class="btn btn-outline-secondary">Back to Products</a>
                     </div>
 
-                    <form id="productForm">
-                        <input type="hidden" name="price_id" value="<?php echo $price_id; ?>">
-                        
+                    <div id="alert-container"></div>
+
+                    <form id="product-form">
+                        <input type="hidden" name="product_id" value="<?php echo $product_id; ?>">
                         <div class="mb-3">
-                            <label for="type" class="form-label">Product Name</label>
-                            <input type="text" class="form-control" id="type" name="type" value="<?php echo htmlspecialchars($product['TYPE']); ?>" required>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="producer_name" class="form-label">Producer</label>
-                            <input type="text" class="form-control" id="producer_name" name="producer_name" value="<?php echo htmlspecialchars($product['PRODUCER_NAME']); ?>" required>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label for="price" class="form-label">Price</label>
-                                <input type="number" class="form-control" id="price" name="price" step="0.01" value="<?php echo htmlspecialchars($product['PRICE']); ?>" required>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="per" class="form-label">Unit (e.g., kg, piece)</label>
-                                <input type="text" class="form-control" id="per" name="per" value="<?php echo htmlspecialchars($product['PER']); ?>" required>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="stock" class="form-label">Stock</label>
-                                <input type="number" class="form-control" id="stock" name="stock" value="<?php echo htmlspecialchars($product['STOCK']); ?>" required>
-                            </div>
+                            <label for="product-name" class="form-label">Product Name</label>
+                            <input type="text" class="form-control" id="product-name" name="product_name" required>
                         </div>
 
                         <div class="mb-3">
-                            <label for="status" class="form-label">Status</label>
-                            <select class="form-select" id="status" name="status" required>
-                                <option value="active" <?php echo ($product['STATUS'] == 'active') ? 'selected' : ''; ?>>Active</option>
-                                <option value="inactive" <?php echo ($product['STATUS'] == 'inactive') ? 'selected' : ''; ?>>Inactive</option>
-                                <option value="out of stock" <?php echo ($product['STATUS'] == 'out of stock') ? 'selected' : ''; ?>>Out of Stock</option>
+                            <label for="producer" class="form-label">Producer</label>
+                            <select class="form-select" id="producer" name="producer_id" required>
+                                <!-- Options will be loaded by JS -->
                             </select>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="price" class="form-label">Price</label>
+                                <input type="number" class="form-control" id="price" name="price" step="0.01" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="unit" class="form-label">Unit (e.g., 'per tray')</label>
+                                <input type="text" class="form-control" id="unit" name="unit" value="per tray" required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="status" class="form-label">Status</label>
+                                <select class="form-select" id="status" name="status" required>
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                    <option value="out_of_stock">Out of Stock</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="stock" class="form-label">Stock</label>
+                                <input type="number" class="form-control" id="stock" name="stock" value="0" required>
+                            </div>
                         </div>
 
                         <button type="submit" class="btn btn-primary">Save Product</button>
                     </form>
-                    <div id="formMessage" class="mt-3"></div>
                 </div>
             </main>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-    document.getElementById('productForm').addEventListener('submit', async function(event) {
-        event.preventDefault();
-        const form = event.target;
-        const formData = new FormData(form);
-        const formMessage = document.getElementById('formMessage');
-        const submitButton = form.querySelector('button[type="submit"]');
-        formMessage.innerHTML = '';
+        document.addEventListener('DOMContentLoaded', async function() {
+            const isEditing = <?php echo json_encode($is_editing); ?>;
+            const productId = <?php echo json_encode($product_id); ?>;
+            const form = document.getElementById('product-form');
+            const producerSelect = document.getElementById('producer');
+            const alertContainer = document.getElementById('alert-container');
 
-        const priceId = formData.get('price_id');
-        const action = '<?php echo $action; ?>';
+            const showAlert = (type, message) => {
+                alertContainer.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>`;
+            };
 
-        submitButton.disabled = true;
-        submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+            // Fetch producers
+            try {
+                const response = await fetch('api/get_producers.php');
+                const result = await response.json();
+                if (result.status === 'success') {
+                    producerSelect.innerHTML = result.data.map(p => `<option value="${p.PRODUCER_ID}">${p.NAME}</option>`).join('');
+                } else {
+                     showAlert('danger', 'Could not load producers.');
+                }
+            } catch (error) {
+                showAlert('danger', 'Could not connect to the server to get producers.');
+            }
+            
+            // If editing, fetch product details
+            if (isEditing) {
+                try {
+                    const response = await fetch(`api/get_product_details.php?id=${productId}`);
+                    const result = await response.json();
+                    if (result.status === 'success') {
+                        const product = result.data;
+                        form.elements.product_name.value = product.TYPE;
+                        form.elements.producer_id.value = product.PRODUCER_ID;
+                        form.elements.price.value = product.PRICE;
+                        form.elements.unit.value = product.PER;
+                        form.elements.status.value = product.STATUS;
+                        form.elements.stock.value = product.STOCK;
+                    } else {
+                        showAlert('danger', result.message);
+                    }
+                } catch (error) {
+                    showAlert('danger', 'Could not connect to the server to get product details.');
+                }
+            }
 
-        try {
-            const response = await fetch(action, {
-                method: 'POST',
-                body: new URLSearchParams(formData).toString(),
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
+            // Handle form submission
+            form.addEventListener('submit', async function(event) {
+                event.preventDefault();
+                const formData = new FormData(form);
+                const endpoint = isEditing ? 'api/update_product.php' : 'api/create_product.php';
+                
+                try {
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const result = await response.json();
+
+                    if (result.status === 'success') {
+                        showAlert('success', result.message);
+                        if (!isEditing) form.reset();
+                        setTimeout(() => { window.location.href = 'products.php'; }, 1000);
+                    } else {
+                        showAlert('danger', result.message || 'An unknown error occurred.');
+                    }
+                } catch (error) {
+                    showAlert('danger', 'Could not connect to the server.');
                 }
             });
-
-            const result = await response.json();
-
-            if (result.status === 'success') {
-                formMessage.innerHTML = `<div class="alert alert-success">${result.message}</div>`;
-                setTimeout(() => {
-                    window.location.href = 'products.php';
-                }, 1500);
-            } else {
-                throw new Error(result.message || 'An unknown error occurred.');
-            }
-        } catch (error) {
-            formMessage.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
-            submitButton.disabled = false;
-            submitButton.innerHTML = 'Save Product';
-        }
-    });
+        });
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

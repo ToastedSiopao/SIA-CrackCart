@@ -1,6 +1,6 @@
 <?php
 session_start();
-// Security check: ensure the user is an admin
+// Security check
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
     header("Location: index.php?error=Please log in to access the admin panel.");
     exit();
@@ -9,47 +9,56 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role
 include '../db_connect.php';
 
 $order_id = isset($_GET['order_id']) ? intval($_GET['order_id']) : 0;
+$order_statuses = ['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'failed', 'refunded'];
 
-if ($order_id === 0) {
-    // This part should be handled gracefully within the HTML structure
+if ($order_id <= 0) {
     $error_message = "Invalid Order ID.";
 } else {
     // Handle status update
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
         $new_status = $_POST['order_status'];
-        $update_stmt = $conn->prepare("UPDATE orders SET status = ? WHERE order_id = ?");
-        $update_stmt->bind_param("si", $new_status, $order_id);
-        $update_stmt->execute();
-        $update_stmt->close();
-        // Refresh the page to show the updated status
-        header("Location: order_details.php?order_id=" . $order_id);
-        exit;
+        if (in_array($new_status, $order_statuses)) {
+            $update_stmt = $conn->prepare("UPDATE product_orders SET status = ? WHERE order_id = ?");
+            $update_stmt->bind_param("si", $new_status, $order_id);
+            $update_stmt->execute();
+            $update_stmt->close();
+            header("Location: order_details.php?order_id=" . $order_id);
+            exit;
+        }
     }
 
-    // Fetch order details
-    $query = "SELECT o.*, CONCAT(u.FIRST_NAME, ' ', u.LAST_NAME) AS customer_name, u.EMAIL, sa.address_line_1, sa.address_line_2, sa.city, sa.state, sa.postal_code, sa.country
-              FROM orders o
-              JOIN USER u ON o.user_id = u.USER_ID
-              JOIN shipping_address sa ON o.shipping_address_id = sa.address_id
-              WHERE o.order_id = ?";
+    // Fetch main order details
+    $query = "SELECT po.*, CONCAT(u.FIRST_NAME, ' ', u.LAST_NAME) AS customer_name, u.EMAIL, 
+                   ua.address_line1, ua.address_line2, ua.city, ua.state, ua.zip_code, ua.country
+            FROM product_orders po
+            JOIN USER u ON po.user_id = u.USER_ID
+            LEFT JOIN user_addresses ua ON po.shipping_address_id = ua.address_id
+            WHERE po.order_id = ?";
+
     $stmt = $conn->prepare($query);
     $stmt->bind_param("i", $order_id);
     $stmt->execute();
     $order = $stmt->get_result()->fetch_assoc();
     $stmt->close();
 
-    // Fetch order items
-    $items_query = "SELECT p.name, p.price, oi.quantity FROM order_items oi JOIN products p ON oi.product_id = p.product_id WHERE oi.order_id = ?";
-    $items_stmt = $conn->prepare($items_query);
-    $items_stmt->bind_param("i", $order_id);
-    $items_stmt->execute();
-    $order_items = $items_stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-    $items_stmt->close();
+    if (!$order) {
+        $error_message = "Order not found.";
+    } else {
+        // Fetch order items
+        $items_query = "SELECT oi.*, p.TYPE as product_name, pr.NAME as producer_name
+                        FROM product_order_items oi
+                        JOIN PRICE p ON oi.product_type = p.TYPE AND oi.producer_id = p.PRODUCER_ID
+                        JOIN PRODUCER pr ON oi.producer_id = pr.PRODUCER_ID
+                        WHERE oi.order_id = ?";
+        $items_stmt = $conn->prepare($items_query);
+        $items_stmt->bind_param("i", $order_id);
+        $items_stmt->execute();
+        $order_items = $items_stmt->get_result();
+        $items_stmt->close();
+    }
 }
 
 $conn->close();
-
-$order_statuses = ['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'];
 $user_name = $_SESSION['user_first_name'] ?? 'Admin';
 
 ?>
@@ -76,84 +85,68 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
                 <div class="card shadow-sm border-0 p-4">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h4 class="mb-0">Order Details</h4>
-                        <div>
-                            <a href="orders.php" class="btn btn-outline-secondary me-2">Back to Orders</a>
-                            <a href="print_invoice.php?order_id=<?php echo $order_id; ?>" target="_blank" class="btn btn-primary">Print Invoice</a>
-                        </div>
+                        <a href="orders.php" class="btn btn-outline-secondary">Back to Orders</a>
                     </div>
 
                     <?php if (isset($error_message)): ?>
                         <div class="alert alert-danger"><?php echo $error_message; ?></div>
                     <?php elseif ($order): ?>
                         <div class="row">
-                            <div class="col-lg-8">
+                            <div class="col-lg-7">
                                 <div class="card mb-4">
                                     <div class="card-header">Order #<?php echo htmlspecialchars($order['order_id']); ?></div>
                                     <div class="card-body">
+                                        <h5 class="card-title">Items</h5>
                                         <div class="table-responsive">
-                                            <table class="table table-bordered">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Product</th>
-                                                        <th>Quantity</th>
-                                                        <th>Price</th>
-                                                        <th>Total</th>
-                                                    </tr>
-                                                </thead>
+                                            <table class="table">
                                                 <tbody>
-                                                    <?php foreach ($order_items as $item): ?>
+                                                    <?php while($item = $order_items->fetch_assoc()): ?>
                                                         <tr>
-                                                            <td><?php echo htmlspecialchars($item['name']); ?></td>
-                                                            <td><?php echo $item['quantity']; ?></td>
-                                                            <td>$<?php echo number_format($item['price'], 2); ?></td>
-                                                            <td>$<?php echo number_format($item['price'] * $item['quantity'], 2); ?></td>
+                                                            <td><?php echo htmlspecialchars($item['product_name']); ?></td>
+                                                            <td><?php echo htmlspecialchars($item['producer_name']); ?></td>
+                                                            <td>x <?php echo htmlspecialchars($item['quantity']); ?></td>
+                                                            <td>$<?php echo number_format($item['price_per_item'], 2); ?></td>
                                                         </tr>
-                                                    <?php endforeach; ?>
+                                                    <?php endwhile; ?>
                                                 </tbody>
-                                                <tfoot>
-                                                    <tr>
-                                                        <th colspan="3" class="text-end">Grand Total:</th>
-                                                        <th>$<?php echo number_format($order['total_amount'], 2); ?></th>
-                                                    </tr>
-                                                </tfoot>
                                             </table>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-lg-4">
+                            <div class="col-lg-5">
                                 <div class="card mb-4">
-                                    <div class="card-header">Update Status</div>
+                                    <div class="card-header">Order Summary</div>
                                     <div class="card-body">
+                                        <p><strong>Status:</strong> <span class="badge bg-success"><?php echo ucfirst(htmlspecialchars($order['status'])); ?></span></p>
+                                        <p><strong>Total Amount:</strong> $<?php echo number_format($order['total_amount'], 2); ?></p>
+                                        <p><strong>Payment Method:</strong> <?php echo htmlspecialchars($order['payment_method']); ?></p>
+                                        <hr>
+                                        <h5 class="card-title">Update Status</h5>
                                         <form method="POST">
-                                            <div class="mb-3">
-                                                <label for="order_status" class="form-label">Order Status</label>
-                                                <select class="form-select" id="order_status" name="order_status">
+                                            <div class="input-group mb-3">
+                                                <select class="form-select" name="order_status">
                                                     <?php foreach ($order_statuses as $status): ?>
                                                         <option value="<?php echo $status; ?>" <?php echo ($order['status'] == $status) ? 'selected' : ''; ?>><?php echo ucfirst($status); ?></option>
                                                     <?php endforeach; ?>
                                                 </select>
+                                                <button class="btn btn-primary" type="submit" name="update_status">Update</button>
                                             </div>
-                                            <button type="submit" name="update_status" class="btn btn-primary">Update</button>
                                         </form>
-                                    </div>
-                                </div>
-                                <div class="card mb-4">
-                                    <div class="card-header">Customer & Shipping</div>
-                                    <div class="card-body">
-                                        <strong><?php echo htmlspecialchars($order['customer_name']); ?></strong><br>
-                                        <?php echo htmlspecialchars($order['EMAIL']); ?><br><br>
-                                        <strong>Shipping Address:</strong><br>
-                                        <?php echo htmlspecialchars($order['address_line_1']); ?><br>
-                                        <?php if(!empty($order['address_line_2'])) echo htmlspecialchars($order['address_line_2']) . '<br>'; ?>
-                                        <?php echo htmlspecialchars($order['city']); ?>, <?php echo htmlspecialchars($order['state']); ?> <?php echo htmlspecialchars($order['postal_code']); ?><br>
-                                        <?php echo htmlspecialchars($order['country']); ?>
+                                        <hr>
+                                        <h5 class="card-title">Customer & Shipping</h5>
+                                        <p><strong>Name:</strong> <?php echo htmlspecialchars($order['customer_name']); ?></p>
+                                        <p><strong>Email:</strong> <?php echo htmlspecialchars($order['EMAIL']); ?></p>
+                                        <p><strong>Shipping Address:</strong><br>
+                                            <?php echo htmlspecialchars($order['address_line1']); ?><br>
+                                            <?php if($order['address_line2']) echo htmlspecialchars($order['address_line2']) . '<br>'; ?>
+                                            <?php echo htmlspecialchars($order['city']); ?>, <?php echo htmlspecialchars($order['state']); ?> <?php echo htmlspecialchars($order['zip_code']); ?><br>
+                                            <?php echo htmlspecialchars($order['country']); ?>
+                                        </p>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    <?php else: ?>
-                        <div class="alert alert-warning">Order not found.</div>
                     <?php endif; ?>
                 </div>
             </main>
