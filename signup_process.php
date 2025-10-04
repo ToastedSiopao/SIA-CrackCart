@@ -89,9 +89,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
         // Insert into USER table
-        $sql_user = "INSERT INTO USER (FIRST_NAME, MIDDLE_NAME, LAST_NAME, EMAIL, PHONE, PASSWORD, HOUSE_NO, STREET_NAME, BARANGAY, CITY, ROLE, CREATED_AT) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'customer', NOW())";
+        $sql_user = "INSERT INTO USER (FIRST_NAME, MIDDLE_NAME, LAST_NAME, EMAIL, PHONE, PASSWORD, ROLE, CREATED_AT) VALUES (?, ?, ?, ?, ?, ?, 'customer', NOW())";
         $stmt_user = $conn->prepare($sql_user);
-        $stmt_user->bind_param("ssssssssss", $firstName, $middleName, $lastName, $email, $phone, $hashedPassword, $houseNo, $streetName, $barangay, $city);
+        $stmt_user->bind_param("ssssss", $firstName, $middleName, $lastName, $email, $phone, $hashedPassword);
 
         if (!$stmt_user->execute()) {
             throw new Exception("Error creating user account.");
@@ -104,15 +104,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Insert into user_addresses table
         $address_line1 = $houseNo . ' ' . $streetName;
         $address_line2 = $barangay;
-        $state = $city; // Assumption as state is not provided
+        $state = $city;
         $country = "Philippines"; // Default country
         $address_type = "shipping"; // Default address type
         $zip_code = ""; // Not provided
+        $is_default = 1; // Set as default address
 
-        $sql_address = "INSERT INTO user_addresses (user_id, address_line1, address_line2, city, state, zip_code, country, address_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        $sql_address = "INSERT INTO user_addresses (user_id, address_line1, address_line2, city, state, zip_code, country, address_type, is_default) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
         $stmt_address = $conn->prepare($sql_address);
-        $stmt_address->bind_param("isssssss", $new_user_id, $address_line1, $address_line2, $city, $state, $zip_code, $country, $address_type);
+        $stmt_address->bind_param("isssssssi", $new_user_id, $address_line1, $address_line2, $city, $state, $zip_code, $country, $address_type, $is_default);
 
         if (!$stmt_address->execute()) {
             throw new Exception("Error saving default address.");

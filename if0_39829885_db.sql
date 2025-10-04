@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: sql101.infinityfree.com
--- Generation Time: Oct 03, 2025 at 04:06 PM
+-- Generation Time: Oct 04, 2025 at 03:32 AM
 -- Server version: 11.4.7-MariaDB
 -- PHP Version: 7.2.22
 
@@ -21,18 +21,6 @@ SET time_zone = "+00:00";
 --
 -- Database: `if0_39829885_db`
 --
-
--- --------------------------------------------------------
-
---
--- Table structure for table `Address`
---
-
-CREATE TABLE `Address` (
-  `address_id` int(11) NOT NULL,
-  `address` varchar(255) DEFAULT NULL,
-  `user_id` int(11) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 -- --------------------------------------------------------
 
@@ -177,6 +165,7 @@ CREATE TABLE `orders` (
 CREATE TABLE `Payment` (
   `payment_id` int(11) NOT NULL,
   `booking_id` int(11) DEFAULT NULL,
+  `order_id` int(11) DEFAULT NULL,
   `amount` decimal(10,2) DEFAULT NULL,
   `currency` varchar(10) DEFAULT NULL,
   `method` varchar(50) DEFAULT NULL,
@@ -198,6 +187,24 @@ CREATE TABLE `PRICE` (
   `PER` varchar(255) DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
+--
+-- Dumping data for table `PRICE`
+--
+
+INSERT INTO `PRICE` (`PRICE_ID`, `PRODUCER_ID`, `TYPE`, `PRICE`, `PER`) VALUES
+(1, 1, 'Standard Eggs', '210.00', 'per tray'),
+(2, 1, 'Jumbo Eggs', '240.00', 'per tray'),
+(3, 2, 'Native Eggs', '280.00', 'per tray'),
+(4, 2, 'Free-Range Eggs', '300.00', 'per tray'),
+(5, 3, 'Golden Yolks', '220.00', 'per tray'),
+(6, 4, 'Fresh Brown Eggs', '215.00', 'per tray'),
+(7, 4, 'Pidan/Century Eggs', '350.00', 'per tray'),
+(8, 5, 'Pasture-Raised Eggs', '320.00', 'per tray'),
+(9, 6, 'White Eggs (Medium)', '190.00', 'per tray'),
+(10, 6, 'White Eggs (Large)', '205.00', 'per tray'),
+(11, 7, 'Salted Eggs', '250.00', 'per tray'),
+(12, 8, 'Itik/Ducks Eggs', '290.00', 'per tray');
+
 -- --------------------------------------------------------
 
 --
@@ -210,6 +217,54 @@ CREATE TABLE `PRODUCER` (
   `LOCATION` varchar(255) DEFAULT NULL,
   `LOGO` varchar(1024) DEFAULT NULL,
   `URL` varchar(255) DEFAULT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+
+--
+-- Dumping data for table `PRODUCER`
+--
+
+INSERT INTO `PRODUCER` (`PRODUCER_ID`, `NAME`, `LOCATION`, `LOGO`, `URL`) VALUES
+(1, 'San Miguel Egg Farm', 'Bulacan, Philippines', 'https://scontent.fmnl3-2.fna.fbcdn.net/v/t39.30808-6/309197041_397533832570608_2852504124934330080_n.jpg', 'https://www.facebook.com/sanmiguelgamefarm'),
+(2, 'Kota Paradiso Agricultural Farm', 'Laguna, Philippines', 'https://i.imgur.com/example.png', 'https://kotaparadisofarm.ph/products/native-egg'),
+(3, 'Golden Yolks Farm', 'Laguna, Philippines', 'https://scontent.fmnl37-1.fna.fbcdn.net/v/t39.30808-6/448766456_122153540054220120_2192821754871017603_n.jpg', 'https://www.facebook.com'),
+(4, 'FreshNest Poultry', 'Pampanga, Philippines', 'https://scontent.fmnl37-1.fna.fbcdn.net/v/t39.30808-6/536278500_771779282457560_1891929734049571049_n.jpg', 'https://www.facebook.com/FreshNestFarmPH'),
+(5, 'Happy Hen Farms', 'Quezon, Philippines', 'https://scontent.fmnl3-4.fna.fbcdn.net/v/t39.30808-6/326506021_494812559393671_6721513954783849887_n.jpg', 'https://www.facebook.com/happyhenphilippines'),
+(6, 'Eggcellent Layers', 'Cavite, Philippines', 'https://scontent.fmnl37-1.fna.fbcdn.net/v/t39.30808-6/275662495_153406203790612_5611612134323118829_n.jpg', 'https://www.facebook.com/EGGCELLENTBUSINESS'),
+(7, 'SunnySide Egg Farm', 'Pasig, Philippines', 'https://scontent.fmnl37-1.fna.fbcdn.net/v/t39.30808-6/244206017_101518792307481_6975821136247613608_n.jpg', 'https://www.facebook.com/profile.php?id=100082500728747'),
+(8, 'FST Egg Store', 'Iloilo, Philippines', 'https://scontent.fmnl3-4.fna.fbcdn.net/v/t39.30808-6/333611225_578136657594857_8081151375127004928_n.jpg', 'https://www.facebook.com/fst.eggstore');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `product_orders`
+--
+
+CREATE TABLE `product_orders` (
+  `order_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `order_date` datetime NOT NULL DEFAULT current_timestamp(),
+  `total_amount` decimal(10,2) NOT NULL,
+  `status` enum('pending','paid','cancelled','failed') NOT NULL DEFAULT 'pending',
+  `shipping_address_id` int(11) NOT NULL,
+  `payment_id` int(11) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `paypal_order_id` varchar(255) DEFAULT NULL
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `product_order_items`
+--
+
+CREATE TABLE `product_order_items` (
+  `order_item_id` int(11) NOT NULL,
+  `order_id` int(11) NOT NULL,
+  `producer_id` int(11) NOT NULL,
+  `product_type` varchar(255) NOT NULL,
+  `quantity` int(11) NOT NULL,
+  `price_per_item` decimal(10,2) NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 -- --------------------------------------------------------
@@ -259,10 +314,6 @@ CREATE TABLE `USER` (
   `PHONE` varchar(20) DEFAULT NULL,
   `PASSWORD` varchar(255) NOT NULL,
   `ROLE` enum('driver','admin','customer') DEFAULT 'customer',
-  `HOUSE_NO` varchar(20) DEFAULT NULL,
-  `STREET_NAME` varchar(100) DEFAULT NULL,
-  `BARANGAY` varchar(100) DEFAULT NULL,
-  `CITY` varchar(100) DEFAULT NULL,
   `CREATED_AT` timestamp NULL DEFAULT current_timestamp(),
   `UPDATED_AT` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
@@ -271,12 +322,31 @@ CREATE TABLE `USER` (
 -- Dumping data for table `USER`
 --
 
-INSERT INTO `USER` (`USER_ID`, `FIRST_NAME`, `MIDDLE_NAME`, `LAST_NAME`, `EMAIL`, `PHONE`, `PASSWORD`, `ROLE`, `HOUSE_NO`, `STREET_NAME`, `BARANGAY`, `CITY`, `CREATED_AT`, `UPDATED_AT`) VALUES
-(4, 'Rasheed Malachi', 'Ramirez', 'Salamat', 'rasheedmalachi@gmail.com', '', '$2y$10$befzVXETI53dfpYMhMBvUeXykYXzrIK96lTix/3QtQFUoLCEZ4zpW', 'customer', '138 A', 'Malumanay', 'UP Village', 'QC', '2025-09-22 12:09:06', '2025-09-22 12:09:06'),
-(7, 'Eduard Simon', 'Nemiada', 'Miana', 'simonmiana@gmail.com', '09956336238', '$2y$10$jIOLZFqQCAl24js9hYZtle8RcGhKU1ZKApqspK1PxStgb2FoHdRpW', 'customer', '9', 'Mapalad', 'Mariblo', 'Quezon City', '2025-10-03 17:45:48', '2025-10-03 17:45:48'),
-(5, 'Crack', 'Nemiada', 'Cart', 'crackcart.auth@gmail.com', '0995 633 6238', '$2y$10$IwU5AvKjNBEncZ8OeXyYTu67a/fKEKo2eYWEuIdRY.HsBhIuSrpFa', 'customer', '9', 'mapalad', 'Mariblo', 'Quezon City', '2025-09-25 08:02:11', '2025-09-25 08:02:11'),
-(6, 'q3rq', 'qr3rq', 'qr3rq', 'qkramirez04@tip.edu.ph', '125135135', '$2y$10$ukVSWkly5c4s9UKZZNMPMekPgv.jNIDiSBirIJ5g48KTGElahPAB6', 'customer', '51351', '5135feas', '151fae', '154fdfg', '2025-10-03 08:19:37', '2025-10-03 08:19:37'),
-(8, 'Eduard Simon', 'Nemiada', 'Miana', 'qesnmiana@tip.edu.ph', '09956336238', '$2y$10$E0I0s1y/JPV4j7pb6ZNk1ObKdmc99Don4U7bbHhoDKxY5KJxe2P1u', 'customer', '9', 'Mapalad', 'Mariblo', 'simonmiana@gmail.com', '2025-10-03 19:12:17', '2025-10-03 19:12:17');
+INSERT INTO `USER` (`USER_ID`, `FIRST_NAME`, `MIDDLE_NAME`, `LAST_NAME`, `EMAIL`, `PHONE`, `PASSWORD`, `ROLE`, `CREATED_AT`, `UPDATED_AT`) VALUES
+(4, 'Rasheed Malachi', 'Ramirez', 'Salamat', 'rasheedmalachi@gmail.com', '', '$2y$10$befzVXETI53dfpYMhMBvUeXykYXzrIK96lTix/3QtQFUoLCEZ4zpW', 'customer', '2025-09-22 12:09:06', '2025-09-22 12:09:06'),
+(7, 'Eduard Simon', 'Nemiada', 'Miana', 'simonmiana@gmail.com', '09956336238', '$2y$10$jIOLZFqQCAl24js9hYZtle8RcGhKU1ZKApqspK1PxStgb2FoHdRpW', 'customer', '2025-10-03 17:45:48', '2025-10-03 17:45:48'),
+(5, 'Crack', 'Nemiada', 'Cart', 'crackcart.auth@gmail.com', '0995 633 6238', '$2y$10$IwU5AvKjNBEncZ8OeXyYTu67a/fKEKo2eYWEuIdRY.HsBhIuSrpFa', 'customer', '2025-09-25 08:02:11', '2025-09-25 08:02:11'),
+(6, 'q3rq', 'qr3rq', 'qr3rq', 'qkramirez04@tip.edu.ph', '125135135', '$2y$10$ukVSWkly5c4s9UKZZNMPMekPgv.jNIDiSBirIJ5g48KTGElahPAB6', 'customer', '2025-10-03 08:19:37', '2025-10-03 08:19:37'),
+(8, 'Eduard Simo', 'Nemiada', 'Miana', 'qesnmiana@tip.edu.ph', '09956336238', '$2y$10$E0I0s1y/JPV4j7pb6ZNk1ObKdmc99Don4U7bbHhoDKxY5KJxe2P1u', 'customer', '2025-10-03 19:12:17', '2025-10-04 05:23:47');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `user_addresses`
+--
+
+CREATE TABLE `user_addresses` (
+  `address_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `address_line1` varchar(255) NOT NULL,
+  `address_line2` varchar(255) DEFAULT NULL,
+  `city` varchar(100) NOT NULL,
+  `state` varchar(100) NOT NULL,
+  `zip_code` varchar(20) NOT NULL,
+  `country` varchar(100) NOT NULL,
+  `address_type` varchar(50) DEFAULT 'shipping',
+  `is_default` tinyint(1) NOT NULL DEFAULT 0
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 -- --------------------------------------------------------
 
@@ -296,13 +366,6 @@ CREATE TABLE `Vehicle` (
 --
 -- Indexes for dumped tables
 --
-
---
--- Indexes for table `Address`
---
-ALTER TABLE `Address`
-  ADD PRIMARY KEY (`address_id`),
-  ADD KEY `user_id` (`user_id`);
 
 --
 -- Indexes for table `Booking`
@@ -367,7 +430,8 @@ ALTER TABLE `orders`
 --
 ALTER TABLE `Payment`
   ADD PRIMARY KEY (`payment_id`),
-  ADD KEY `booking_id` (`booking_id`);
+  ADD KEY `booking_id` (`booking_id`),
+  ADD KEY `order_id` (`order_id`);
 
 --
 -- Indexes for table `PRICE`
@@ -381,6 +445,23 @@ ALTER TABLE `PRICE`
 --
 ALTER TABLE `PRODUCER`
   ADD PRIMARY KEY (`PRODUCER_ID`);
+
+--
+-- Indexes for table `product_orders`
+--
+ALTER TABLE `product_orders`
+  ADD PRIMARY KEY (`order_id`),
+  ADD KEY `user_id` (`user_id`),
+  ADD KEY `shipping_address_id` (`shipping_address_id`),
+  ADD KEY `payment_id` (`payment_id`);
+
+--
+-- Indexes for table `product_order_items`
+--
+ALTER TABLE `product_order_items`
+  ADD PRIMARY KEY (`order_item_id`),
+  ADD KEY `order_id` (`order_id`),
+  ADD KEY `producer_id` (`producer_id`);
 
 --
 -- Indexes for table `Rate_Card`
@@ -404,6 +485,13 @@ ALTER TABLE `USER`
   ADD UNIQUE KEY `EMAIL` (`EMAIL`);
 
 --
+-- Indexes for table `user_addresses`
+--
+ALTER TABLE `user_addresses`
+  ADD PRIMARY KEY (`address_id`),
+  ADD KEY `user_id` (`user_id`);
+
+--
 -- Indexes for table `Vehicle`
 --
 ALTER TABLE `Vehicle`
@@ -412,12 +500,6 @@ ALTER TABLE `Vehicle`
 --
 -- AUTO_INCREMENT for dumped tables
 --
-
---
--- AUTO_INCREMENT for table `Address`
---
-ALTER TABLE `Address`
-  MODIFY `address_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `Booking`
@@ -471,13 +553,25 @@ ALTER TABLE `Payment`
 -- AUTO_INCREMENT for table `PRICE`
 --
 ALTER TABLE `PRICE`
-  MODIFY `PRICE_ID` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `PRICE_ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT for table `PRODUCER`
 --
 ALTER TABLE `PRODUCER`
-  MODIFY `PRODUCER_ID` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `PRODUCER_ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+
+--
+-- AUTO_INCREMENT for table `product_orders`
+--
+ALTER TABLE `product_orders`
+  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `product_order_items`
+--
+ALTER TABLE `product_order_items`
+  MODIFY `order_item_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `Rate_Card`
@@ -496,6 +590,12 @@ ALTER TABLE `Tracking_Event`
 --
 ALTER TABLE `USER`
   MODIFY `USER_ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+
+--
+-- AUTO_INCREMENT for table `user_addresses`
+--
+ALTER TABLE `user_addresses`
+  MODIFY `address_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `Vehicle`

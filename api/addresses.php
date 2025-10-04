@@ -11,11 +11,10 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 $method = $_SERVER['REQUEST_METHOD'];
-$data = json_decode(file_get_contents('php://input'), true);
 
 switch ($method) {
     case 'GET':
-        $stmt = $conn->prepare("SELECT * FROM Address WHERE user_id = ?");
+        $stmt = $conn->prepare("SELECT address_id, address_line1, address_line2, city, state, zip_code, country, is_default FROM user_addresses WHERE user_id = ? ORDER BY is_default DESC");
         $stmt->bind_param("i", $user_id);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -24,58 +23,111 @@ switch ($method) {
         break;
 
     case 'POST':
-        if (isset($data['street'], $data['city'], $data['state'], $data['zip_code'], $data['country'])) {
-            $stmt = $conn->prepare("INSERT INTO Address (user_id, street, city, state, zip_code, country) VALUES (?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("isssss", $user_id, $data['street'], $data['city'], $data['state'], $data['zip_code'], $data['country']);
-            if ($stmt->execute()) {
-                $new_address_id = $conn->insert_id;
-                http_response_code(201);
-                echo json_encode(['status' => 'success', 'message' => 'Address added successfully.', 'address_id' => $new_address_id]);
-            } else {
-                http_response_code(500);
-                echo json_encode(['status' => 'error', 'message' => 'Failed to add address.']);
+        $data = json_decode(file_get_contents('php://input'), true);
+        $address_line1 = $data['address_line1'];
+        $address_line2 = $data['address_line2'];
+        $city = $data['city'];
+        $state = $data['state'];
+        $zip_code = $data['zip_code'];
+        $country = $data['country'];
+        $is_default = isset($data['is_default']) && $data['is_default'] ? 1 : 0;
+
+        $conn->begin_transaction();
+        try {
+            if ($is_default) {
+                $stmt = $conn->prepare("UPDATE user_addresses SET is_default = 0 WHERE user_id = ?");
+                $stmt->bind_param("i", $user_id);
+                $stmt->execute();
             }
-        } else {
-            http_response_code(400);
-            echo json_encode(['status' => 'error', 'message' => 'Invalid data provided.']);
+
+            $stmt = $conn->prepare("INSERT INTO user_addresses (user_id, address_line1, address_line2, city, state, zip_code, country, is_default) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->bind_param("issssssi", $user_id, $address_line1, $address_line2, $city, $state, $zip_code, $country, $is_default);
+            $stmt->execute();
+            $conn->commit();
+            echo json_encode(['status' => 'success', 'message' => 'Address added successfully.']);
+        } catch (Exception $e) {
+            $conn->rollback();
+            http_response_code(500);
+            echo json_encode(['status' => 'error', 'message' => 'Failed to add address.']);
         }
         break;
 
     case 'PUT':
-        if (isset($data['address_id'], $data['street'], $data['city'], $data['state'], $data['zip_code'], $data['country'])) {
-            $stmt = $conn->prepare("UPDATE Address SET street = ?, city = ?, state = ?, zip_code = ?, country = ? WHERE address_id = ? AND user_id = ?");
-            $stmt->bind_param("sssssii", $data['street'], $data['city'], $data['state'], $data['zip_code'], $data['country'], $data['address_id'], $user_id);
+        $data = json_decode(file_get_contents('php://input'), true);
+        $address_id = $data['address_id'];
+        
+        if (isset($data['make_default']) && $data['make_default']) {
+            $conn->begin_transaction();
+            try {
+                $stmt = $conn->prepare("UPDATE user_addresses SET is_default = 0 WHERE user_id = ?");
+                $stmt->bind_param("i", $user_id);
+                $stmt->execute();
+
+                $stmt = $conn->prepare("UPDATE user_addresses SET is_default = 1 WHERE address_id = ? AND user_id = ?");
+                $stmt->bind_param("ii", $address_id, $user_id);
+                $stmt->execute();
+                
+                $conn->commit();
+                echo json_encode(['status' => 'success', 'message' => 'Default address updated successfully.']);
+            } catch (Exception $e) {
+                $conn->rollback();
+                http_response_code(500);
+                echo json_encode(['status' => 'error', 'message' => 'Failed to update default address.']);
+            }
+        } else {
+            $address_line1 = $data['address_line1'];
+            $address_line2 = $data['address_line2'];
+            $city = $data['city'];
+            $state = $data['state'];
+            $zip_code = $data['zip_code'];
+            $country = $data['country'];
+
+            $stmt = $conn->prepare("UPDATE user_addresses SET address_line1 = ?, address_line2 = ?, city = ?, state = ?, zip_code = ?, country = ? WHERE address_id = ? AND user_id = ?");
+            $stmt->bind_param("ssssssii", $address_line1, $address_line2, $city, $state, $zip_code, $country, $address_id, $user_.id);
             if ($stmt->execute()) {
                 echo json_encode(['status' => 'success', 'message' => 'Address updated successfully.']);
             } else {
                 http_response_code(500);
                 echo json_encode(['status' => 'error', 'message' => 'Failed to update address.']);
             }
-        } else {
-            http_response_code(400);
-            echo json_encode(['status' => 'error', 'message' => 'Invalid data provided.']);
         }
         break;
 
     case 'DELETE':
-        if (isset($data['address_id'])) {
-            $stmt = $conn->prepare("DELETE FROM Address WHERE address_id = ? AND user_id = ?");
-            $stmt->bind_param("ii", $data['address_id'], $user_id);
-            if ($stmt->execute()) {
+        $data = json_decode(file_get_contents('php://input'), true);
+        $address_id = $data['address_id'];
+
+        // Check if the address is the default one
+        $stmt = $conn->prepare("SELECT is_default FROM user_addresses WHERE address_id = ? AND user_id = ?");
+        $stmt->bind_param("ii", $address_id, $user_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $address = $result->fetch_assoc();
+
+        if ($address && $address['is_default']) {
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'Cannot delete the default address.']);
+            exit();
+        }
+
+        $stmt = $conn->prepare("DELETE FROM user_addresses WHERE address_id = ? AND user_id = ?");
+        $stmt->bind_param("ii", $address_id, $user_id);
+        if ($stmt->execute()) {
+            if ($stmt->affected_rows > 0) {
                 echo json_encode(['status' => 'success', 'message' => 'Address deleted successfully.']);
             } else {
-                http_response_code(500);
-                echo json_encode(['status' => 'error', 'message' => 'Failed to delete address.']);
+                http_response_code(404);
+                echo json_encode(['status' => 'error', 'message' => 'Address not found or you do not have permission to delete it.']);
             }
         } else {
-            http_response_code(400);
-            echo json_encode(['status' => 'error', 'message' => 'Address ID not provided.']);
+            http_response_code(500);
+            echo json_encode(['status' => 'error', 'message' => 'Failed to delete address.']);
         }
         break;
 
     default:
         http_response_code(405);
-        echo json_encode(['status' => 'error', 'message' => 'Method Not Allowed']);
+        echo json_encode(['status' => 'error', 'message' => 'Method not allowed.']);
         break;
 }
 
