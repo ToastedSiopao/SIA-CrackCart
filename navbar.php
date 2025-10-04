@@ -2,7 +2,7 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-$user_name = $_SESSION['user_name'] ?? 'Guest';
+$user_name = $_SESSION['user_first_name'] ?? 'Guest';
 ?>
 <nav class="navbar navbar-expand-lg shadow-sm px-3">
     <div class="container-fluid">
