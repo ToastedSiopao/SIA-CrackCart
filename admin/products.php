@@ -1,55 +1,62 @@
 <?php
 session_start();
-// Ensure the user is logged in and is an admin
+// Security check: ensure the user is an admin
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-    header("Location: index.php"); // Redirect to login page if not authorized
+    // If not an admin, redirect to the login page
+    header("Location: index.php?error=Please log in to access the admin panel.");
     exit();
 }
+
+$user_name = $_SESSION['user_first_name'] ?? 'Admin';
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Product Management - CrackCart Admin</title>
+    <title>Product Management - CrackCart</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="../dashboard-styles.css?v=1.3" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="admin-styles.css?v=1.0" rel="stylesheet">
 </head>
 <body>
-    <?php include 'admin_header.php'; ?>
+    <?php include('admin_header.php'); ?>
 
     <div class="container-fluid">
-        <div class="row">
-            <?php include 'admin_sidebar.php'; ?>
+        <div class="row flex-nowrap">
+            <?php include('admin_sidebar.php'); ?>
+            <?php include('admin_offcanvas_sidebar.php'); ?>
 
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                    <h1 class="h2">Product Management</h1>
-                    <div class="btn-toolbar mb-2 mb-md-0">
-                        <a href="product_form.php" class="btn btn-sm btn-outline-secondary">Add New Product</a>
+            <main class="col p-4 main-content">
+                <div class="card shadow-sm border-0 p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="mb-0">Product Management</h4>
+                        <a href="product_form.php" class="btn btn-primary">Add New Product</a>
                     </div>
-                </div>
 
-                <div id="alert-container"></div>
+                    <div id="alert-container"></div>
 
-                <div class="table-responsive">
-                    <table class="table table-striped table-sm">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Product Name</th>
-                                <th>Producer</th>
-                                <th>Price</th>
-                                <th>Unit</th>
-                                <th>Status</th>
-                                <th>Stock</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="products-table-body">
-                            <!-- Product rows will be inserted here by JavaScript -->
-                        </tbody>
-                    </table>
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Product Name</th>
+                                    <th>Producer</th>
+                                    <th>Price</th>
+                                    <th>Unit</th>
+                                    <th>Status</th>
+                                    <th>Stock</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="products-table-body">
+                                <!-- Product rows will be inserted here by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </main>
         </div>

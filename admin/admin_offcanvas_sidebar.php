@@ -7,7 +7,7 @@
     <div class="offcanvas-body">
         <ul class="nav flex-column">
             <li class="nav-item">
-                <a class="nav-link active" href="dashboard.php"><i class="bi bi-house-door"></i> Dashboard</a>
+                <a class="nav-link" href="dashboard.php"><i class="bi bi-house-door"></i> Dashboard</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link" href="products.php"><i class="bi bi-box-seam"></i> Products</a>
