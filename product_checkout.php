@@ -13,6 +13,7 @@ if (!isset($_SESSION['user_id'])) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Checkout - CrackCart</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <link href="dashboard-styles.css?v=2.6" rel="stylesheet">
   <script src="https://www.paypal.com/sdk/js?client-id=<?php echo PAYPAL_CLIENT_ID; ?>&currency=PHP"></script>
 </head>
@@ -126,10 +127,19 @@ if (!isset($_SESSION['user_id'])) {
               orderSummaryContainer.innerHTML = '<p class="text-center">Your cart is empty.</p>';
               return;
           }
+
           const itemsHtml = data.items.map(item => `
               <li class="list-group-item d-flex justify-content-between align-items-center">
-                  <div>${item.product_type} (x${item.quantity})</div>
-                  <span>₱${(item.price * item.quantity).toFixed(2)}</span>
+                  <div>
+                      ${item.product_type} (x${item.quantity})
+                      <p class="mb-0">₱${(item.price).toFixed(2)} each</p>
+                  </div>
+                  <div class="d-flex align-items-center">
+                    <span class="me-3">₱${(item.price * item.quantity).toFixed(2)}</span>
+                    <button class="btn btn-sm btn-outline-danger remove-item-btn" data-cart-item-key="${item.cart_item_key}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                  </div>
               </li>`).join('');
 
           orderSummaryContainer.innerHTML = `
@@ -155,6 +165,40 @@ if (!isset($_SESSION['user_id'])) {
           renderPaymentMethod();
       };
       
+      const handleRemoveItem = async (event) => {
+          const button = event.target.closest('.remove-item-btn');
+          if (!button) return;
+
+          const cartItemKey = button.dataset.cartItemKey;
+          if (!cartItemKey) return;
+          
+          if (!confirm('Are you sure you want to remove this item?')) {
+              return;
+          }
+
+          try {
+              const response = await fetch('api/cart.php', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ 
+                      _method: 'DELETE',
+                      cart_item_key: cartItemKey 
+                  })
+              });
+              const result = await response.json();
+              if (result.status === 'success') {
+                  showAlert('success', 'Item removed successfully.');
+                  fetchCartAndAddresses();
+              } else {
+                  showAlert('danger', result.message || 'Could not remove item.');
+              }
+          } catch (error) {
+              showAlert('danger', 'Could not connect to the server to remove item.');
+          }
+      };
+      
+      orderSummaryContainer.addEventListener('click', handleRemoveItem);
+
       function setupPaymentListeners() {
         document.querySelectorAll('input[name="paymentMethod"]').forEach(elem => {
             elem.addEventListener('change', (event) => {
