@@ -2,8 +2,6 @@
 session_start();
 header("Content-Type: application/json");
 include("../db_connect.php");
-include("paypal_helpers.php");
-include("paypal_config.php");
 
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
