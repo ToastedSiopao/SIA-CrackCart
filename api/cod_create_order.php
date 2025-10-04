@@ -41,7 +41,7 @@ try {
     // 2. Add items to the order_items table
     $stmt = $conn->prepare("INSERT INTO product_order_items (order_id, producer_id, product_type, quantity, price) VALUES (?, ?, ?, ?, ?)");
     foreach ($product_cart as $item) {
-        $stmt->bind_param("issid", $order_id, $item['producer_id'], $item['product_type'], $item['quantity'], $item['price']);
+        $stmt->bind_param("iisid", $order_id, $item['producer_id'], $item['product_type'], $item['quantity'], $item['price']);
         $stmt->execute();
     }
     $stmt->close();
