@@ -4,6 +4,18 @@ session_start();
 header("Content-Type: application/json");
 include("../db_connect.php");
 
+// (Function from cart.php - duplicated for safety in case of direct call)
+function get_product_price($conn, $producer_id, $product_type) {
+    $stmt = $conn->prepare("SELECT price FROM producer_services WHERE producer_id = ? AND service_type = ?");
+    $stmt->bind_param("is", $producer_id, $product_type);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($result->num_rows > 0) {
+        return $result->fetch_assoc()['price'];
+    }
+    return null;
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['status' => 'error', 'message' => 'Method not allowed']);
@@ -16,28 +28,43 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-$user_id = $_SESSION['user_id'];
-$data = json_decode(file_get_contents('php://input'), true);
-
-$address_id = $data['address_id'] ?? null;
-$cart = $data['cart'] ?? [];
-
-if (empty($address_id) || empty($cart)) {
+// IGNORE the cart sent from the client. Use the one from the session which is validated.
+if (!isset($_SESSION['product_cart']) || empty($_SESSION['product_cart'])) {
     http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'Missing address or cart items']);
+    echo json_encode(['status' => 'error', 'message' => 'Your cart is empty.']);
     exit();
 }
 
-// Calculate total amount
-$total_amount = 0;
-foreach ($cart as $item) {
-    $total_amount += $item['price'] * $item['quantity'];
+$user_id = $_SESSION['user_id'];
+$data = json_decode(file_get_contents('php://input'), true);
+$address_id = $data['address_id'] ?? null;
+
+if (empty($address_id)) {
+    http_response_code(400);
+    echo json_encode(['status' => 'error', 'message' => 'Shipping address is missing.']);
+    exit();
 }
 
 // Use a transaction to ensure atomicity
 $conn->begin_transaction();
 
 try {
+    $cart = $_SESSION['product_cart'];
+    $total_amount = 0;
+    
+    // --- SERVER-SIDE VALIDATION & CALCULATION ---
+    // Recalculate the total amount on the server side based on prices from the database.
+    foreach ($cart as $key => &$item) {
+        $real_price = get_product_price($conn, $item['producer_id'], $item['product_type']);
+        if ($real_price === null) {
+            // If a product suddenly becomes unavailable, throw an error.
+            throw new Exception("Product '{$item['product_type']}' is no longer available.");
+        }
+        $item['price'] = $real_price; // Ensure the price is correct.
+        $total_amount += $item['price'] * $item['quantity'];
+    }
+    unset($item); // Unset reference
+
     // Create an entry in the Payment table
     $stmt_payment = $conn->prepare("INSERT INTO Payment (amount, currency, method, status) VALUES (?, 'PHP', 'cod', 'pending')");
     $stmt_payment->bind_param("d", $total_amount);
@@ -58,18 +85,23 @@ try {
     // Add items to the product_order_items table
     $stmt_items = $conn->prepare("INSERT INTO product_order_items (order_id, producer_id, product_type, quantity, price_per_item) VALUES (?, ?, ?, ?, ?)");
     foreach ($cart as $item) {
-        $stmt_items->bind_param("iisid", $order_id, $item['producer_id'], $item['type'], $item['quantity'], $item['price']);
+        // CRITICAL FIX: Use 'product_type' from the validated session cart
+        $stmt_items->bind_param("iisid", $order_id, $item['producer_id'], $item['product_type'], $item['quantity'], $item['price']);
         $stmt_items->execute();
     }
 
     $conn->commit();
+
+    // Clear the cart after successful order placement
+    $_SESSION['product_cart'] = [];
 
     echo json_encode(['status' => 'success', 'order_id' => $order_id]);
 
 } catch (Exception $e) {
     $conn->rollback();
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Order placement failed: ' . $e->getMessage()]);
+    // Provide a more user-friendly error message
+    echo json_encode(['status' => 'error', 'message' => 'Order placement failed. ' . $e->getMessage()]);
 }
 
 $conn->close();

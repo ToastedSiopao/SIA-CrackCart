@@ -3,7 +3,53 @@ session_start();
 header("Content-Type: application/json");
 include("../db_connect.php");
 
-// Initialize product cart if it doesn't exist
+// Function to get the real price of a product from the database
+function get_product_price($conn, $producer_id, $product_type) {
+    // Assuming 'service_type' is the correct column name in the database for product_type
+    $stmt = $conn->prepare("SELECT price FROM producer_services WHERE producer_id = ? AND service_type = ?");
+    if (!$stmt) {
+        return null;
+    }
+    $stmt->bind_param("is", $producer_id, $product_type);
+    if (!$stmt->execute()) {
+        return null;
+    }
+    $result = $stmt->get_result();
+    if ($result->num_rows > 0) {
+        return $result->fetch_assoc()['price'];
+    }
+    return null; // Product not found
+}
+
+// Function to validate and sanitize the entire cart
+function validate_cart($conn) {
+    if (!isset($_SESSION['product_cart']) || !is_array($_SESSION['product_cart'])) {
+        return; // No cart or invalid cart structure
+    }
+
+    foreach ($_SESSION['product_cart'] as $key => &$item) {
+        if (!isset($item['producer_id']) || !isset($item['product_type']) || !isset($item['price'])) {
+             unset($_SESSION['product_cart'][$key]);
+             continue;
+        }
+
+        $real_price = get_product_price($conn, $item['producer_id'], $item['product_type']);
+
+        // If product no longer exists, remove it from the cart
+        if ($real_price === null) {
+            unset($_SESSION['product_cart'][$key]);
+        } 
+        // If price in session is incorrect, update it with the real price
+        else if ($item['price'] != $real_price) {
+            $item['price'] = $real_price;
+        }
+    }
+    // Unset the reference to avoid side effects
+    unset($item);
+}
+
+// --- Main script logic ---
+
 if (!isset($_SESSION['product_cart'])) {
     $_SESSION['product_cart'] = [];
 }
@@ -11,14 +57,15 @@ if (!isset($_SESSION['product_cart'])) {
 $method = $_SERVER['REQUEST_METHOD'];
 $data = json_decode(file_get_contents('php://input'), true);
 
+// Always validate the cart on every API call that might use it.
+validate_cart($conn);
+
 switch ($method) {
     case 'GET':
-        // Retrieve cart contents
         $cart = $_SESSION['product_cart'];
         $subtotal = 0;
         $total_items = 0;
         foreach ($cart as $item) {
-            // Basic validation to prevent errors if data is malformed
             $price = is_numeric($item['price']) ? $item['price'] : 0;
             $quantity = is_numeric($item['quantity']) ? $item['quantity'] : 0;
             $subtotal += $price * $quantity;
@@ -28,12 +75,10 @@ switch ($method) {
         break;
 
     case 'POST':
-        // Handle different actions based on a parameter in the request body
-        $action = $data['_method'] ?? 'POST'; // Use _method for method overriding
+        $action = $data['_method'] ?? 'POST';
 
         if ($action === 'DELETE') {
-            // --- REMOVE ITEM FROM CART (using POST) ---
-            if (isset($data['cart_item_key'])) {
+             if (isset($data['cart_item_key'])) {
                 $cart_item_key = $data['cart_item_key'];
                 if (isset($_SESSION['product_cart'][$cart_item_key])) {
                     unset($_SESSION['product_cart'][$cart_item_key]);
@@ -48,8 +93,17 @@ switch ($method) {
                 echo json_encode(['status' => 'error', 'message' => 'Invalid data provided for deletion.']);
             }
         } else {
-            // --- ADD ITEM TO CART (default POST action) ---
-            if (isset($data['producer_id'], $data['product_type'], $data['price'], $data['quantity'])) {
+            // --- SECURELY ADD ITEM TO CART ---
+            if (isset($data['producer_id'], $data['product_type'], $data['quantity'])) {
+                
+                $real_price = get_product_price($conn, $data['producer_id'], $data['product_type']);
+
+                if ($real_price === null) {
+                    http_response_code(404);
+                    echo json_encode(['status' => 'error', 'message' => 'Product not found or is no longer available.']);
+                    exit();
+                }
+
                 $cart_item_key = md5($data['producer_id'] . $data['product_type']);
 
                 if (isset($_SESSION['product_cart'][$cart_item_key])) {
@@ -59,7 +113,7 @@ switch ($method) {
                         'cart_item_key' => $cart_item_key,
                         'producer_id' => $data['producer_id'],
                         'product_type' => $data['product_type'],
-                        'price' => $data['price'],
+                        'price' => $real_price, // Use the real price from the database
                         'quantity' => $data['quantity']
                     ];
                 }
@@ -73,12 +127,10 @@ switch ($method) {
         break;
 
     case 'PUT':
-        // Update item quantity
         if (isset($data['cart_item_key'], $data['quantity'])) {
             $cart_item_key = $data['cart_item_key'];
             $quantity = $data['quantity'];
             
-            // Basic validation
             if ($quantity > 0 && is_numeric($quantity)) {
                 if (isset($_SESSION['product_cart'][$cart_item_key])) {
                     $_SESSION['product_cart'][$cart_item_key]['quantity'] = $quantity;
@@ -89,7 +141,6 @@ switch ($method) {
                     echo json_encode(['status' => 'error', 'message' => 'Item not found in cart.']);
                 }
             } else {
-                // If quantity is 0 or less, remove the item
                 if (isset($_SESSION['product_cart'][$cart_item_key])) {
                     unset($_SESSION['product_cart'][$cart_item_key]);
                     http_response_code(200);
@@ -106,7 +157,6 @@ switch ($method) {
         break;
 
     case 'DELETE':
-        // Remove item from cart (standard method)
         if (isset($data['cart_item_key'])) {
             $cart_item_key = $data['cart_item_key'];
             if (isset($_SESSION['product_cart'][$cart_item_key])) {

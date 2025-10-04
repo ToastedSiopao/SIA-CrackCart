@@ -5,14 +5,19 @@ header("Content-Type: application/json");
 include("../db_connect.php");
 include("paypal_config.php");
 
-if (!isset($_SESSION['user_id']) || empty($_SESSION['product_cart'])) {
-    http_response_code(400);
-    echo json_encode(['error' => 'Invalid request']);
-    exit();
+// Function to get the real price of a product from the database
+function get_product_price($conn, $producer_id, $product_type) {
+    $stmt = $conn->prepare("SELECT price FROM producer_services WHERE producer_id = ? AND service_type = ?");
+    $stmt->bind_param("is", $producer_id, $product_type);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($result->num_rows > 0) {
+        return $result->fetch_assoc()['price'];
+    }
+    return null;
 }
 
-// 1. Get Access Token
-// This function now returns an array with either 'access_token' or 'error'
+// Function to get PayPal Access Token
 function get_paypal_access_token() {
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, PAYPAL_API_BASE_URL . '/v1/oauth2/token');
@@ -26,44 +31,72 @@ function get_paypal_access_token() {
 
     if (curl_errno($ch)) {
         $error_msg = curl_error($ch);
-        error_log("PayPal Token cURL Error: " . $error_msg);
         curl_close($ch);
         return ['error' => 'Could not connect to PayPal to get token: ' . $error_msg];
     }
     
     $http_status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
-    
     $json = json_decode($result);
 
     if ($http_status >= 400 || isset($json->error)) {
-        $error_description = $json->error_description ?? 'Unknown PayPal authentication error.';
-        error_log("PayPal Auth Error: " . $result);
-        return ['error' => 'PayPal Auth Error: ' . $error_description];
+        return ['error' => 'PayPal Auth Error: ' . ($json->error_description ?? 'Unknown error')];
     }
     
     return ['access_token' => $json->access_token ?? null];
 }
 
-// 2. Calculate Total
-$product_cart = $_SESSION['product_cart'];
-$subtotal = 0;
-foreach ($product_cart as $item) {
-    if (is_numeric($item['price']) && is_numeric($item['quantity'])) {
-        $subtotal += $item['price'] * $item['quantity'];
-    } else {
+// --- Main Logic --- 
+
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['product_cart']) || empty($_SESSION['product_cart'])) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Invalid request: Missing user or cart data.']);
+    exit();
+}
+
+// --- SECURE PRICE VALIDATION ---
+$validated_cart = [];
+$total_amount = 0;
+
+foreach ($_SESSION['product_cart'] as $item) {
+    if (!isset($item['producer_id'], $item['product_type'], $item['quantity'])) {
         http_response_code(400);
         echo json_encode(['error' => 'Invalid cart item data.']);
         exit();
     }
-}
-$total_amount = round($subtotal, 2);
 
-// 3. Get Access Token and Create PayPal Order
+    $real_price = get_product_price($conn, $item['producer_id'], $item['product_type']);
+
+    if ($real_price === null) {
+        http_response_code(404);
+        echo json_encode(['error' => "Product '{$item['product_type']}' is no longer available or has an invalid price."]);
+        exit();
+    }
+
+    $total_amount += $real_price * $item['quantity'];
+    
+    // Build a validated version of the cart item
+    $validated_cart[] = [
+        'producer_id' => $item['producer_id'],
+        'product_type' => $item['product_type'],
+        'quantity' => $item['quantity'],
+        'price' => $real_price // Use the validated price
+    ];
+}
+
+$total_amount = round($total_amount, 2);
+
+// Store the securely validated details in the session for the capture step
+$_SESSION['validated_paypal_order'] = [
+    'cart' => $validated_cart,
+    'total' => $total_amount
+];
+
+// --- PayPal Order Creation --- 
+
 $token_response = get_paypal_access_token();
 if (isset($token_response['error']) || empty($token_response['access_token'])) {
     http_response_code(500);
-    // Send the detailed error from get_paypal_access_token to the client
     echo json_encode(['error' => $token_response['error'] ?? 'Could not retrieve PayPal access token.']);
     exit();
 }
@@ -94,22 +127,11 @@ curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
 $result = curl_exec($ch);
 $http_status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-
-if (curl_errno($ch)) {
-    $curl_error = curl_error($ch);
-    error_log("PayPal Create Order cURL Error: " . $curl_error);
-    curl_close($ch);
-    http_response_code(500);
-    // Send the detailed cURL error to the client
-    echo json_encode(['error' => 'Could not connect to PayPal to create order: ' . $curl_error]);
-    exit();
-}
 curl_close($ch);
 
 $json = json_decode($result, true);
 
 if ($http_status >= 400) {
-    error_log("PayPal API Error: " . $result);
     $error_message = 'An error occurred with the payment process.';
     if (isset($json['details'][0]['description'])) {
        $error_message = $json['details'][0]['description'];
