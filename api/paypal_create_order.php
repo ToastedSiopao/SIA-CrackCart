@@ -12,6 +12,7 @@ if (!isset($_SESSION['user_id']) || empty($_SESSION['product_cart'])) {
 }
 
 // 1. Get Access Token
+// This function now returns an array with either 'access_token' or 'error'
 function get_paypal_access_token() {
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, PAYPAL_API_BASE_URL . '/v1/oauth2/token');
@@ -22,20 +23,32 @@ function get_paypal_access_token() {
     $headers = ['Accept: application/json', 'Accept-Language: en_US'];
     curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
     $result = curl_exec($ch);
+
     if (curl_errno($ch)) {
-        error_log("PayPal Token cURL Error: " . curl_error($ch));
-        return null;
+        $error_msg = curl_error($ch);
+        error_log("PayPal Token cURL Error: " . $error_msg);
+        curl_close($ch);
+        return ['error' => 'Could not connect to PayPal to get token: ' . $error_msg];
     }
+    
+    $http_status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
+    
     $json = json_decode($result);
-    return $json->access_token ?? null;
+
+    if ($http_status >= 400 || isset($json->error)) {
+        $error_description = $json->error_description ?? 'Unknown PayPal authentication error.';
+        error_log("PayPal Auth Error: " . $result);
+        return ['error' => 'PayPal Auth Error: ' . $error_description];
+    }
+    
+    return ['access_token' => $json->access_token ?? null];
 }
 
 // 2. Calculate Total
 $product_cart = $_SESSION['product_cart'];
 $subtotal = 0;
 foreach ($product_cart as $item) {
-    // Ensure price and quantity are numeric
     if (is_numeric($item['price']) && is_numeric($item['quantity'])) {
         $subtotal += $item['price'] * $item['quantity'];
     } else {
@@ -46,13 +59,15 @@ foreach ($product_cart as $item) {
 }
 $total_amount = round($subtotal, 2);
 
-// 3. Create PayPal Order
-$access_token = get_paypal_access_token();
-if (!$access_token) {
+// 3. Get Access Token and Create PayPal Order
+$token_response = get_paypal_access_token();
+if (isset($token_response['error']) || empty($token_response['access_token'])) {
     http_response_code(500);
-    echo json_encode(['error' => 'Could not retrieve PayPal access token. Payment service may be temporarily unavailable.']);
+    // Send the detailed error from get_paypal_access_token to the client
+    echo json_encode(['error' => $token_response['error'] ?? 'Could not retrieve PayPal access token.']);
     exit();
 }
+$access_token = $token_response['access_token'];
 
 $order_data = [
     'intent' => 'CAPTURE',
@@ -60,7 +75,6 @@ $order_data = [
         [
             'amount' => [
                 'currency_code' => 'PHP',
-                 // PayPal requires the value to be a string with two decimal places.
                 'value' => number_format($total_amount, 2, '.', '')
             ]
         ]
@@ -82,24 +96,26 @@ $result = curl_exec($ch);
 $http_status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
 if (curl_errno($ch)) {
-    error_log("PayPal Create Order cURL Error: " . curl_error($ch));
+    $curl_error = curl_error($ch);
+    error_log("PayPal Create Order cURL Error: " . $curl_error);
+    curl_close($ch);
     http_response_code(500);
-    echo json_encode(['error' => 'Error communicating with payment gateway.']);
+    // Send the detailed cURL error to the client
+    echo json_encode(['error' => 'Could not connect to PayPal to create order: ' . $curl_error]);
     exit();
 }
 curl_close($ch);
 
 $json = json_decode($result, true);
 
-// Handle potential errors from PayPal API
 if ($http_status >= 400) {
     error_log("PayPal API Error: " . $result);
-    $error_message = 'An error occurred with the payment process. Please try again.';
+    $error_message = 'An error occurred with the payment process.';
     if (isset($json['details'][0]['description'])) {
-       $error_message = $json['details'][0]['description']; // Provide more specific error if available
+       $error_message = $json['details'][0]['description'];
     }
     http_response_code($http_status);
-    echo json_encode(['error' => $error_message]);
+    echo json_encode(['error' => 'PayPal API Error: ' . $error_message]);
     exit();
 }
 
