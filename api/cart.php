@@ -5,18 +5,26 @@ include("../db_connect.php");
 
 // Function to get the real price of a product from the database
 function get_product_price($conn, $producer_id, $product_type) {
-    // Assuming 'service_type' is the correct column name in the database for product_type
-    $stmt = $conn->prepare("SELECT price FROM producer_services WHERE producer_id = ? AND service_type = ?");
+    // The table is PRICE, and the columns are PRODUCER_ID, TYPE, and PRICE (all uppercase)
+    $stmt = $conn->prepare("SELECT PRICE FROM PRICE WHERE PRODUCER_ID = ? AND TYPE = ?");
     if (!$stmt) {
+        // You might want to log this error to a file
+        // error_log("Prepare failed: (" . $conn->errno . ") " . $conn->error);
         return null;
     }
+    
+    // The types are integer and string
     $stmt->bind_param("is", $producer_id, $product_type);
+    
     if (!$stmt->execute()) {
+        // You might want to log this error to a file
+        // error_log("Execute failed: (" . $stmt->errno . ") " . $stmt->error);
         return null;
     }
+    
     $result = $stmt->get_result();
     if ($result->num_rows > 0) {
-        return $result->fetch_assoc()['price'];
+        return $result->fetch_assoc()['PRICE']; // Column name is uppercase PRICE
     }
     return null; // Product not found
 }
@@ -58,11 +66,13 @@ $method = $_SERVER['REQUEST_METHOD'];
 $data = json_decode(file_get_contents('php://input'), true);
 
 // Always validate the cart on every API call that might use it.
-validate_cart($conn);
+if ($conn) {
+    validate_cart($conn);
+}
 
 switch ($method) {
     case 'GET':
-        $cart = $_SESSION['product_cart'];
+        $cart = $_SESSION['product_cart'] ?? [];
         $subtotal = 0;
         $total_items = 0;
         foreach ($cart as $item) {

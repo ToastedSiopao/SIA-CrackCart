@@ -10,7 +10,8 @@ $conn = mysqli_connect($host, $user, $pass, $db);
 
 // Check connection
 if (!$conn) {
-    // Using trigger_error will be caught by the custom error handler
-    trigger_error("Database connection failed: " . mysqli_connect_error(), E_USER_ERROR);
+    $error_message = "Database connection failed: " . mysqli_connect_error() . "\n";
+    file_put_contents("error_log.txt", $error_message, FILE_APPEND);
+    trigger_error($error_message, E_USER_ERROR);
 }
 ?>

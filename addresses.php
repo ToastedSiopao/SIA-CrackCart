@@ -184,9 +184,12 @@ if (!isset($_SESSION['user_id'])) {
                 } else if (e.target.classList.contains('delete-btn')) {
                     if (confirm('Are you sure you want to delete this address?')) {
                         const response = await fetch('api/addresses.php', {
-                            method: 'DELETE',
+                            method: 'POST', // Changed from DELETE to POST
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ address_id: addressId })
+                            body: JSON.stringify({ 
+                                _method: 'DELETE', // Method override
+                                address_id: addressId 
+                            })
                         });
                         const result = await response.json();
                         if (result.status === 'success') {

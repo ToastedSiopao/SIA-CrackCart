@@ -82,7 +82,7 @@ if (!isset($_SESSION['user_id'])) {
                 addressSelectionContainer.innerHTML = `<div class="alert alert-danger">${addressResult.message || 'Error loading addresses.'}</div>`;
             }
           } catch (error) {
-             showAlert('danger', 'Could not connect to the server. Please try again later.');
+             showAlert('danger', 'Could not process your request. Please try again later.');
           }
       };
 
@@ -132,10 +132,10 @@ if (!isset($_SESSION['user_id'])) {
               <li class="list-group-item d-flex justify-content-between align-items-center">
                   <div>
                       ${item.product_type} (x${item.quantity})
-                      <p class="mb-0">₱${(item.price).toFixed(2)} each</p>
+                      <p class="mb-0">₱${parseFloat(item.price).toFixed(2)} each</p>
                   </div>
                   <div class="d-flex align-items-center">
-                    <span class="me-3">₱${(item.price * item.quantity).toFixed(2)}</span>
+                    <span class="me-3">₱${(parseFloat(item.price) * item.quantity).toFixed(2)}</span>
                     <button class="btn btn-sm btn-outline-danger remove-item-btn" data-cart-item-key="${item.cart_item_key}">
                         <i class="fas fa-trash"></i>
                     </button>
@@ -146,7 +146,7 @@ if (!isset($_SESSION['user_id'])) {
               <h5 class="card-title">Order Summary</h5>
               <ul class="list-group list-group-flush">${itemsHtml}
                   <li class="list-group-item d-flex justify-content-between align-items-center fw-bold">
-                      Subtotal <span>₱${data.subtotal.toFixed(2)}</span>
+                      Subtotal <span>₱${parseFloat(data.subtotal).toFixed(2)}</span>
                   </li>
               </ul>
               <h5 class="mt-4">Payment Method</h5>
