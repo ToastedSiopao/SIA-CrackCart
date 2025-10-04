@@ -6,6 +6,9 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role
     header("Location: index.php?error=Please log in to access the admin panel.");
     exit();
 }
+
+$user_name = $_SESSION['user_first_name'] ?? 'Admin';
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -14,45 +17,41 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - CrackCart</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="../dashboard-styles.css?v=1.1" rel="stylesheet"> <!-- Link to existing stylesheet -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="admin-styles.css?v=1.0" rel="stylesheet">
 </head>
 <body>
     <?php include('admin_header.php'); ?>
 
     <div class="container-fluid">
-        <div class="row">
+        <div class="row flex-nowrap">
             <?php include('admin_sidebar.php'); ?>
+            <?php include('admin_offcanvas_sidebar.php'); ?>
 
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                    <h1 class="h2">Dashboard</h1>
-                </div>
-
-                <h2>Welcome, <?php echo htmlspecialchars($_SESSION['first_name']); ?>!</h2>
-                <p>This is your central hub for managing products, orders, and more. Use the navigation on the left to get started.</p>
-
-                <!-- Example Content/Widgets can go here -->
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">Products</h5>
-                                <p class="card-text">Manage your product catalog, including adding, editing, and deleting items.</p>
-                                <a href="products.php" class="btn btn-primary">Go to Products</a>
+            <main class="col p-4 main-content">
+                <div class="card shadow-sm border-0 p-4">
+                    <h6 class="text-warning">Overview</h6>
+                    <h4 class="mb-4">Welcome back, <?php echo htmlspecialchars($user_name); ?> 👋</h4>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="category-card">
+                                <i class="bi bi-box-seam"></i>
+                                <p class="mb-0">Products</p>
+                                <h5>Manage</h5>
+                                <a href="products.php" class="stretched-link"></a>
                             </div>
                         </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">Orders</h5>
-                                <p class="card-text">View and manage customer orders, including bulk updates and returns.</p>
-                                <a href="orders.php" class="btn btn-primary">Go to Orders</a>
+                        <div class="col-md-6">
+                            <div class="category-card">
+                                <i class="bi bi-cart3"></i>
+                                <p class="mb-0">Orders</p>
+                                <h5>View</h5>
+                                <a href="orders.php" class="stretched-link"></a>
                             </div>
                         </div>
                     </div>
                 </div>
-
             </main>
         </div>
     </div>

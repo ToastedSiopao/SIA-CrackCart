@@ -1,6 +1,10 @@
-<!-- Desktop Sidebar -->
-<nav class="col-lg-2 d-none d-lg-block sidebar">
-    <div class="position-sticky">
+<!-- Off-canvas Sidebar for small screens -->
+<div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasSidebar" aria-labelledby="offcanvasSidebarLabel">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="offcanvasSidebarLabel">CrackCart Admin</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
         <ul class="nav flex-column">
             <li class="nav-item">
                 <a class="nav-link active" href="dashboard.php"><i class="bi bi-house-door"></i> Dashboard</a>
@@ -16,4 +20,4 @@
             </li>
         </ul>
     </div>
-</nav>
+</div>
