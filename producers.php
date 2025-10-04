@@ -18,7 +18,7 @@ include("../db_connect.php");
   <title>CrackCart Producers</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-  <link href="dashboard-styles.css?v=2.7" rel="stylesheet">
+  <link href="dashboard-styles.css?v=2.8" rel="stylesheet">
 </head>
 <body>
   <?php include("navbar.php"); ?>
@@ -50,14 +50,19 @@ include("../db_connect.php");
         <form id="orderForm">
           <input type="hidden" id="producerId" name="producer_id">
           <div class="mb-3">
-            <label for="productSelect" class="form-label">Egg Type</label>
+            <label for="productSelect" class="form-label">Egg Size & Price</label>
+            <p class="form-text mt-0 mb-2">Prices are based on a standard 30-piece tray.</p>
             <select class="form-select" id="productSelect" name="product" required>
               <!-- Product options will be populated here -->
             </select>
           </div>
           <div class="mb-3">
-            <label for="quantityInput" class="form-label">Quantity (Trays)</label>
+            <label for="quantityInput" class="form-label">Quantity of Trays</label>
             <input type="number" class="form-control" id="quantityInput" name="quantity" min="1" value="1" required>
+          </div>
+           <div class="mb-3">
+            <label for="notesInput" class="form-label">Special Instructions (Optional)</label>
+            <textarea class="form-control" id="notesInput" name="notes" rows="2" placeholder="e.g., Please select the freshest batch available."></textarea>
           </div>
           <button type="submit" class="btn btn-warning w-100">Add to Cart</button>
         </form>
@@ -109,7 +114,7 @@ include("../db_connect.php");
                       ${producer.products.map(product => `
                         <div class="d-flex justify-content-between">
                           <span class="small">${product.type}</span>
-                          <span class="price-tag small">₱${product.price.toFixed(2)} / tray</span>
+                          <span class="price-tag small">₱${product.price.toFixed(2)} / 30-pc tray</span>
                         </div>
                       `).join('')}
                     </div>
@@ -143,7 +148,7 @@ include("../db_connect.php");
           products.forEach(product => {
             const option = document.createElement('option');
             option.value = JSON.stringify({ type: product.type, price: product.price });
-            option.textContent = `${product.type} - ₱${product.price.toFixed(2)}`;
+            option.textContent = `${product.type} Eggs - ₱${product.price.toFixed(2)} / tray`;
             productSelect.appendChild(option);
           });
           
@@ -157,13 +162,15 @@ include("../db_connect.php");
 
         const producerId = producerIdInput.value;
         const quantity = document.getElementById('quantityInput').value;
+        const notes = document.getElementById('notesInput').value;
         const selectedProduct = JSON.parse(productSelect.value);
 
         const cartData = {
           producer_id: producerId,
           product_type: selectedProduct.type,
           price: selectedProduct.price,
-          quantity: parseInt(quantity)
+          quantity: parseInt(quantity),
+          notes: notes
         };
 
         fetch('api/cart.php', {
