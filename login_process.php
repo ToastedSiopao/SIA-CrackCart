@@ -95,7 +95,16 @@ try {
 
             if ($_SESSION['login_attempts'] >= $max_attempts) {
                 $_SESSION['lockout_time'] = time() + $lockout_time;
-                unset($_SESSION['login_attempts']); // Reset for next lockout cycle
+                unset($_SESSION['login_attempts']); 
+
+                // --- Create Notification for Account Lockout ---
+                $notification_message = "Your account has been locked for 5 minutes due to too many failed login attempts.";
+                $notification_type = 'SECURITY';
+                $insert_notification_stmt = $conn->prepare("INSERT INTO NOTIFICATION (USER_ID, MESSAGE, TYPE) VALUES (?, ?, ?)");
+                $insert_notification_stmt->bind_param("iss", $user['USER_ID'], $notification_message, $notification_type);
+                $insert_notification_stmt->execute();
+
+
                 http_response_code(429);
                 echo json_encode(['error' => ['message' => "Too many failed attempts. You are locked out for 5 minutes."]]);
             } else {
