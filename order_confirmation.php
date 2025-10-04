@@ -141,7 +141,7 @@ if (!$access_token) {
       fetch(`api/order_details.php?order_id=${orderId}`)
         .then(response => response.json())
         .then(result => {
-          if (result..status === 'success') {
+          if (result.status === 'success') {
             renderOrderDetails(result.data);
           } else {
             confirmationContainer.innerHTML = `<div class="alert alert-danger">Error: ${result.message}</div>`;
