@@ -41,10 +41,22 @@ try {
     $order = $result->fetch_assoc();
     $current_status = strtolower($order['status']);
 
-    // MODIFIED: Allow cancellation for 'pending', 'processing', or 'paid' statuses.
     $cancellable_statuses = ['pending', 'processing', 'paid'];
     if (!in_array($current_status, $cancellable_statuses)) {
         throw new Exception("This order cannot be cancelled as its status is '{$current_status}'.", 400);
+    }
+
+    // --- RETURN STOCK ---
+    $stmt_get_items = $conn->prepare("SELECT producer_id, product_type, quantity FROM product_order_items WHERE order_id = ?");
+    $stmt_get_items->bind_param("i", $order_id);
+    $stmt_get_items->execute();
+    $order_items = $stmt_get_items->get_result();
+
+    $stmt_update_stock = $conn->prepare("UPDATE PRICE SET STOCK = STOCK + ? WHERE PRODUCER_ID = ? AND TYPE = ?");
+
+    while ($item = $order_items->fetch_assoc()) {
+        $stmt_update_stock->bind_param("iis", $item['quantity'], $item['producer_id'], $item['product_type']);
+        $stmt_update_stock->execute();
     }
 
     // Update the order status to 'cancelled'
@@ -57,7 +69,6 @@ try {
     $update_stmt->close();
 
     // --- Fraud Detection Logic ---
-    // Count recent cancellations by this user
     $seven_days_ago = date('Y-m-d H:i:s', strtotime('-7 days'));
     $cancel_count_stmt = $conn->prepare("SELECT COUNT(*) as cancellation_count FROM product_orders WHERE user_id = ? AND status = 'cancelled' AND created_at >= ?");
     $cancel_count_stmt->bind_param("is", $user_id, $seven_days_ago);
@@ -67,7 +78,6 @@ try {
 
     $message = 'Order has been successfully cancelled.'; // Default message
 
-    // If the user has 3 or more cancellations in the last 7 days, lock their account
     if ($cancellations >= 3) {
         $lock_duration = 7; // Lock for 7 days
         $lock_expires_at = date('Y-m-d H:i:s', strtotime("+{$lock_duration} days"));
@@ -80,7 +90,6 @@ try {
         $message = 'Order has been successfully cancelled. Your account has been temporarily locked due to excessive cancellations.';
     }
     $cancel_count_stmt->close();
-    // --- End of Fraud Logic ---
 
     $conn->commit();
 

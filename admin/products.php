@@ -41,6 +41,8 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role
                                 <th>Producer</th>
                                 <th>Price</th>
                                 <th>Unit</th>
+                                <th>Status</th>
+                                <th>Stock</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -83,7 +85,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role
 
             const renderProducts = (products) => {
                 if (products.length === 0) {
-                    productsTableBody.innerHTML = '<tr><td colspan="6" class="text-center">No products found.</td></tr>';
+                    productsTableBody.innerHTML = '<tr><td colspan="8" class="text-center">No products found.</td></tr>';
                     return;
                 }
 
@@ -94,6 +96,8 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role
                         <td>${product.PRODUCER_NAME}</td>
                         <td>₱${parseFloat(product.PRICE).toFixed(2)}</td>
                         <td>${product.PER}</td>
+                        <td>${product.STATUS}</td>
+                        <td>${product.STOCK}</td>
                         <td>
                             <a href="product_form.php?id=${product.PRICE_ID}" class="btn btn-sm btn-primary">Edit</a>
                             <button class="btn btn-sm btn-danger delete-btn" data-id="${product.PRICE_ID}">Delete</button>

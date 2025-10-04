@@ -5,9 +5,10 @@ header("Access-Control-Allow-Origin: *"); // Allow requests from any origin
 include("../db_connect.php");
 
 $producers = [];
-$sql = "SELECT p.PRODUCER_ID, p.NAME, p.LOCATION, p.LOGO, p.URL, pr.TYPE, pr.PRICE, pr.PER 
+$sql = "SELECT p.PRODUCER_ID, p.NAME, p.LOCATION, p.LOGO, p.URL, pr.TYPE, pr.PRICE, pr.PER, pr.STOCK, pr.STATUS
         FROM PRODUCER p 
         LEFT JOIN PRICE pr ON p.PRODUCER_ID = pr.PRODUCER_ID
+        WHERE pr.STATUS = 'active'
         ORDER BY p.NAME, pr.TYPE";
 
 $result = $conn->query($sql);
@@ -35,7 +36,9 @@ if ($result && $result->num_rows > 0) {
             $producers[$producer_id]['products'][] = [
                 'type' => $row['TYPE'],
                 'price' => $price_value,
-                'per' => $row['PER']
+                'per' => $row['PER'],
+                'stock' => $row['STOCK'],
+                'status' => $row['STATUS']
             ];
         }
     }

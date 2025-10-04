@@ -7,13 +7,15 @@ $product = [
     'TYPE' => '', 
     'PRODUCER_NAME' => '', 
     'PRICE' => '', 
-    'PER' => ''
+    'PER' => '',
+    'STATUS' => 'active',
+    'STOCK' => 0
 ];
 $page_title = "Add New Product";
 
 if ($price_id > 0) {
     $page_title = "Edit Product";
-    $stmt = $conn->prepare("SELECT * FROM PRICING WHERE PRICE_ID = ?");
+    $stmt = $conn->prepare("SELECT * FROM PRICE WHERE PRICE_ID = ?");
     $stmt->bind_param("i", $price_id);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -48,14 +50,27 @@ $conn->close();
                 </div>
                 
                 <div class="row">
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-4 mb-3">
                         <label for="price" class="form-label">Price</label>
                         <input type="number" class="form-control" id="price" name="price" step="0.01" value="<?php echo htmlspecialchars($product['PRICE']); ?>" required>
                     </div>
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-4 mb-3">
                         <label for="per" class="form-label">Unit (e.g., kg, piece)</label>
                         <input type="text" class="form-control" id="per" name="per" value="<?php echo htmlspecialchars($product['PER']); ?>" required>
                     </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="stock" class="form-label">Stock</label>
+                        <input type="number" class="form-control" id="stock" name="stock" value="<?php echo htmlspecialchars($product['STOCK']); ?>" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-control" id="status" name="status" required>
+                        <option value="active" <?php echo ($product['STATUS'] == 'active') ? 'selected' : ''; ?>>Active</option>
+                        <option value="inactive" <?php echo ($product['STATUS'] == 'inactive') ? 'selected' : ''; ?>>Inactive</option>
+                        <option value="out of stock" <?php echo ($product['STATUS'] == 'out of stock') ? 'selected' : ''; ?>>Out of Stock</option>
+                    </select>
                 </div>
 
                 <button type="submit" class="btn btn-primary">Save Product</button>

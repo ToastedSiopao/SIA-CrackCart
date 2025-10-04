@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: sql101.infinityfree.com
--- Generation Time: Oct 04, 2025 at 12:41 PM
+-- Generation Time: Oct 04, 2025 at 01:19 PM
 -- Server version: 11.4.7-MariaDB
 -- PHP Version: 7.2.22
 
@@ -199,27 +199,29 @@ CREATE TABLE `PRICE` (
   `PRODUCER_ID` int(11) DEFAULT NULL,
   `TYPE` varchar(255) DEFAULT NULL,
   `PRICE` varchar(255) DEFAULT NULL,
-  `PER` varchar(255) DEFAULT NULL
+  `PER` varchar(255) DEFAULT NULL,
+  `STATUS` varchar(255) NOT NULL DEFAULT 'active',
+  `STOCK` int(11) NOT NULL DEFAULT 0
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 --
 -- Dumping data for table `PRICE`
 --
 
-INSERT INTO `PRICE` (`PRICE_ID`, `PRODUCER_ID`, `TYPE`, `PRICE`, `PER`) VALUES
-(1, 1, 'Standard Eggs', '210.00', 'per tray'),
-(2, 1, 'Jumbo Eggs', '240.00', 'per tray'),
-(3, 2, 'Native Eggs', '280.00', 'per tray'),
-(4, 2, 'Free-Range Eggs', '300.00', 'per tray'),
-(5, 3, 'Golden Yolks', '220.00', 'per tray'),
-(6, 4, 'Fresh Brown Eggs', '215.00', 'per tray'),
-(7, 4, 'Pidan/Century Eggs', '350.00', 'per tray'),
-(8, 5, 'Pasture-Raised Eggs', '320.00', 'per tray'),
-(9, 6, 'White Eggs (Medium)', '190.00', 'per tray'),
-(10, 6, 'White Eggs (Large)', '205.00', 'per tray'),
-(11, 7, 'Salted Eggs', '250.00', 'per tray'),
-(12, 8, 'Itik/Ducks Eggs', '290.00', 'per tray'),
-(13, 5, 'Test Egg', '210', 'per tray');
+INSERT INTO `PRICE` (`PRICE_ID`, `PRODUCER_ID`, `TYPE`, `PRICE`, `PER`, `STATUS`, `STOCK`) VALUES
+(1, 1, 'Standard Eggs', '210.00', 'per tray', 'active', 0),
+(2, 1, 'Jumbo Eggs', '240.00', 'per tray', 'active', 0),
+(3, 2, 'Native Eggs', '280.00', 'per tray', 'active', 0),
+(4, 2, 'Free-Range Eggs', '300.00', 'per tray', 'active', 0),
+(5, 3, 'Golden Yolks', '220.00', 'per tray', 'active', 0),
+(6, 4, 'Fresh Brown Eggs', '215.00', 'per tray', 'active', 0),
+(7, 4, 'Pidan/Century Eggs', '350.00', 'per tray', 'active', 0),
+(8, 5, 'Pasture-Raised Eggs', '320.00', 'per tray', 'active', 0),
+(9, 6, 'White Eggs (Medium)', '190.00', 'per tray', 'active', 0),
+(10, 6, 'White Eggs (Large)', '205.00', 'per tray', 'active', 0),
+(11, 7, 'Salted Eggs', '250.00', 'per tray', 'active', 0),
+(12, 8, 'Itik/Ducks Eggs', '290.00', 'per tray', 'active', 0),
+(13, 5, 'Test Egg', '210', 'per tray', 'active', 0);
 
 -- --------------------------------------------------------
 

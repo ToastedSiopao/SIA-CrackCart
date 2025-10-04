@@ -94,6 +94,24 @@ $transaction_id = $capture_data['purchase_units'][0]['payments']['captures'][0][
 
 $conn->begin_transaction();
 try {
+    // --- STOCK VALIDATION AND UPDATE ---
+    $stmt_check_stock = $conn->prepare("SELECT STOCK FROM PRICE WHERE PRODUCER_ID = ? AND TYPE = ? FOR UPDATE");
+    $stmt_update_stock = $conn->prepare("UPDATE PRICE SET STOCK = STOCK - ? WHERE PRODUCER_ID = ? AND TYPE = ?");
+
+    foreach ($validated_cart as $item) {
+        $stmt_check_stock->bind_param("is", $item['producer_id'], $item['product_type']);
+        $stmt_check_stock->execute();
+        $result = $stmt_check_stock->get_result();
+        $product_stock = $result->fetch_assoc();
+
+        if (!$product_stock || $product_stock['STOCK'] < $item['quantity']) {
+            throw new Exception("Insufficient stock for product type: " . $item['product_type'] . " after payment was captured. Order cannot be fulfilled.");
+        }
+
+        $stmt_update_stock->bind_param("iis", $item['quantity'], $item['producer_id'], $item['product_type']);
+        $stmt_update_stock->execute();
+    }
+
     // 1. Create a record in the Payment table
     $stmt_payment = $conn->prepare("INSERT INTO Payment (amount, currency, method, status, transaction_id) VALUES (?, 'PHP', 'paypal', 'completed', ?)");
     $stmt_payment->bind_param("ds", $validated_total, $transaction_id);

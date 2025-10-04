@@ -52,6 +52,24 @@ foreach ($product_cart as $item) {
 $conn->begin_transaction();
 
 try {
+    // CHECK STOCK AND UPDATE
+    $stmt_check_stock = $conn->prepare("SELECT STOCK FROM PRICE WHERE PRODUCER_ID = ? AND TYPE = ? FOR UPDATE");
+    $stmt_update_stock = $conn->prepare("UPDATE PRICE SET STOCK = STOCK - ? WHERE PRODUCER_ID = ? AND TYPE = ?");
+
+    foreach ($product_cart as $item) {
+        $stmt_check_stock->bind_param("is", $item['producer_id'], $item['product_type']);
+        $stmt_check_stock->execute();
+        $result = $stmt_check_stock->get_result();
+        $product = $result->fetch_assoc();
+
+        if (!$product || $product['STOCK'] < $item['quantity']) {
+            throw new Exception("Insufficient stock for product: " . $item['product_type']);
+        }
+
+        $stmt_update_stock->bind_param("iis", $item['quantity'], $item['producer_id'], $item['product_type']);
+        $stmt_update_stock->execute();
+    }
+
     // Insert into product_orders table
     $stmt = $conn->prepare("INSERT INTO product_orders (user_id, total_amount, status, shipping_address_id, payment_method) VALUES (?, ?, ?, ?, ?)");
     $stmt->bind_param("idsis", $user_id, $subtotal, $order_status, $shipping_address_id, $payment_method);

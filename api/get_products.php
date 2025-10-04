@@ -9,7 +9,7 @@ if ($conn->connect_error) {
     exit();
 }
 
-$query = "SELECT PRICE_ID, TYPE, PRODUCER_NAME, PRICE, PER FROM PRICING ORDER BY TYPE";
+$query = "SELECT PRICE_ID, TYPE, PRODUCER_NAME, PRICE, PER, STATUS, STOCK FROM PRICE ORDER BY TYPE";
 $result = $conn->query($query);
 
 if ($result) {

@@ -12,7 +12,7 @@ $user_name = $_SESSION['user_name'];
   <title>CrackCart Producers</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-  <link href="dashboard-styles.css?v=2.8" rel="stylesheet">
+  <link href="dashboard-styles.css?v=2.9" rel="stylesheet">
 </head>
 <body>
   <?php include("navbar.php"); ?>
@@ -88,6 +88,7 @@ $user_name = $_SESSION['user_name'];
       const orderModalLabel = document.getElementById('orderModalLabel');
       const productSelect = document.getElementById('productSelect');
       const producerIdInput = document.getElementById('producerId');
+      const quantityInput = document.getElementById('quantityInput');
       const orderForm = document.getElementById('orderForm');
 
       // Fetch producers from the API
@@ -97,6 +98,7 @@ $user_name = $_SESSION['user_name'];
           if (data.status === 'success') {
             producersContainer.innerHTML = '' // Clear existing content
             data.data.forEach(producer => {
+              const areAllProductsOutOfStock = producer.products.every(p => p.stock <= 0);
               const producerCard = `
                 <div class="col-12 col-md-4 col-lg-3 producer-item">
                   <div class="producer-card">
@@ -106,17 +108,21 @@ $user_name = $_SESSION['user_name'];
                     <div class="price-list mb-3">
                       <h6 class="fw-bold mb-2">Available Products:</h6>
                       ${producer.products.map(product => `
-                        <div class="d-flex justify-content-between">
+                        <div class="d-flex justify-content-between ${product.stock > 0 ? '' : 'text-muted'}">
                           <span class="small">${product.type}</span>
-                          <span class="price-tag small">₱${product.price.toFixed(2)} / 30-pc tray</span>
+                           <div class="d-flex flex-column align-items-end">
+                                <span class="price-tag small">₱${product.price.toFixed(2)} / 30-pc tray</span>
+                                ${product.stock > 0 ? `<span class="small text-success">In Stock: ${product.stock}</span>` : '<span class="small text-danger">Out of Stock</span>'}
+                            </div>
                         </div>
                       `).join('')}
                     </div>
                     <button class="btn btn-warning order-btn" 
                             data-producer-id="${producer.producer_id}"
                             data-producer-name="${producer.name}"
-                            data-products='${JSON.stringify(producer.products)}'>
-                      Order From Here
+                            data-products='${JSON.stringify(producer.products)}'
+                            ${areAllProductsOutOfStock ? 'disabled' : ''}>
+                      ${areAllProductsOutOfStock ? 'Out of Stock' : 'Order From Here'}
                     </button>
                   </div>
                 </div>
@@ -141,11 +147,23 @@ $user_name = $_SESSION['user_name'];
           productSelect.innerHTML = ''; // Clear previous options
           products.forEach(product => {
             const option = document.createElement('option');
-            option.value = JSON.stringify({ type: product.type, price: product.price });
-            option.textContent = `${product.type} Eggs - ₱${product.price.toFixed(2)} / tray`;
+            option.value = JSON.stringify({ type: product.type, price: product.price, stock: product.stock });
+            option.textContent = `${product.type} Eggs - ₱${product.price.toFixed(2)} / tray (Stock: ${product.stock})`;
+            if (product.stock <= 0) {
+                option.disabled = true;
+            }
             productSelect.appendChild(option);
           });
           
+          // Add an event listener to the product select to update the quantity input's max value
+            productSelect.addEventListener('change', function() {
+                const selectedProduct = JSON.parse(this.value);
+                quantityInput.max = selectedProduct.stock;
+            });
+
+            // Trigger the change event to set the initial max value
+            productSelect.dispatchEvent(new Event('change'));
+
           orderModal.show();
         }
       });
@@ -158,6 +176,11 @@ $user_name = $_SESSION['user_name'];
         const quantity = document.getElementById('quantityInput').value;
         const notes = document.getElementById('notesInput').value;
         const selectedProduct = JSON.parse(productSelect.value);
+        
+        if (parseInt(quantity) > selectedProduct.stock) {
+            alert('You cannot order more than the available stock.');
+            return;
+        }
 
         const cartData = {
           producer_id: producerId,

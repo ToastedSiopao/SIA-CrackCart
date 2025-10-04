@@ -15,16 +15,18 @@ $type = trim($_POST['type'] ?? '');
 $producer_name = trim($_POST['producer_name'] ?? '');
 $price = filter_input(INPUT_POST, 'price', FILTER_VALIDATE_FLOAT);
 $per = trim($_POST['per'] ?? '');
+$status = trim($_POST['status'] ?? 'active');
+$stock = filter_input(INPUT_POST, 'stock', FILTER_VALIDATE_INT);
 
-if (!$price_id || empty($type) || empty($producer_name) || $price === false || empty($per)) {
+if (!$price_id || empty($type) || empty($producer_name) || $price === false || empty($per) || $stock === false) {
     http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Invalid input. Please check all fields.']);
     exit();
 }
 
 try {
-    $stmt = $conn->prepare("UPDATE PRICING SET TYPE = ?, PRODUCER_NAME = ?, PRICE = ?, PER = ? WHERE PRICE_ID = ?");
-    $stmt->bind_param("ssdsi", $type, $producer_name, $price, $per, $price_id);
+    $stmt = $conn->prepare("UPDATE PRICE SET TYPE = ?, PRODUCER_NAME = ?, PRICE = ?, PER = ?, STATUS = ?, STOCK = ? WHERE PRICE_ID = ?");
+    $stmt->bind_param("ssdssii", $type, $producer_name, $price, $per, $status, $stock, $price_id);
     
     if ($stmt->execute()) {
         if ($stmt->affected_rows > 0) {
