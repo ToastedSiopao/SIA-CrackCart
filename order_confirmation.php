@@ -1,5 +1,8 @@
 <?php
 session_start();
+include('api/paypal_helpers.php');
+include('api/paypal_config.php');
+
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit();
@@ -9,6 +12,12 @@ $order_id = isset($_GET['order_id']) ? intval($_GET['order_id']) : 0;
 if ($order_id === 0) {
     header("Location: producers.php");
     exit();
+}
+
+$access_token = get_paypal_access_token(PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET);
+
+if (!$access_token) {
+    die("Could not retrieve PayPal access token.");
 }
 ?>
 <!DOCTYPE html>
@@ -132,7 +141,7 @@ if ($order_id === 0) {
       fetch(`api/order_details.php?order_id=${orderId}`)
         .then(response => response.json())
         .then(result => {
-          if (result.status === 'success') {
+          if (result..status === 'success') {
             renderOrderDetails(result.data);
           } else {
             confirmationContainer.innerHTML = `<div class="alert alert-danger">Error: ${result.message}</div>`;
