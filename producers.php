@@ -32,64 +32,10 @@ $user_name = $_SESSION['user_name'];
     </div>
   </div>
 
-  <!-- Order Modal -->
-<div class="modal fade" id="orderModal" tabindex="-1" aria-labelledby="orderModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="orderModalLabel">Order from [Producer Name]</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <form id="orderForm">
-          <input type="hidden" id="producerId" name="producer_id">
-          <div class="mb-3">
-            <label for="productSelect" class="form-label">Egg Size & Price</label>
-            <p class="form-text mt-0 mb-2">Prices are based on a standard 30-piece tray.</p>
-            <select class="form-select" id="productSelect" name="product" required>
-              <!-- Product options will be populated here -->
-            </select>
-          </div>
-          <div class="mb-3">
-            <label for="quantityInput" class="form-label">Quantity of Trays</label>
-            <input type="number" class="form-control" id="quantityInput" name="quantity" min="1" value="1" required>
-          </div>
-           <div class="mb-3">
-            <label for="notesInput" class="form-label">Special Instructions (Optional)</label>
-            <textarea class="form-control" id="notesInput" name="notes" rows="2" placeholder="e.g., Please select the freshest batch available."></textarea>
-          </div>
-          <button type="submit" class="btn btn-warning w-100">Add to Cart</button>
-        </form>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-  <!-- Toast for notifications -->
-  <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100">
-    <div id="cartToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-      <div class="toast-header">
-        <strong class="me-auto">CrackCart</strong>
-        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-      </div>
-      <div class="toast-body">
-        Item added to cart successfully!
-      </div>
-    </div>
-  </div>
-
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       const producersContainer = document.getElementById('producersContainer');
-      const cartToast = new bootstrap.Toast(document.getElementById('cartToast'));
-      const orderModal = new bootstrap.Modal(document.getElementById('orderModal'));
-      const orderModalLabel = document.getElementById('orderModalLabel');
-      const productSelect = document.getElementById('productSelect');
-      const producerIdInput = document.getElementById('producerId');
-      const quantityInput = document.getElementById('quantityInput');
-      const orderForm = document.getElementById('orderForm');
 
       // Fetch producers from the API
       fetch('api/producers.php')
@@ -119,8 +65,6 @@ $user_name = $_SESSION['user_name'];
                     </div>
                     <button class="btn btn-warning order-btn" 
                             data-producer-id="${producer.producer_id}"
-                            data-producer-name="${producer.name}"
-                            data-products='${JSON.stringify(producer.products)}'
                             ${areAllProductsOutOfStock ? 'disabled' : ''}>
                       ${areAllProductsOutOfStock ? 'Out of Stock' : 'Order From Here'}
                     </button>
@@ -135,75 +79,9 @@ $user_name = $_SESSION['user_name'];
       // Event delegation for "Order From Here" buttons
       producersContainer.addEventListener('click', function(e) {
         if (e.target.classList.contains('order-btn')) {
-          const button = e.target;
-          const producerId = button.dataset.producerId;
-          const producerName = button.dataset.producerName;
-          const products = JSON.parse(button.dataset.products);
-
-          // Populate and show the modal
-          orderModalLabel.textContent = `Order from ${producerName}`;
-          producerIdInput.value = producerId;
-          
-          productSelect.innerHTML = ''; // Clear previous options
-          products.forEach(product => {
-            const option = document.createElement('option');
-            option.value = JSON.stringify({ type: product.type, price: product.price, stock: product.stock });
-            option.textContent = `${product.type} Eggs - ₱${product.price.toFixed(2)} / tray (Stock: ${product.stock})`;
-            if (product.stock <= 0) {
-                option.disabled = true;
-            }
-            productSelect.appendChild(option);
-          });
-          
-          // Add an event listener to the product select to update the quantity input's max value
-            productSelect.addEventListener('change', function() {
-                const selectedProduct = JSON.parse(this.value);
-                quantityInput.max = selectedProduct.stock;
-            });
-
-            // Trigger the change event to set the initial max value
-            productSelect.dispatchEvent(new Event('change'));
-
-          orderModal.show();
+          const producerId = e.target.dataset.producerId;
+          window.location.href = `order.php?producer_id=${producerId}`;
         }
-      });
-
-      // Handle form submission inside the modal
-      orderForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-
-        const producerId = producerIdInput.value;
-        const quantity = document.getElementById('quantityInput').value;
-        const notes = document.getElementById('notesInput').value;
-        const selectedProduct = JSON.parse(productSelect.value);
-        
-        if (parseInt(quantity) > selectedProduct.stock) {
-            alert('You cannot order more than the available stock.');
-            return;
-        }
-
-        const cartData = {
-          producer_id: producerId,
-          product_type: selectedProduct.type,
-          price: selectedProduct.price,
-          quantity: parseInt(quantity),
-          notes: notes
-        };
-
-        fetch('api/cart.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(cartData)
-        })
-        .then(response => response.json())
-        .then(data => {
-          if (data.status === 'success') {
-            orderModal.hide();
-            cartToast.show();
-          } else {
-            alert('Error: ' + data.message);
-          }
-        });
       });
     });
   </script>
