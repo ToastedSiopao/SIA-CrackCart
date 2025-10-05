@@ -10,7 +10,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 
 // Fetch all users (excluding the current admin to prevent self-modification)
 $current_admin_id = $_SESSION['user_id'];
-$query = "SELECT id, user_name, email, status, role, created_at FROM users WHERE id != ? ORDER BY created_at DESC";
+$query = "SELECT USER_ID, CONCAT(FIRST_NAME, ' ', LAST_NAME) as user_name, EMAIL, ACCOUNT_STATUS, ROLE, CREATED_AT FROM USER WHERE USER_ID != ? ORDER BY CREATED_AT DESC";
 $stmt = $conn->prepare($query);
 $stmt->bind_param("i", $current_admin_id);
 $stmt->execute();
@@ -69,24 +69,24 @@ $conn->close();
                                         <tr><td colspan="6" class="text-center">No other user accounts found.</td></tr>
                                     <?php else: ?>
                                         <?php foreach ($users as $user): ?>
-                                            <tr id="user-row-<?php echo $user['id']; ?>">
-                                                <td><?php echo htmlspecialchars($user['id']); ?></td>
+                                            <tr id="user-row-<?php echo $user['USER_ID']; ?>">
+                                                <td><?php echo htmlspecialchars($user['USER_ID']); ?></td>
                                                 <td><?php echo htmlspecialchars($user['user_name']); ?></td>
-                                                <td><?php echo htmlspecialchars($user['email']); ?></td>
+                                                <td><?php echo htmlspecialchars($user['EMAIL']); ?></td>
                                                 <td>
-                                                    <span class="badge <?php echo $user['status'] === 'LOCKED' ? 'bg-danger' : 'bg-success'; ?>" id="status-badge-<?php echo $user['id']; ?>">
-                                                        <?php echo htmlspecialchars($user['status']); ?>
+                                                    <span class="badge <?php echo $user['ACCOUNT_STATUS'] === 'LOCKED' ? 'bg-danger' : 'bg-success'; ?>" id="status-badge-<?php echo $user['USER_ID']; ?>">
+                                                        <?php echo htmlspecialchars($user['ACCOUNT_STATUS']); ?>
                                                     </span>
                                                 </td>
                                                 <td>
-                                                    <select class="form-select form-select-sm" onchange="updateRole(<?php echo $user['id']; ?>, this.value)" id="role-select-<?php echo $user['id']; ?>">
-                                                        <option value="customer" <?php echo $user['role'] === 'customer' ? 'selected' : ''; ?>>Customer</option>
-                                                        <option value="admin" <?php echo $user['role'] === 'admin' ? 'selected' : ''; ?>>Admin</option>
+                                                    <select class="form-select form-select-sm" onchange="updateRole(<?php echo $user['USER_ID']; ?>, this.value)" id="role-select-<?php echo $user['USER_ID']; ?>">
+                                                        <option value="customer" <?php echo $user['ROLE'] === 'customer' ? 'selected' : ''; ?>>Customer</option>
+                                                        <option value="admin" <?php echo $user['ROLE'] === 'admin' ? 'selected' : ''; ?>>Admin</option>
                                                     </select>
                                                 </td>
                                                 <td>
-                                                    <?php if ($user['status'] === 'LOCKED'): ?>
-                                                        <button class="btn btn-sm btn-outline-success" id="unlock-btn-<?php echo $user['id']; ?>" onclick="unlockUser(<?php echo $user['id']; ?>)">
+                                                    <?php if ($user['ACCOUNT_STATUS'] === 'LOCKED'): ?>
+                                                        <button class="btn btn-sm btn-outline-success" id="unlock-btn-<?php echo $user['USER_ID']; ?>" onclick="unlockUser(<?php echo $user['USER_ID']; ?>)">
                                                             <i class="bi bi-unlock"></i> Unlock
                                                         </button>
                                                     <?php else: ?>

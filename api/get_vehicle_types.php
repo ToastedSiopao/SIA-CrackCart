@@ -10,8 +10,8 @@ try {
                 type, 
                 MIN(capacity_trays) as min_capacity, 
                 MAX(capacity_trays) as max_capacity 
-              FROM vehicles 
-              WHERE status = 'standby'
+              FROM Vehicle 
+              WHERE status = 'available'
               GROUP BY type
               ORDER BY MIN(capacity_trays)";
 

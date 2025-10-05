@@ -8,10 +8,10 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 }
 
 // Fetch all orders with customer and vehicle information
-$query = "SELECT po.order_id, u.user_name, po.order_date, po.total_price, po.status, v.vehicle_name 
+$query = "SELECT po.order_id, CONCAT(u.FIRST_NAME, ' ', u.LAST_NAME) as user_name, po.order_date, po.total_amount, po.status, v.type as vehicle_name 
           FROM product_orders po
-          JOIN users u ON po.user_id = u.id
-          LEFT JOIN vehicles v ON po.vehicle_id = v.id
+          JOIN USER u ON po.user_id = u.USER_ID
+          LEFT JOIN Vehicle v ON po.vehicle_id = v.vehicle_id
           ORDER BY po.order_date DESC";
 $result = $conn->query($query);
 
@@ -23,7 +23,7 @@ if ($result->num_rows > 0) {
 }
 
 // Fetch available vehicles
-$vehicles_result = $conn->query("SELECT id, vehicle_name, license_plate FROM vehicles WHERE status = 'standby'");
+$vehicles_result = $conn->query("SELECT vehicle_id, type, plate_no FROM Vehicle WHERE status = 'available'");
 $available_vehicles = [];
 if ($vehicles_result->num_rows > 0) {
     while($row = $vehicles_result->fetch_assoc()) {
@@ -85,7 +85,7 @@ $conn->close();
                                                 <td>#<?php echo htmlspecialchars($order['order_id']); ?></td>
                                                 <td><?php echo htmlspecialchars($order['user_name']); ?></td>
                                                 <td><?php echo date("F j, Y, g:i a", strtotime($order['order_date'])); ?></td>
-                                                <td>$<?php echo number_format($order['total_price'], 2); ?></td>
+                                                <td>$<?php echo number_format($order['total_amount'], 2); ?></td>
                                                 <td>
                                                     <span class="badge rounded-pill <?php echo getStatusClass($order['status']); ?> status-badge" id="status-<?php echo $order['order_id']; ?>">
                                                         <?php echo htmlspecialchars($order['status']); ?>
@@ -146,8 +146,8 @@ $conn->close();
                     <option>No vehicles available</option>
                 <?php else: ?>
                     <?php foreach ($available_vehicles as $vehicle): ?>
-                        <option value="<?php echo $vehicle['id']; ?>">
-                            <?php echo htmlspecialchars($vehicle['vehicle_name'] . ' (' . $vehicle['license_plate'] . ')'); ?>
+                        <option value="<?php echo $vehicle['vehicle_id']; ?>">
+                            <?php echo htmlspecialchars($vehicle['type'] . ' (' . $vehicle['plate_no'] . ')'); ?>
                         </option>
                     <?php endforeach; ?>
                 <?php endif; ?>
