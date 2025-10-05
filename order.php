@@ -1,6 +1,7 @@
 <?php
 require_once 'session_handler.php';
 
+// Get producer ID from URL, redirect if not set
 if (!isset($_GET['producer_id'])) {
     header('Location: producers.php');
     exit;
@@ -12,10 +13,73 @@ $producer_id = $_GET['producer_id'];
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Order from Producer</title>
+  <title>Order from Producer - CrackCart</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-  <link href="order-styles.css?v=1.2" rel="stylesheet"> <!-- version bumped -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="dashboard-styles.css?v=3.0" rel="stylesheet">
+  <style>
+    .producer-logo-large {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border: 2px solid #ffc107;
+    }
+    .form-label.fw-bold {
+        font-weight: 500 !important;
+        margin-bottom: 0.5rem;
+    }
+    .egg-option-card .form-check-label {
+        display: block;
+        padding: 1rem;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        cursor: pointer;
+        transition: border-color .15s ease-in-out, background-color .15s ease-in-out;
+    }
+    .egg-option-card .form-check-input:checked + .form-check-label {
+        background-color: #fff9e0;
+        border-color: #ffc107;
+    }
+    .egg-option-card .form-check-label:hover {
+        background-color: #f8f9fa;
+    }
+    .vehicle-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 1rem;
+    }
+    .vehicle-option-card {
+        padding: 0;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+    }
+    .vehicle-option-card .form-check-input { display: none; }
+    .vehicle-option-card .form-check-label {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        width: 100%;
+        cursor: pointer;
+        border-radius: 0.375rem;
+    }
+    .vehicle-icon {
+        font-size: 2.5rem;
+        color: #495057;
+        margin-right: 1rem;
+        width: 40px;
+        text-align: center;
+    }
+    .vehicle-details { display: flex; flex-direction: column; line-height: 1.3; }
+    .vehicle-type { font-weight: bold; color: #212529; }
+    .vehicle-capacity { font-size: 0.85rem; color: #6c757d; }
+    .vehicle-option-card .form-check-input:checked + .form-check-label {
+        background-color: #fff3cd;
+        border-color: #ffc107;
+    }
+    .vehicle-option-card:hover { border-color: #ffc107; }
+  </style>
 </head>
 <body>
   <?php include("navbar.php"); ?>
@@ -25,17 +89,21 @@ $producer_id = $_GET['producer_id'];
       <?php include("sidebar.php"); ?>
       <?php include("offcanvas_sidebar.php"); ?>
 
-      <div class="col p-4">
-        <div id="producer-info"></div>
-        <div id="order-form-container"></div>
-      </div>
+      <main class="col p-4">
+        <div class="card shadow-sm border-0 p-4">
+            <div id="content-container">
+                <div id="producer-info-placeholder"></div>
+                <div id="order-form-container"></div>
+            </div>
+        </div>
+      </main>
     </div>
   </div>
   
   <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100">
-    <div id="cartToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+    <div id="cartToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true">
       <div class="toast-header"><strong class="me-auto">CrackCart</strong><button type="button" class="btn-close" data-bs-dismiss="toast"></button></div>
-      <div class="toast-body">Item added to cart successfully!</div>
+      <div class="toast-body"></div>
     </div>
   </div>
 
@@ -43,128 +111,134 @@ $producer_id = $_GET['producer_id'];
   <script>
 document.addEventListener('DOMContentLoaded', function() {
     const producerId = new URLSearchParams(window.location.search).get('producer_id');
-    const producerInfoContainer = document.getElementById('producer-info');
+    const producerInfoContainer = document.getElementById('producer-info-placeholder');
     const orderFormContainer = document.getElementById('order-form-container');
-    const cartToast = new bootstrap.Toast(document.getElementById('cartToast'));
+    const cartToastEl = document.getElementById('cartToast');
+    const cartToast = new bootstrap.Toast(cartToastEl);
+
+    if (!producerId) {
+        orderFormContainer.innerHTML = `<div class="alert alert-danger">No producer selected. Please <a href="producers.php" class="alert-link">go back</a> and select a producer.</div>`;
+        return;
+    }
 
     const getVehicleIcon = (type) => {
-        switch (type.toLowerCase()) {
-            case 'motorcycle': return 'bi-bicycle';
-            case 'car': return 'bi-car-front-fill';
-            case 'truck': return 'bi-truck';
-            default: return 'bi-question-circle';
-        }
+        const normalizedType = type ? type.toLowerCase() : '';
+        if (normalizedType.includes('motor')) return 'bi-bicycle';
+        if (normalizedType.includes('car')) return 'bi-car-front-fill';
+        if (normalizedType.includes('truck')) return 'bi-truck';
+        return 'bi-question-circle';
     };
 
     Promise.all([
         fetch(`api/producers.php?producer_id=${producerId}`).then(res => res.json()),
         fetch('api/get_vehicles.php').then(res => res.json())
     ]).then(([producerData, vehicleData]) => {
-        if (producerData.status !== 'success' || vehicleData.status !== 'success') {
-            throw new Error('Failed to load page data.');
+        if (producerData.status !== 'success' || !producerData.data) {
+             throw new Error(producerData.message || 'Could not load producer details.');
+        }
+        if (vehicleData.status !== 'success') {
+            throw new Error(vehicleData.message || 'Could not load vehicles.');
         }
 
         const producer = producerData.data;
         const vehicles = vehicleData.data;
 
-        // 1. Display Producer Info
         producerInfoContainer.innerHTML = `
-            <div class="producer-header">
-                <img src="${producer.logo}" alt="${producer.name}" class="producer-logo-large">
-                <div><h2 class="fw-bold">${producer.name}</h2><p class="text-muted">${producer.location}</p></div>
+            <div class="d-flex align-items-center mb-4">
+                <img src="${producer.logo}" alt="${producer.name}" class="producer-logo-large rounded-circle me-3">
+                <div>
+                    <h2 class="fw-bold mb-0">Order from ${producer.name}</h2>
+                    <p class="text-muted mb-0"><i class="bi bi-geo-alt-fill"></i> ${producer.location}</p>
+                </div>
             </div>`;
 
-        // 2. Build the main form structure
         orderFormContainer.innerHTML = `
-        <form id="orderForm" class="mt-4">
+        <form id="orderForm">
             <input type="hidden" name="producer_id" value="${producer.producer_id}">
             
             <div class="mb-4">
-                <label class="form-label fw-bold">1. Select Egg Size</label>
-                <div class="d-flex flex-wrap gap-2">${producer.products.map(p => `
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="egg_size" id="size_${p.type.toLowerCase()}" value='${JSON.stringify({ type: p.type, price: p.price, stock: p.stock })}' ${p.stock <= 0 ? 'disabled' : ''} required>
-                        <label class="form-check-label" for="size_${p.type.toLowerCase()}">
-                            ${p.type} <span class="text-muted">(₱${p.price.toFixed(2)})</span>
-                            ${p.stock > 0 ? `<span class="text-success">- In Stock: ${p.stock}</span>` : '<span class="text-danger">- Out of Stock</span>'}
+                <label class="form-label fw-bold">1. Select Egg Type</label>
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">${producer.products.map((p, index) => `
+                    <div class="col form-check egg-option-card">
+                        <input class="form-check-input" type="radio" name="product_details" id="product_${index}" value='${JSON.stringify({ type: p.type, price: p.price, stock: p.stock })}' ${p.stock <= 0 ? 'disabled' : ''} required>
+                        <label class="form-check-label" for="product_${index}">
+                            <span class="fw-bold">${p.type}</span><br>
+                            <span class="text-success">₱${p.price.toFixed(2)}</span> / ${p.per}<br>
+                            ${p.stock > 0 ? `<span class="text-muted small">Stock: ${p.stock} trays</span>` : '<span class="text-danger small">Out of Stock</span>'}
                         </label>
-                    </div>`).join('')}</div>
+                    </div>`).join('') || '<div class="col-12"><div class="alert alert-info">This producer has no products available.</div></div>'}</div>
             </div>
 
             <div class="row mb-4">
                 <div class="col-md-6 mb-3 mb-md-0">
-                    <label for="tray-size" class="form-label fw-bold">2. Select Tray Size</label>
-                    <select class="form-select" id="tray-size" name="tray_size">
-                        <option value="12">12 pcs</option>
-                        <option value="24">24 pcs</option>
-                        <option value="30" selected>30 pcs (Standard)</option>
-                    </select>
-                </div>
-                <div class="col-md-6">
-                    <label for="quantityInput" class="form-label fw-bold">3. Quantity of Trays</label>
+                    <label for="quantityInput" class="form-label fw-bold">2. Quantity of Trays</label>
                     <input type="number" class="form-control" id="quantityInput" name="quantity" min="1" value="1" required disabled>
+                </div>
+                 <div class="col-md-6">
+                    <label for="tray-size" class="form-label fw-bold">3. Tray Size (eggs per tray)</label>
+                    <select class="form-select" id="tray-size" name="tray_size">
+                        <option value="30" selected>30 (Standard)</option>
+                        <option value="12">12</option>
+                    </select>
                 </div>
             </div>
 
             <div class="mb-4">
                 <label class="form-label fw-bold">4. Select Vehicle for Delivery</label>
-                <div id="vehicle-options-container" class="vehicle-grid"></div>
+                <div class="vehicle-grid">${vehicles.map(v => `
+                    <div class="form-check vehicle-option-card">
+                        <input class="form-check-input" type="radio" name="vehicle_id" id="vehicle_${v.vehicle_id}" value="${v.vehicle_id}" required>
+                        <label class="form-check-label" for="vehicle_${v.vehicle_id}">
+                            <i class="bi ${getVehicleIcon(v.type)} vehicle-icon"></i>
+                            <div class="vehicle-details">
+                                <span class="vehicle-type">${v.type} (${v.plate_no})</span>
+                                <span class="vehicle-capacity">Capacity: ${v.capacity_trays} trays</span>
+                            </div>
+                        </label>
+                    </div>`).join('') || '<div class="alert alert-warning">No vehicles available for delivery at the moment.</div>'}</div>
             </div>
 
             <div class="mb-4">
-                <label for="notesInput" class="form-label fw-bold">5. Special Instructions (Optional)</label>
-                <textarea class="form-control" id="notesInput" name="notes" rows="3" placeholder="e.g., Please handle with care."></textarea>
+                <label for="notesInput" class="form-label fw-bold">5. Notes (Optional)</label>
+                <textarea class="form-control" id="notesInput" name="notes" rows="3" placeholder="Any special instructions for the producer or driver?"></textarea>
             </div>
 
             <button type="submit" class="btn btn-warning w-100 btn-lg mt-3">Add to Cart</button>
         </form>`;
 
-        // 3. Populate Vehicle Options
-        document.getElementById('vehicle-options-container').innerHTML = vehicles.map(v => `
-            <div class="form-check vehicle-option-card">
-                <input class="form-check-input" type="radio" name="vehicle_id" id="vehicle_${v.vehicle_id}" value="${v.vehicle_id}" required>
-                <label class="form-check-label" for="vehicle_${v.vehicle_id}">
-                    <i class="bi ${getVehicleIcon(v.type)} vehicle-icon"></i>
-                    <div class="vehicle-details">
-                        <span class="vehicle-type">${v.type} (${v.plate_no})</span>
-                        <span class="vehicle-capacity">Capacity: ${v.capacity_trays} trays</span>
-                    </div>
-                </label>
-            </div>`).join('');
-
-        // 4. Add Event Listeners
         const quantityInput = document.getElementById('quantityInput');
-        document.querySelectorAll('input[name="egg_size"]').forEach(radio => {
+        document.querySelectorAll('input[name="product_details"]').forEach(radio => {
             radio.addEventListener('change', function() {
                 if(this.checked) {
                     const selectedProduct = JSON.parse(this.value);
                     quantityInput.max = selectedProduct.stock;
                     quantityInput.disabled = false;
+                    quantityInput.value = 1; // Reset to 1 on change
                 }
             });
         });
 
         document.getElementById('orderForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            const selectedEggSizeRadio = document.querySelector('input[name="egg_size"]:checked');
+            const selectedProductRadio = document.querySelector('input[name="product_details"]:checked');
             const selectedVehicleRadio = document.querySelector('input[name="vehicle_id"]:checked');
 
-            if (!selectedEggSizeRadio) { alert('Please select an egg size.'); return; }
-            if (!selectedVehicleRadio) { alert('Please select a vehicle.'); return; } 
+            if (!selectedProductRadio) { alert('Please select an egg type.'); return; }
+            if (vehicles.length > 0 && !selectedVehicleRadio) { alert('Please select a vehicle.'); return; }
             
-            const selectedProduct = JSON.parse(selectedEggSizeRadio.value);
-            const quantity = parseInt(document.getElementById('quantityInput').value);
+            const productDetails = JSON.parse(selectedProductRadio.value);
+            const quantity = parseInt(quantityInput.value);
 
-            if (quantity > selectedProduct.stock) { alert('You cannot order more than the available stock.'); return; }
+            if (quantity > productDetails.stock) { alert('The order quantity exceeds the available stock.'); return; }
 
             const formData = new FormData(this);
             const cartData = {
                 producer_id: parseInt(formData.get('producer_id')),
-                product_type: selectedProduct.type,
-                price: selectedProduct.price,
+                product_type: productDetails.type,
+                price: productDetails.price,
                 quantity: quantity,
                 tray_size: parseInt(formData.get('tray_size')),
-                vehicle_id: parseInt(formData.get('vehicle_id')), // Now sends vehicle_id
+                vehicle_id: selectedVehicleRadio ? parseInt(formData.get('vehicle_id')) : null,
                 notes: formData.get('notes')
             };
 
@@ -175,18 +249,24 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(res => res.json())
             .then(data => {
+                const toastBody = cartToastEl.querySelector('.toast-body');
                 if (data.status === 'success') {
+                    toastBody.textContent = data.message || 'Item added to cart!';
                     cartToast.show();
-                    setTimeout(() => window.location.href = 'producers.php', 2000);
+                    setTimeout(() => window.location.href = 'producers.php', 1500);
                 } else {
-                    alert('Error: ' + data.message);
+                    toastBody.textContent = data.message || 'An unknown error occurred.';
+                    cartToast.show();
                 }
+            }).catch(err => {
+                cartToastEl.querySelector('.toast-body').textContent = 'Request failed: ' + err;
+                cartToast.show();
             });
         });
 
     }).catch(error => {
-        console.error("Error loading page:", error);
-        orderFormContainer.innerHTML = `<div class="alert alert-danger">Could not load order details. Please <a href="producers.php">go back</a> and try again.</div>`;
+        console.error("Error loading page content:", error);
+        orderFormContainer.innerHTML = `<div class="alert alert-danger">There was a problem loading the order page. Please <a href="producers.php" class="alert-link">try again</a>.<br><small>${error.message}</small></div>`;
     });
 });
   </script>

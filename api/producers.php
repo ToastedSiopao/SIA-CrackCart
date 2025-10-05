@@ -1,53 +1,81 @@
 <?php
-header("Content-Type: application/json");
-header("Access-Control-Allow-Origin: *"); // Allow requests from any origin
+header('Content-Type: application/json');
+require_once '../db_connect.php';
+require_once '../error_handler.php';
 
-include("../db_connect.php");
+// Set a default error response
+$response = ['status' => 'error', 'message' => 'Invalid request'];
 
-$producers = [];
-$sql = "SELECT p.PRODUCER_ID, p.NAME, p.LOCATION, p.LOGO, p.URL, pr.TYPE, pr.PRICE, pr.PER, pr.STOCK, pr.STATUS
-        FROM PRODUCER p 
-        LEFT JOIN PRICE pr ON p.PRODUCER_ID = pr.PRODUCER_ID
-        WHERE pr.STATUS = 'active'
-        ORDER BY p.NAME, pr.TYPE";
+if (isset($_GET['producer_id'])) {
+    $producer_id = intval($_GET['producer_id']);
 
-$result = $conn->query($sql);
+    // Fetch a specific producer with their products from the PRICE table
+    try {
+        $sql = "SELECT p.PRODUCER_ID as producer_id, p.NAME as name, p.LOCATION as location, p.LOGO as logo, 
+                       pr.TYPE as product_type, pr.PRICE as price, pr.STOCK as stock, pr.PER as per_unit
+                FROM PRODUCER p
+                LEFT JOIN PRICE pr ON p.PRODUCER_ID = pr.PRODUCER_ID
+                WHERE p.PRODUCER_ID = ? AND pr.STATUS = 'active'";
+        
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("i", $producer_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
 
-if ($result && $result->num_rows > 0) {
-    while ($row = $result->fetch_assoc()) {
-        $producer_id = $row['PRODUCER_ID'];
+        if ($result->num_rows > 0) {
+            $producer_details = null;
+            $products = [];
 
-        // If this is the first time we see this producer, initialize it
-        if (!isset($producers[$producer_id])) {
-            $producers[$producer_id] = [
-                'producer_id' => $producer_id,
-                'name' => $row['NAME'],
-                'location' => $row['LOCATION'],
-                'logo' => $row['LOGO'],
-                'url' => $row['URL'],
-                'products' => []
-            ];
+            while ($row = $result->fetch_assoc()) {
+                if (!$producer_details) {
+                    $producer_details = [
+                        'producer_id' => $row['producer_id'],
+                        'name' => $row['name'],
+                        'location' => $row['location'],
+                        'logo' => $row['logo']
+                    ];
+                }
+                // Add product if it exists
+                if ($row['product_type']) {
+                    $products[] = [
+                        'type' => $row['product_type'],
+                        'price' => floatval($row['price']), 
+                        'stock' => intval($row['stock']),
+                        'per' => $row['per_unit']
+                    ];
+                }
+            }
+            
+            $producer_details['products'] = $products;
+            $response = ['status' => 'success', 'data' => $producer_details];
+
+        } else {
+            $response['message'] = 'Producer not found or has no active products.';
         }
+        $stmt->close();
+    } catch (Exception $e) {
+        $response['message'] = 'Database error: ' . $e->getMessage();
+    }
+} else {
+    // Fetch all producers (for producers.php page)
+    try {
+        $sql = "SELECT PRODUCER_ID as producer_id, NAME as name, LOCATION as location, LOGO as logo FROM PRODUCER";
+        $result = $conn->query($sql);
 
-        // Add product price information if it exists
-        if ($row['TYPE']) {
-            $price_value = floatval(preg_replace('/[^0-9.]/', '', $row['PRICE']));
-
-            $producers[$producer_id]['products'][] = [
-                'type' => $row['TYPE'],
-                'price' => $price_value,
-                'per' => $row['PER'],
-                'stock' => $row['STOCK'],
-                'status' => $row['STATUS']
-            ];
+        if ($result->num_rows > 0) {
+            $producers = [];
+            while ($row = $result->fetch_assoc()) {
+                $producers[] = $row;
+            }
+            $response = ['status' => 'success', 'data' => $producers];
+        } else {
+            $response['message'] = 'No producers found.';
         }
+    } catch (Exception $e) {
+        $response['message'] = 'Database error: ' . $e->getMessage();
     }
 }
 
 $conn->close();
-
-// Re-index the array to be a simple list
-$output = array_values($producers);
-
-echo json_encode(['status' => 'success', 'data' => $output]);
+echo json_encode($response);
 ?>
