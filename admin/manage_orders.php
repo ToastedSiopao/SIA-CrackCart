@@ -8,7 +8,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 }
 
 // Fetch all orders with customer and vehicle information
-$query = "SELECT po.order_id, CONCAT(u.FIRST_NAME, ' ', u.LAST_NAME) as user_name, po.order_date, po.total_amount, po.status, v.type as vehicle_name 
+$query = "SELECT po.order_id, CONCAT(u.FIRST_NAME, ' ', u.LAST_NAME) as user_name, po.order_date, po.total_amount, po.status, po.vehicle_type as requested_vehicle_type, v.type as vehicle_name 
           FROM product_orders po
           JOIN USER u ON po.user_id = u.USER_ID
           LEFT JOIN Vehicle v ON po.vehicle_id = v.vehicle_id
@@ -91,8 +91,11 @@ $conn->close();
                                                         <?php echo htmlspecialchars($order['status']); ?>
                                                     </span>
                                                     <div class="vehicle-info" id="vehicle-info-<?php echo $order['order_id']; ?>">
+														<?php if ($order['requested_vehicle_type']): ?>
+															<i class="bi bi-card-list"></i> Requested: <?php echo htmlspecialchars($order['requested_vehicle_type']); ?><br>
+														<?php endif; ?>
                                                         <?php if ($order['vehicle_name']): ?>
-                                                            <i class="bi bi-truck"></i> <?php echo htmlspecialchars($order['vehicle_name']); ?>
+                                                            <i class="bi bi-truck"></i> Assigned: <?php echo htmlspecialchars($order['vehicle_name']); ?>
                                                         <?php endif; ?>
                                                     </div>
                                                 </td>
@@ -209,7 +212,6 @@ function assignVehicle() {
 }
 
 function updateStatus(orderId, newStatus) {
-    // Previous updateStatus function code...
     if (!confirm(`Are you sure you want to update order #${orderId} to "${newStatus}"?`)) {
         return;
     }
@@ -220,7 +222,7 @@ function updateStatus(orderId, newStatus) {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         },
-        body: JSON.stringify({ order__id: orderId, status: newStatus })
+        body: JSON.stringify({ order_id: orderId, status: newStatus })
     })
     .then(response => response.json())
     .then(data => {
@@ -231,8 +233,7 @@ function updateStatus(orderId, newStatus) {
             statusBadge.textContent = newStatus;
             statusBadge.className = `badge rounded-pill ${getStatusClass(newStatus)} status-badge`;
             
-            // If order is completed, refresh to update vehicle status
-            if (newStatus === 'delivered') {
+            if (newStatus === 'delivered' || newStatus === 'cancelled') {
                 setTimeout(() => location.reload(), 2000);
             }
         }

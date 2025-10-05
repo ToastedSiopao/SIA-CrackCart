@@ -80,7 +80,8 @@ try {
             }
         }
         $stmt_get_items->close();
-        $stmt_update_stock->close();n        $message .= ' Product stock has been returned.';
+        $stmt_update_stock->close();
+        $message .= ' Product stock has been returned.';
     }
     
     $conn->commit();
