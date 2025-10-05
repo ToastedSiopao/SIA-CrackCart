@@ -19,8 +19,8 @@ $username = $isLoggedIn ? $_SESSION['user_name'] : '';
     <img src="assets/Logo.png" alt="CrackCart Logo" class="logo">
     <nav>
       <ul>
-        <li><a href="#">About</a></li>
-        <li><a href="#">Features</a></li>
+        <li><a href="about.php">About</a></li>
+        <li><a href="features.php">Features</a></li>
         <?php if($isLoggedIn): ?>
           <li><a href="dashboard.php">Dashboard</a></li>
           <li class="user-info">
@@ -44,7 +44,7 @@ $username = $isLoggedIn ? $_SESSION['user_name'] : '';
         <p>Your one-stop cart for fast and reliable shopping.</p>
         <div class="buttons">
           <a href="<?php echo $isLoggedIn ? 'dashboard.php' : 'login.php'; ?>" class="btn btn-primary">Get Started</a>
-          <a href="#" class="btn btn-secondary">Learn More</a>
+          <a href="about.php" class="btn btn-secondary">Learn More</a>
         </div>
       </div>
       <div class="hero-image">
