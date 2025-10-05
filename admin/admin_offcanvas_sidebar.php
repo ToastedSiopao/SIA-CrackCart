@@ -16,6 +16,12 @@
                 <a class="nav-link" href="orders.php"><i class="bi bi-cart3"></i> Orders</a>
             </li>
             <li class="nav-item">
+                <a class="nav-link" href="manage_orders.php"><i class="bi bi-pencil-square"></i> Manage Orders</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="manage_users.php"><i class="bi bi-people"></i> Manage Users</a>
+            </li>
+            <li class="nav-item">
                 <a class="nav-link" href="logout.php"><i class="bi bi-box-arrow-left"></i> Logout</a>
             </li>
         </ul>

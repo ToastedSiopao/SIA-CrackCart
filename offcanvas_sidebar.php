@@ -13,7 +13,6 @@
                   <li><a href="bills.php" class="nav-link"><i class="bi bi-receipt me-2"></i> Bills</a></li>
                   <li><a href="profilePage.php" class="nav-link"><i class="bi bi-gear me-2"></i> Setting</a></li>
                   <li><a href="producers.php" class="nav-link"><i class="bi bi-egg me-2"></i> Producers</a></li>
-                  <li><a href="view_shipment.php" class="nav-link"><i class="bi bi-box-seam me-2"></i> View Shipment</a></li>
                   <li><a href="terms.php" class="nav-link" target="_blank"><i class="bi bi-file-text me-2"></i> Terms & Privacy</a></li>
                 </ul>
                 <div class="upgrade-box">
