@@ -1,9 +1,9 @@
 <?php
-require_once '../session_handler.php';
+session_start();
 require_once '../db_connect.php';
 
 // Ensure user is an admin
-if ($_SESSION['role'] !== 'admin') {
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     header("Location: ../index.php");
     exit;
 }

@@ -1,7 +1,6 @@
 <?php
 require_once 'session_handler.php';
 
-// Get producer ID from URL, redirect if not set
 if (!isset($_GET['producer_id'])) {
     header('Location: producers.php');
     exit;
@@ -17,7 +16,7 @@ $producer_id = $_GET['producer_id'];
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
-  <link href="dashboard-styles.css?v=3.0" rel="stylesheet">
+  <link href="dashboard-styles.css?v=3.1" rel="stylesheet">
   <style>
     .producer-logo-large {
         width: 80px;
@@ -46,17 +45,17 @@ $producer_id = $_GET['producer_id'];
     }
     .vehicle-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
         gap: 1rem;
     }
-    .vehicle-option-card {
+    .vehicle-type-card {
         padding: 0;
         border: 1px solid #dee2e6;
         border-radius: 0.375rem;
         transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
     }
-    .vehicle-option-card .form-check-input { display: none; }
-    .vehicle-option-card .form-check-label {
+    .vehicle-type-card .form-check-input { display: none; }
+    .vehicle-type-card .form-check-label {
         display: flex;
         align-items: center;
         padding: 1rem;
@@ -72,13 +71,13 @@ $producer_id = $_GET['producer_id'];
         text-align: center;
     }
     .vehicle-details { display: flex; flex-direction: column; line-height: 1.3; }
-    .vehicle-type { font-weight: bold; color: #212529; }
-    .vehicle-capacity { font-size: 0.85rem; color: #6c757d; }
-    .vehicle-option-card .form-check-input:checked + .form-check-label {
+    .vehicle-type-name { font-weight: bold; color: #212529; }
+    .vehicle-capacity-range { font-size: 0.85rem; color: #6c757d; }
+    .vehicle-type-card .form-check-input:checked + .form-check-label {
         background-color: #fff3cd;
         border-color: #ffc107;
     }
-    .vehicle-option-card:hover { border-color: #ffc107; }
+    .vehicle-type-card:hover { border-color: #ffc107; }
   </style>
 </head>
 <body>
@@ -124,24 +123,24 @@ document.addEventListener('DOMContentLoaded', function() {
     const getVehicleIcon = (type) => {
         const normalizedType = type ? type.toLowerCase() : '';
         if (normalizedType.includes('motor')) return 'bi-bicycle';
-        if (normalizedType.includes('car')) return 'bi-car-front-fill';
+        if (normalizedType.includes('suv')) return 'bi-car-front-fill';
         if (normalizedType.includes('truck')) return 'bi-truck';
         return 'bi-question-circle';
     };
 
     Promise.all([
         fetch(`api/producers.php?producer_id=${producerId}`).then(res => res.json()),
-        fetch('api/get_vehicles.php').then(res => res.json())
-    ]).then(([producerData, vehicleData]) => {
+        fetch('api/get_vehicle_types.php').then(res => res.json()) // Fetch vehicle types
+    ]).then(([producerData, vehicleTypeData]) => {
         if (producerData.status !== 'success' || !producerData.data) {
              throw new Error(producerData.message || 'Could not load producer details.');
         }
-        if (vehicleData.status !== 'success') {
-            throw new Error(vehicleData.message || 'Could not load vehicles.');
+        if (vehicleTypeData.status !== 'success') {
+            throw new Error(vehicleTypeData.message || 'Could not load vehicle types.');
         }
 
         const producer = producerData.data;
-        const vehicles = vehicleData.data;
+        const vehicleTypes = vehicleTypeData.data;
 
         producerInfoContainer.innerHTML = `
             <div class="d-flex align-items-center mb-4">
@@ -185,17 +184,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
             <div class="mb-4">
                 <label class="form-label fw-bold">4. Select Vehicle for Delivery</label>
-                <div class="vehicle-grid">${vehicles.map(v => `
-                    <div class="form-check vehicle-option-card">
-                        <input class="form-check-input" type="radio" name="vehicle_id" id="vehicle_${v.vehicle_id}" value="${v.vehicle_id}" required>
-                        <label class="form-check-label" for="vehicle_${v.vehicle_id}">
-                            <i class="bi ${getVehicleIcon(v.type)} vehicle-icon"></i>
+                <div class="vehicle-grid">${vehicleTypes.map(vt => `
+                    <div class="form-check vehicle-type-card">
+                        <input class="form-check-input" type="radio" name="vehicle_type" id="vehicle_type_${vt.type.replace(/\s+/g, '_')}" value="${vt.type}" required>
+                        <label class="form-check-label" for="vehicle_type_${vt.type.replace(/\s+/g, '_')}">
+                            <i class="bi ${getVehicleIcon(vt.type)} vehicle-icon"></i>
                             <div class="vehicle-details">
-                                <span class="vehicle-type">${v.type} (${v.plate_no})</span>
-                                <span class="vehicle-capacity">Capacity: ${v.capacity_trays} trays</span>
+                                <span class="vehicle-type-name">${vt.type}</span>
+                                <span class="vehicle-capacity-range">Capacity: ${vt.min_capacity} - ${vt.max_capacity} trays</span>
                             </div>
                         </label>
-                    </div>`).join('') || '<div class="alert alert-warning">No vehicles available for delivery at the moment.</div>'}</div>
+                    </div>`).join('') || '<div class="alert alert-warning">No delivery options available at the moment.</div>'}</div>
             </div>
 
             <div class="mb-4">
@@ -213,7 +212,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const selectedProduct = JSON.parse(this.value);
                     quantityInput.max = selectedProduct.stock;
                     quantityInput.disabled = false;
-                    quantityInput.value = 1; // Reset to 1 on change
+                    quantityInput.value = 1; 
                 }
             });
         });
@@ -221,10 +220,10 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('orderForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const selectedProductRadio = document.querySelector('input[name="product_details"]:checked');
-            const selectedVehicleRadio = document.querySelector('input[name="vehicle_id"]:checked');
+            const selectedVehicleRadio = document.querySelector('input[name="vehicle_type"]:checked');
 
             if (!selectedProductRadio) { alert('Please select an egg type.'); return; }
-            if (vehicles.length > 0 && !selectedVehicleRadio) { alert('Please select a vehicle.'); return; }
+            if (vehicleTypes.length > 0 && !selectedVehicleRadio) { alert('Please select a delivery vehicle type.'); return; }
             
             const productDetails = JSON.parse(selectedProductRadio.value);
             const quantity = parseInt(quantityInput.value);
@@ -238,14 +237,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 price: productDetails.price,
                 quantity: quantity,
                 tray_size: parseInt(formData.get('tray_size')),
-                vehicle_id: selectedVehicleRadio ? parseInt(formData.get('vehicle_id')) : null,
+                vehicle_type: selectedVehicleRadio ? formData.get('vehicle_type') : null,
                 notes: formData.get('notes')
             };
 
             fetch('api/cart.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(cartData)
+                body: JSON.stringify({ action: 'add', item: cartData })
             })
             .then(res => res.json())
             .then(data => {

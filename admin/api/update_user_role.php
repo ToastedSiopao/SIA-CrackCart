@@ -1,6 +1,6 @@
 <?php
+session_start();
 require_once '../../db_connect.php';
-require_once '../../session_handler.php';
 
 // Admin-only access
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
