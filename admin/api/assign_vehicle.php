@@ -24,7 +24,7 @@ $conn->begin_transaction();
 
 try {
     // 1. Check if vehicle is available
-    $stmt_check = $conn->prepare("SELECT status FROM vehicles WHERE id = ?");
+    $stmt_check = $conn->prepare("SELECT status FROM Vehicle WHERE vehicle_id = ?");
     $stmt_check->bind_param("i", $vehicle_id);
     $stmt_check->execute();
     $result = $stmt_check->get_result();
@@ -32,7 +32,7 @@ try {
         throw new Exception("Vehicle not found.");
     }
     $vehicle = $result->fetch_assoc();
-    if ($vehicle['status'] !== 'standby') {
+    if ($vehicle['status'] !== 'available') {
         throw new Exception("Vehicle is not available. Current status: " . $vehicle['status']);
     }
     $stmt_check->close();
@@ -46,7 +46,7 @@ try {
     $stmt_order->close();
 
     // 3. Update vehicle status to 'in-transit'
-    $stmt_vehicle = $conn->prepare("UPDATE vehicles SET status = 'in-transit' WHERE id = ?");
+    $stmt_vehicle = $conn->prepare("UPDATE Vehicle SET status = 'in-transit' WHERE vehicle_id = ?");
     $stmt_vehicle->bind_param("i", $vehicle_id);
     if (!$stmt_vehicle->execute()) {
         throw new Exception("Failed to update vehicle status.");

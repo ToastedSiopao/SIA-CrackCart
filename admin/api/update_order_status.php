@@ -20,7 +20,7 @@ if (!isset($input['order_id']) || !isset($input['status'])) {
 
 $order_id = $input['order_id'];
 $new_status = $input['status'];
-$valid_statuses = ['To Pay', 'To Ship', 'To Receive', 'Completed', 'Cancelled'];
+$valid_statuses = ['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'failed', 'refunded'];
 
 if (!in_array($new_status, $valid_statuses)) {
     http_response_code(400);
@@ -54,9 +54,9 @@ try {
 
     $message = "Order #$order_id status updated to $new_status.";
 
-    // If order is completed or cancelled, release the vehicle if one is assigned
-    if (($new_status === 'Completed' || ($new_status === 'Cancelled' && $current_status !== 'Cancelled')) && $vehicle_id) {
-        $stmt_release_vehicle = $conn->prepare("UPDATE vehicles SET status = 'standby' WHERE id = ?");
+    // If order is delivered or cancelled, release the vehicle if one is assigned
+    if (($new_status === 'delivered' || ($new_status === 'cancelled' && $current_status !== 'cancelled')) && $vehicle_id) {
+        $stmt_release_vehicle = $conn->prepare("UPDATE Vehicle SET status = 'available' WHERE vehicle_id = ?");
         $stmt_release_vehicle->bind_param("i", $vehicle_id);
         if (!$stmt_release_vehicle->execute()) {
             throw new Exception('Failed to release assigned vehicle.', 500);
@@ -65,8 +65,8 @@ try {
         $message .= ' Assigned vehicle has been released.';
     }
 
-    // If changing status to 'Cancelled' and it wasn't already cancelled, return stock
-    if ($new_status === 'Cancelled' && $current_status !== 'Cancelled') {
+    // If changing status to 'cancelled' and it wasn't already cancelled, return stock
+    if ($new_status === 'cancelled' && $current_status !== 'cancelled') {
         $stmt_get_items = $conn->prepare("SELECT producer_id, product_type, quantity FROM product_order_items WHERE order_id = ?");
         $stmt_get_items->bind_param("i", $order_id);
         $stmt_get_items->execute();
@@ -80,8 +80,7 @@ try {
             }
         }
         $stmt_get_items->close();
-        $stmt_update_stock->close();
-        $message .= ' Product stock has been returned.';
+        $stmt_update_stock->close();n        $message .= ' Product stock has been returned.';
     }
     
     $conn->commit();

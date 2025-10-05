@@ -33,26 +33,26 @@ require_once '../db_connect.php';
                         <thead>
                             <tr>
                                 <th>ID</th>
-                                <th>Vehicle Name</th>
-                                <th>License Plate</th>
+                                <th>Type</th>
+                                <th>Plate No</th>
                                 <th>Status</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php
-                            $result = $conn->query("SELECT * FROM vehicles ORDER BY id DESC");
+                            $result = $conn->query("SELECT vehicle_id, type, plate_no, status FROM Vehicle ORDER BY vehicle_id DESC");
                             while ($row = $result->fetch_assoc()) {
                                 echo "<tr>";
-                                echo "<td>" . $row['id'] . "</td>";
-                                echo "<td>" . htmlspecialchars($row['vehicle_name']) . "</td>";
-                                echo "<td>" . htmlspecialchars($row['license_plate']) . "</td>";
+                                echo "<td>" . $row['vehicle_id'] . "</td>";
+                                echo "<td>" . htmlspecialchars($row['type']) . "</td>";
+                                echo "<td>" . htmlspecialchars($row['plate_no']) . "</td>";
                                 echo "<td>" . htmlspecialchars($row['status']) . "</td>";
                                 echo "<td>";
-                                if ($row['status'] == 'standby') {
-                                    echo "<button class="btn btn-primary btn-sm" onclick=\"updateVehicleStatus({$row['id']}, 'in-transit')\">Set to In Transit</button>";
+                                if ($row['status'] == 'available') {
+                                    echo "<button class=\"btn btn-primary btn-sm\" onclick=\"updateVehicleStatus({$row['vehicle_id']}, 'in-transit')\">Set to In Transit</button>";
                                 } else {
-                                    echo "<button class="btn btn-success btn-sm" onclick=\"updateVehicleStatus({$row['id']}, 'standby')\">Set to Standby</button>";
+                                    echo "<button class=\"btn btn-success btn-sm\" onclick=\"updateVehicleStatus({$row['vehicle_id']}, 'available')\">Set to Available</button>";
                                 }
                                 echo "</td>";
                                 echo "</tr>";

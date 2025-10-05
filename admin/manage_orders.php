@@ -98,7 +98,7 @@ $conn->close();
                                                 </td>
                                                 <td>
                                                     <div class="btn-group">
-                                                        <button class="btn btn-sm btn-outline-primary" onclick="openAssignVehicleModal(<?php echo $order['order_id']; ?>)" <?php echo $order['status'] !== 'To Ship' ? 'disabled' : ''; ?>>
+                                                        <button class="btn btn-sm btn-outline-primary" onclick="openAssignVehicleModal(<?php echo $order['order_id']; ?>)" <?php echo $order['status'] !== 'processing' ? 'disabled' : ''; ?>>
                                                             <i class="bi bi-truck"></i> Assign Vehicle
                                                         </button>
                                                         <div class="dropdown">
@@ -106,12 +106,13 @@ $conn->close();
                                                                 Update Status
                                                             </button>
                                                             <ul class="dropdown-menu">
-                                                                <li><a class="dropdown-item" href="#" onclick="updateStatus(<?php echo $order['order_id']; ?>, 'To Pay')">To Pay</a></li>
-                                                                <li><a class="dropdown-item" href="#" onclick="updateStatus(<?php echo $order['order_id']; ?>, 'To Ship')">To Ship</a></li>
-                                                                <li><a class="dropdown-item" href="#" onclick="updateStatus(<?php echo $order['order_id']; ?>, 'To Receive')">To Receive</a></li>
-                                                                <li><a class="dropdown-item" href="#" onclick="updateStatus(<?php echo $order['order_id']; ?>, 'Completed')">Completed</a></li>
+                                                                <li><a class="dropdown-item" href="#" onclick="updateStatus(<?php echo $order['order_id']; ?>, 'pending')">Pending</a></li>
+                                                                <li><a class="dropdown-item" href="#" onclick="updateStatus(<?php echo $order['order_id']; ?>, 'paid')">Paid</a></li>
+                                                                <li><a class="dropdown-item" href="#" onclick="updateStatus(<?php echo $order['order_id']; ?>, 'processing')">Processing</a></li>
+                                                                <li><a class="dropdown-item" href="#" onclick="updateStatus(<?php echo $order['order_id']; ?>, 'shipped')">Shipped</a></li>
+                                                                <li><a class="dropdown-item" href="#" onclick="updateStatus(<?php echo $order['order_id']; ?>, 'delivered')">Delivered</a></li>
                                                                 <li><hr class="dropdown-divider"></li>
-                                                                <li><a class="dropdown-item text-danger" href="#" onclick="updateStatus(<?php echo $order['order_id']; ?>, 'Cancelled')">Cancelled</a></li>
+                                                                <li><a class="dropdown-item text-danger" href="#" onclick="updateStatus(<?php echo $order['order_id']; ?>, 'cancelled')">Cancelled</a></li>
                                                             </ul>
                                                         </div>
                                                     </div>
@@ -140,7 +141,7 @@ $conn->close();
       <div class="modal-body">
         <input type="hidden" id="modalOrderId">
         <div class="mb-3">
-            <label for="vehicleSelect" class="form-label">Available Vehicles (Status: Standby)</label>
+            <label for="vehicleSelect" class="form-label">Available Vehicles (Status: available)</label>
             <select class="form-select" id="vehicleSelect">
                 <?php if (empty($available_vehicles)): ?>
                     <option>No vehicles available</option>
@@ -219,7 +220,7 @@ function updateStatus(orderId, newStatus) {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         },
-        body: JSON.stringify({ order_id: orderId, status: newStatus })
+        body: JSON.stringify({ order__id: orderId, status: newStatus })
     })
     .then(response => response.json())
     .then(data => {
@@ -231,7 +232,7 @@ function updateStatus(orderId, newStatus) {
             statusBadge.className = `badge rounded-pill ${getStatusClass(newStatus)} status-badge`;
             
             // If order is completed, refresh to update vehicle status
-            if (newStatus === 'Completed') {
+            if (newStatus === 'delivered') {
                 setTimeout(() => location.reload(), 2000);
             }
         }
@@ -258,11 +259,12 @@ function showAlert(message, type) {
 
 function getStatusClass(status) {
     switch (status) {
-        case 'Completed': return 'bg-success';
-        case 'To Ship': return 'bg-info';
-        case 'To Receive': return 'bg-primary';
-        case 'Cancelled': return 'bg-danger';
-        case 'To Pay':
+        case 'delivered': return 'bg-success';
+        case 'shipped': return 'bg-info';
+        case 'processing': return 'bg-primary';
+        case 'cancelled': return 'bg-danger';
+        case 'pending':
+        case 'paid':
         default: return 'bg-warning text-dark';
     }
 }
@@ -270,11 +272,12 @@ function getStatusClass(status) {
 <?php
 function getStatusClass($status) {
     switch ($status) {
-        case 'Completed': return 'bg-success';
-        case 'To Ship': return 'bg-info';
-        case 'To Receive': return 'bg-primary';
-        case 'Cancelled': return 'bg-danger';
-        case 'To Pay':
+        case 'delivered': return 'bg-success';
+        case 'shipped': return 'bg-info';
+        case 'processing': return 'bg-primary';
+        case 'cancelled': return 'bg-danger';
+        case 'pending':
+        case 'paid':
         default: return 'bg-warning text-dark';
     }
 }

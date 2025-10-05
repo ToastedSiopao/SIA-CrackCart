@@ -20,14 +20,14 @@ if (!$vehicle_id || !$status) {
     exit;
 }
 
-$allowed_statuses = ['standby', 'in-transit'];
+$allowed_statuses = ['available', 'in-transit'];
 if (!in_array($status, $allowed_statuses)) {
     http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Invalid status provided.']);
     exit;
 }
 
-$stmt = $conn->prepare("UPDATE vehicles SET status = ? WHERE id = ?");
+$stmt = $conn->prepare("UPDATE Vehicle SET status = ? WHERE vehicle_id = ?");
 $stmt->bind_param('si', $status, $vehicle_id);
 
 if ($stmt->execute()) {
