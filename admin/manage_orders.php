@@ -8,7 +8,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 }
 
 // Fetch all orders with customer and vehicle information
-$query = "SELECT po.order_id, CONCAT(u.FIRST_NAME, ' ', u.LAST_NAME) as user_name, po.order_date, po.total_amount, po.status, po.vehicle_type as requested_vehicle_type, v.type as vehicle_name, v.plate_no as vehicle_plate
+$query = "SELECT po.order_id, CONCAT(u.FIRST_NAME, ' ', u.LAST_NAME) as user_name, po.order_date, po.total_amount, po.status, po.vehicle_type as requested_vehicle_type, v.type as vehicle_name, v.plate_no as vehicle_plate, po.vehicle_id
           FROM product_orders po
           JOIN USER u ON po.user_id = u.USER_ID
           LEFT JOIN Vehicle v ON po.vehicle_id = v.vehicle_id
@@ -16,7 +16,7 @@ $query = "SELECT po.order_id, CONCAT(u.FIRST_NAME, ' ', u.LAST_NAME) as user_nam
 $result = $conn->query($query);
 
 $orders = [];
-if ($result->num_rows > 0) {
+if ($result && $result->num_rows > 0) {
     while($row = $result->fetch_assoc()) {
         $orders[] = $row;
     }
@@ -25,13 +25,25 @@ if ($result->num_rows > 0) {
 // Fetch all available vehicles
 $vehicles_result = $conn->query("SELECT vehicle_id, type, plate_no FROM Vehicle WHERE status = 'available'");
 $available_vehicles = [];
-if ($vehicles_result->num_rows > 0) {
+if ($vehicles_result && $vehicles_result->num_rows > 0) {
     while($row = $vehicles_result->fetch_assoc()) {
         $available_vehicles[] = $row;
     }
 }
 
 $conn->close();
+
+function getStatusClass($status) {
+    switch ($status) {
+        case 'delivered': return 'bg-success';
+        case 'shipped': return 'bg-info text-dark';
+        case 'processing': return 'bg-primary';
+        case 'cancelled': return 'bg-danger';
+        case 'pending':
+        case 'paid': 
+        default: return 'bg-warning text-dark';
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -41,14 +53,24 @@ $conn->close();
   <title>Manage Orders</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-  <link href="admin-styles.css?v=1.4" rel="stylesheet">
+  <link href="admin-styles.css?v=1.6" rel="stylesheet">
   <style>
       .status-badge { font-size: 0.9em; }
       .vehicle-info { font-size: 0.8em; color: #6c757d; }
       .vehicle-info .bi { vertical-align: middle; }
+      #alert-container {
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          z-index: 1055; 
+          width: auto;
+          max-width: 400px;
+      }     
   </style>
 </head>
 <body>
+
+<div id="alert-container"></div>
 
 <div class="container-fluid">
     <div class="row flex-nowrap">
@@ -60,8 +82,6 @@ $conn->close();
 
             <main class="container-fluid p-4">
                 <h1 class="mb-4">Manage Customer Orders</h1>
-
-                <div id="alert-container"></div>
 
                 <div class="card shadow-sm">
                     <div class="card-body">
@@ -82,7 +102,7 @@ $conn->close();
                                         <tr><td colspan="6" class="text-center">No orders found.</td></tr>
                                     <?php else: ?>
                                         <?php foreach ($orders as $order): ?>
-                                            <tr>
+                                            <tr id="order-row-<?php echo $order['order_id']; ?>">
                                                 <td>#<?php echo htmlspecialchars($order['order_id']); ?></td>
                                                 <td><?php echo htmlspecialchars($order['user_name']); ?></td>
                                                 <td><?php echo date("F j, Y, g:i a", strtotime($order['order_date'])); ?></td>
@@ -103,9 +123,9 @@ $conn->close();
                                                 <td>
                                                     <div class="btn-group">
                                                         <button class="btn btn-sm btn-outline-primary" 
-                                                                onclick="openAssignVehicleModal(<?php echo $order['order_id']; ?>)" 
-                                                                <?php echo $order['status'] !== 'processing' || !$order['requested_vehicle_type'] ? 'disabled' : ''; ?>
-                                                                title="<?php echo $order['status'] !== 'processing' || !$order['requested_vehicle_type'] ? 'Order must be in 'processing' status and have a requested vehicle.' : 'Assign a vehicle to this order'; ?>">
+                                                                onclick='openAssignVehicleModal(<?php echo json_encode($order); ?>)' 
+                                                                <?php echo $order['status'] !== 'processing' || !$order['requested_vehicle_type'] || $order['vehicle_id'] != null ? 'disabled' : ''; ?>
+                                                                title="<?php echo $order['status'] !== 'processing' ? 'Order must be in processing status.' : (!$order['requested_vehicle_type'] ? 'No vehicle type requested.' : ($order['vehicle_id'] != null ? 'Vehicle already assigned.' : 'Assign a vehicle to this order')); ?>">
                                                             <i class="bi bi-truck"></i> Assign
                                                         </button>
                                                         <div class="dropdown">
@@ -165,7 +185,6 @@ $conn->close();
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-const orders = <?php echo json_encode($orders); ?>;
 const available_vehicles = <?php echo json_encode($available_vehicles); ?>;
 let assignVehicleModal;
 
@@ -173,12 +192,10 @@ document.addEventListener("DOMContentLoaded", function() {
     assignVehicleModal = new bootstrap.Modal(document.getElementById('assignVehicleModal'));
 });
 
-function openAssignVehicleModal(orderId) {
-    document.getElementById('modalOrderId').value = orderId;
+function openAssignVehicleModal(order) {
+    document.getElementById('modalOrderId').value = order.order_id;
     
-    const order = orders.find(o => o.order_id == orderId);
-    const requestedType = order ? order.requested_vehicle_type : null;
-    
+    const requestedType = order.requested_vehicle_type;
     const vehicleSelect = document.getElementById('vehicleSelect');
     const requestedVehicleTypeElem = document.getElementById('requestedVehicleType');
     const assignBtn = document.getElementById('assignVehicleBtn');
@@ -217,13 +234,12 @@ function openAssignVehicleModal(orderId) {
 }
 
 function assignVehicle() {
+    const assignBtn = document.getElementById('assignVehicleBtn');
+    assignBtn.disabled = true;
+    assignBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Assigning...';
+
     const orderId = document.getElementById('modalOrderId').value;
     const vehicleId = document.getElementById('vehicleSelect').value;
-
-    if (!vehicleId) {
-        showAlert('Please select a vehicle.', 'danger');
-        return;
-    }
 
     fetch('api/assign_vehicle.php', {
         method: 'POST',
@@ -233,17 +249,27 @@ function assignVehicle() {
         },
         body: JSON.stringify({ order_id: orderId, vehicle_id: vehicleId })
     })
-    .then(response => response.json())
+    .then(response => {
+         if (!response.ok) {
+            return response.json().then(err => {throw new Error(err.message || 'Server error');});
+        }
+        return response.json();
+    })
     .then(data => {
-        showAlert(data.message, data.status);
         if (data.status === 'success') {
+            showAlert(data.message, 'success');
             assignVehicleModal.hide();
-            setTimeout(() => location.reload(), 1500); // Reload to reflect changes
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showAlert(data.message || 'An unknown error occurred.', 'danger');
         }
     })
     .catch(error => {
         console.error('Fetch Error:', error);
-        showAlert('An unexpected error occurred. Please try again.', 'danger');
+        showAlert(error.message, 'danger');
+    }).finally(() => {
+        assignBtn.disabled = false;
+        assignBtn.innerHTML = 'Assign';
     });
 }
 
@@ -259,65 +285,41 @@ function updateStatus(orderId, newStatus) {
     })
     .then(response => {
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+             return response.json().then(err => {throw new Error(err.message || 'Server error');});
         }
         return response.json();
     })
     .then(data => {
-        showAlert(data.message, data.status);
-
         if (data.status === 'success') {
-            // Reload the page to ensure all data (status, vehicle availability) is fresh
+            showAlert(data.message, 'success');
             setTimeout(() => location.reload(), 1500);
+        } else {
+             showAlert(data.message || 'An unknown error occurred.', 'danger');
         }
     })
     .catch(error => {
         console.error('Fetch Error:', error);
-        showAlert('An unexpected error occurred. Check the console for details.', 'danger');
+        showAlert(error.message, 'danger');
     });
 }
 
 function showAlert(message, type) {
     const alertContainer = document.getElementById('alert-container');
     const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
-    const alertHTML = `<div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert ${alertClass} alert-dismissible fade show`;
+    alertDiv.role = 'alert';
+    alertDiv.innerHTML = `
         ${message}
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>`;
-    alertContainer.innerHTML = alertHTML;
-    
+    `;
+    alertContainer.appendChild(alertDiv);
+
+    const bsAlert = new bootstrap.Alert(alertDiv);
     setTimeout(() => {
-        const alertNode = alertContainer.querySelector('.alert');
-        if (alertNode) {
-            bootstrap.Alert.getOrCreateInstance(alertNode).close();
-        }
+        bsAlert.close();
     }, 5000);
 }
-
-function getStatusClass(status) {
-    switch (status) {
-        case 'delivered': return 'bg-success';
-        case 'shipped': return 'bg-info text-dark';
-        case 'processing': return 'bg-primary';
-        case 'cancelled': return 'bg-danger';
-        case 'pending':
-        case 'paid': 
-        default: return 'bg-warning text-dark';
-    }
-}
-?>
-<?php
-function getStatusClass($status) {
-    switch ($status) {
-        case 'delivered': return 'bg-success';
-        case 'shipped': return 'bg-info text-dark';
-        case 'processing': return 'bg-primary';
-        case 'cancelled': return 'bg-danger';
-        case 'pending':
-        case 'paid':
-        default: return 'bg-warning text-dark';
-    }
-}
-?>
+</script>
 </body>
 </html>

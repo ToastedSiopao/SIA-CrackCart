@@ -20,7 +20,7 @@ $order_id = $_GET['order_id'];
     <title>View Order - CrackCart</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="dashboard-styles.css?v=2.9" rel="stylesheet">
+    <link href="dashboard-styles.css?v=3.0" rel="stylesheet">
 </head>
 <body>
     <?php include("navbar.php"); ?>
@@ -65,7 +65,7 @@ $order_id = $_GET['order_id'];
                 </div>
                 <div class="modal-body">
                     <form id="reviewForm">
-                        <input type="hidden" id="reviewProductId" name="product_id">
+                        <input type="hidden" id="reviewProductType" name="product_type">
                         <input type="hidden" id="reviewOrderId" name="order_id">
                         <div class="mb-3">
                             <label for="rating" class="form-label">Rating</label>
@@ -137,7 +137,7 @@ $order_id = $_GET['order_id'];
                     </div>
                     ${isCompleted ? `
                     <div class="btn-group">
-                        <button class="btn btn-outline-primary btn-sm review-btn" data-product-id="${item.product_id}" data-order-id="${order.order_id}">Leave a Review</button>
+                        <button class="btn btn-outline-primary btn-sm review-btn" data-product-type="${item.product_name}" data-order-id="${order.order_id}">Leave a Review</button>
                         <a href="request_return.php?order_id=${order.order_id}" class="btn btn-outline-secondary btn-sm">Request Return</a>
                     </div>
                     ` : ''}
@@ -195,10 +195,10 @@ $order_id = $_GET['order_id'];
         // Modal Trigger Logic
         orderDetailsContainer.addEventListener('click', event => {
             if (event.target.classList.contains('review-btn')) {
-                const productId = event.target.dataset.productId;
+                const productType = event.target.dataset.productType;
                 const orderId = event.target.dataset.orderId;
                 reviewForm.reset();
-                document.getElementById('reviewProductId').value = productId;
+                document.getElementById('reviewProductType').value = productType;
                 document.getElementById('reviewOrderId').value = orderId;
                 document.getElementById('rating').value = '';
                 const stars = [...starRatingContainer.children];

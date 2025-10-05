@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: sql101.infinityfree.com
--- Generation Time: Oct 05, 2025 at 10:39 AM
+-- Generation Time: Oct 05, 2025 at 12:37 PM
 -- Server version: 11.4.7-MariaDB
 -- PHP Version: 7.2.22
 
@@ -187,7 +187,8 @@ INSERT INTO `Payment` (`payment_id`, `booking_id`, `order_id`, `amount`, `curren
 (6, NULL, 12, '205.00', 'PHP', 'cod', 'pending', NULL, NULL),
 (7, NULL, 13, '205.00', 'PHP', 'cod', 'pending', NULL, NULL),
 (8, NULL, 14, '205.00', 'PHP', 'paypal', 'completed', NULL, '5PP07558NW4621240'),
-(9, NULL, 22, '210.00', 'PHP', 'paypal', 'completed', NULL, '76U764920M824035D');
+(9, NULL, 22, '210.00', 'PHP', 'paypal', 'completed', NULL, '76U764920M824035D'),
+(10, NULL, 23, '210.00', 'PHP', 'paypal', 'completed', NULL, '1AP80039RL494342L');
 
 -- --------------------------------------------------------
 
@@ -219,10 +220,10 @@ INSERT INTO `PRICE` (`PRICE_ID`, `PRODUCER_ID`, `TYPE`, `PRICE`, `PER`, `STATUS`
 (7, 4, 'Pidan/Century Eggs', '350.00', 'per tray', 'active', 0),
 (8, 5, 'Pasture-Raised Eggs', '320.00', 'per tray', 'active', 0),
 (9, 6, 'White Eggs (Medium)', '190.00', 'per tray', 'active', 0),
-(10, 6, 'White Eggs (Large)', '205.00', 'per tray', 'active', 0),
-(11, 7, 'Salted Eggs', '250.00', 'per tray', 'active', 0),
-(12, 8, 'Itik/Ducks Eggs', '290.00', 'per tray', 'active', 0),
-(13, 5, 'Test Egg', '210', 'per tray', 'active', 99);
+(10, 6, 'White Eggs (Large)', '205', 'per tray', 'active', 120),
+(11, 7, 'Salted Eggs', '250', 'per tray', 'active', 11),
+(12, 8, 'Itik/Ducks Eggs', '290', 'per tray', 'active', 110),
+(13, 5, 'Test Egg', '210', 'per tray', 'active', 98);
 
 -- --------------------------------------------------------
 
@@ -271,36 +272,38 @@ CREATE TABLE `product_orders` (
   `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `paypal_order_id` varchar(255) DEFAULT NULL,
   `cancellation_reason` text DEFAULT NULL,
-  `vehicle_type` varchar(255) DEFAULT NULL
+  `vehicle_type` varchar(255) DEFAULT NULL,
+  `vehicle_id` int(11) DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 --
 -- Dumping data for table `product_orders`
 --
 
-INSERT INTO `product_orders` (`order_id`, `user_id`, `order_date`, `total_amount`, `status`, `shipping_address_id`, `payment_method`, `payment_id`, `created_at`, `updated_at`, `paypal_order_id`, `cancellation_reason`, `vehicle_type`) VALUES
-(1, 8, '2025-10-04 02:22:36', '205.00', 'cancelled', 1, 'card', NULL, '2025-10-04 09:22:36', '2025-10-04 10:05:31', '6', NULL, NULL),
-(2, 8, '2025-10-04 02:34:40', '205.00', 'cancelled', 1, 'card', NULL, '2025-10-04 09:34:40', '2025-10-04 10:05:29', '7', NULL, NULL),
-(3, 8, '2025-10-04 02:39:50', '205.00', 'cancelled', 1, 'card', NULL, '2025-10-04 09:39:50', '2025-10-04 10:05:27', '6', NULL, NULL),
-(4, 8, '2025-10-04 02:44:35', '205.00', 'cancelled', 1, 'card', NULL, '2025-10-04 09:44:35', '2025-10-04 10:05:25', '9', NULL, NULL),
-(5, 8, '2025-10-04 03:43:54', '205.00', 'cancelled', 1, 'card', NULL, '2025-10-04 10:43:54', '2025-10-04 10:54:55', '85', NULL, NULL),
-(6, 8, '2025-10-04 03:54:48', '2665.00', 'cancelled', 1, 'card', NULL, '2025-10-04 10:54:48', '2025-10-04 10:54:57', '57', NULL, NULL),
-(7, 8, '2025-10-04 05:31:13', '205.00', 'cancelled', 1, 'card', 1, '2025-10-04 12:31:13', '2025-10-04 15:15:17', NULL, NULL, NULL),
-(8, 8, '2025-10-04 05:36:22', '205.00', 'cancelled', 1, 'card', 2, '2025-10-04 12:36:22', '2025-10-04 12:36:51', '1UB14343G42883930', NULL, NULL),
-(9, 8, '2025-10-04 05:37:55', '615.00', 'cancelled', 1, 'card', 3, '2025-10-04 12:37:55', '2025-10-04 15:15:12', NULL, NULL, NULL),
-(10, 7, '2025-10-04 07:44:11', '2310.00', 'cancelled', 3, 'card', 4, '2025-10-04 14:44:11', '2025-10-04 14:59:53', NULL, NULL, NULL),
-(11, 7, '2025-10-04 07:44:23', '205.00', 'cancelled', 3, 'card', 5, '2025-10-04 14:44:23', '2025-10-04 14:59:50', NULL, NULL, NULL),
-(12, 7, '2025-10-04 07:44:34', '205.00', 'cancelled', 3, 'card', 6, '2025-10-04 14:44:34', '2025-10-04 14:59:47', NULL, NULL, NULL),
-(13, 7, '2025-10-04 07:45:26', '205.00', 'cancelled', 3, 'card', 7, '2025-10-04 14:45:26', '2025-10-04 14:59:44', NULL, NULL, NULL),
-(14, 7, '2025-10-04 08:02:59', '205.00', 'cancelled', 3, 'card', 8, '2025-10-04 15:02:59', '2025-10-04 15:03:40', '3NC28549W2543104C', NULL, NULL),
-(15, 7, '2025-10-04 08:03:13', '205.00', '', 3, 'cod', NULL, '2025-10-04 15:03:13', '2025-10-04 15:03:13', NULL, NULL, NULL),
-(16, 7, '2025-10-04 08:03:24', '205.00', '', 3, 'cod', NULL, '2025-10-04 15:03:24', '2025-10-04 15:03:24', NULL, NULL, NULL),
-(17, 7, '2025-10-04 08:03:34', '205.00', '', 3, 'cod', NULL, '2025-10-04 15:03:34', '2025-10-04 15:03:34', NULL, NULL, NULL),
-(18, 7, '2025-10-04 08:03:58', '205.00', '', 3, 'cod', NULL, '2025-10-04 15:03:58', '2025-10-04 15:03:58', NULL, NULL, NULL),
-(19, 8, '2025-10-04 08:14:11', '205.00', '', 1, 'cod', NULL, '2025-10-04 15:14:11', '2025-10-04 15:14:11', NULL, NULL, NULL),
-(20, 8, '2025-10-04 08:14:31', '205.00', '', 1, 'cod', NULL, '2025-10-04 15:14:31', '2025-10-04 15:14:31', NULL, NULL, NULL),
-(21, 8, '2025-10-04 08:14:56', '205.00', '', 1, 'cod', NULL, '2025-10-04 15:14:56', '2025-10-04 15:14:56', NULL, NULL, NULL),
-(22, 11, '2025-10-05 06:44:28', '210.00', 'paid', 5, 'card', 9, '2025-10-05 13:44:28', '2025-10-05 13:44:28', '9BG16867AY442874F', NULL, NULL);
+INSERT INTO `product_orders` (`order_id`, `user_id`, `order_date`, `total_amount`, `status`, `shipping_address_id`, `payment_method`, `payment_id`, `created_at`, `updated_at`, `paypal_order_id`, `cancellation_reason`, `vehicle_type`, `vehicle_id`) VALUES
+(1, 8, '2025-10-04 02:22:36', '205.00', 'cancelled', 1, 'card', NULL, '2025-10-04 09:22:36', '2025-10-04 10:05:31', '6', NULL, NULL, NULL),
+(2, 8, '2025-10-04 02:34:40', '205.00', 'cancelled', 1, 'card', NULL, '2025-10-04 09:34:40', '2025-10-04 10:05:29', '7', NULL, NULL, NULL),
+(3, 8, '2025-10-04 02:39:50', '205.00', 'cancelled', 1, 'card', NULL, '2025-10-04 09:39:50', '2025-10-04 10:05:27', '6', NULL, NULL, NULL),
+(4, 8, '2025-10-04 02:44:35', '205.00', 'cancelled', 1, 'card', NULL, '2025-10-04 09:44:35', '2025-10-04 10:05:25', '9', NULL, NULL, NULL),
+(5, 8, '2025-10-04 03:43:54', '205.00', 'cancelled', 1, 'card', NULL, '2025-10-04 10:43:54', '2025-10-04 10:54:55', '85', NULL, NULL, NULL),
+(6, 8, '2025-10-04 03:54:48', '2665.00', 'cancelled', 1, 'card', NULL, '2025-10-04 10:54:48', '2025-10-04 10:54:57', '57', NULL, NULL, NULL),
+(7, 8, '2025-10-04 05:31:13', '205.00', 'cancelled', 1, 'card', 1, '2025-10-04 12:31:13', '2025-10-04 15:15:17', NULL, NULL, NULL, NULL),
+(8, 8, '2025-10-04 05:36:22', '205.00', 'cancelled', 1, 'card', 2, '2025-10-04 12:36:22', '2025-10-04 12:36:51', '1UB14343G42883930', NULL, NULL, NULL),
+(9, 8, '2025-10-04 05:37:55', '615.00', 'cancelled', 1, 'card', 3, '2025-10-04 12:37:55', '2025-10-04 15:15:12', NULL, NULL, NULL, NULL),
+(10, 7, '2025-10-04 07:44:11', '2310.00', 'cancelled', 3, 'card', 4, '2025-10-04 14:44:11', '2025-10-04 14:59:53', NULL, NULL, NULL, NULL),
+(11, 7, '2025-10-04 07:44:23', '205.00', 'cancelled', 3, 'card', 5, '2025-10-04 14:44:23', '2025-10-04 14:59:50', NULL, NULL, NULL, NULL),
+(12, 7, '2025-10-04 07:44:34', '205.00', 'cancelled', 3, 'card', 6, '2025-10-04 14:44:34', '2025-10-04 14:59:47', NULL, NULL, NULL, NULL),
+(13, 7, '2025-10-04 07:45:26', '205.00', 'cancelled', 3, 'card', 7, '2025-10-04 14:45:26', '2025-10-04 14:59:44', NULL, NULL, NULL, NULL),
+(14, 7, '2025-10-04 08:02:59', '205.00', 'cancelled', 3, 'card', 8, '2025-10-04 15:02:59', '2025-10-04 15:03:40', '3NC28549W2543104C', NULL, NULL, NULL),
+(15, 7, '2025-10-04 08:03:13', '205.00', '', 3, 'cod', NULL, '2025-10-04 15:03:13', '2025-10-04 15:03:13', NULL, NULL, NULL, NULL),
+(16, 7, '2025-10-04 08:03:24', '205.00', '', 3, 'cod', NULL, '2025-10-04 15:03:24', '2025-10-04 15:03:24', NULL, NULL, NULL, NULL),
+(17, 7, '2025-10-04 08:03:34', '205.00', '', 3, 'cod', NULL, '2025-10-04 15:03:34', '2025-10-04 15:03:34', NULL, NULL, NULL, NULL),
+(18, 7, '2025-10-04 08:03:58', '205.00', '', 3, 'cod', NULL, '2025-10-04 15:03:58', '2025-10-04 15:03:58', NULL, NULL, NULL, NULL),
+(19, 8, '2025-10-04 08:14:11', '205.00', '', 1, 'cod', NULL, '2025-10-04 15:14:11', '2025-10-04 15:14:11', NULL, NULL, NULL, NULL),
+(20, 8, '2025-10-04 08:14:31', '205.00', '', 1, 'cod', NULL, '2025-10-04 15:14:31', '2025-10-04 15:14:31', NULL, NULL, NULL, NULL),
+(21, 8, '2025-10-04 08:14:56', '205.00', '', 1, 'cod', NULL, '2025-10-04 15:14:56', '2025-10-04 15:14:56', NULL, NULL, NULL, NULL),
+(22, 11, '2025-10-05 06:44:28', '210.00', 'delivered', 5, 'card', 9, '2025-10-05 13:44:28', '2025-10-05 15:09:48', '9BG16867AY442874F', NULL, NULL, NULL),
+(23, 9, '2025-10-05 08:42:14', '210.00', 'paid', 6, 'card', 10, '2025-10-05 15:42:14', '2025-10-05 15:42:14', '5M619307HM508061X', NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -343,7 +346,8 @@ INSERT INTO `product_order_items` (`order_item_id`, `order_id`, `producer_id`, `
 (19, 19, 6, 'White Eggs (Large)', 1, '205.00'),
 (20, 20, 6, 'White Eggs (Large)', 1, '205.00'),
 (21, 21, 6, 'White Eggs (Large)', 1, '205.00'),
-(22, 22, 5, 'Test Egg', 1, '210.00');
+(22, 22, 5, 'Test Egg', 1, '210.00'),
+(23, 23, 5, 'Test Egg', 1, '210.00');
 
 -- --------------------------------------------------------
 
@@ -456,7 +460,7 @@ INSERT INTO `USER` (`USER_ID`, `FIRST_NAME`, `MIDDLE_NAME`, `LAST_NAME`, `EMAIL`
 (10, 'Eduard Simon', 'Nemiada', 'Miana', 'simonmiana@gmail.co', '09956336238', 'default_avatar.png', '$2y$10$Zzi2FrqhC90ptvMdxXzPVuHriuSOqReJ/6wAZNt3L0b56eCsnZKga', 'customer', 'ACTIVE', NULL, '2025-10-04 15:18:01', '2025-10-04 15:18:01'),
 (5, 'Crack', 'Nemiada', 'Cart', 'crackcart.auth@gmail.com', '0995 633 6238', 'default_avatar.png', '$2y$10$IwU5AvKjNBEncZ8OeXyYTu67a/fKEKo2eYWEuIdRY.HsBhIuSrpFa', 'customer', 'ACTIVE', NULL, '2025-09-25 08:02:11', '2025-09-25 08:02:11'),
 (6, 'q3rq', 'qr3rq', 'qr3rq', 'qkramirez04@tip.edu.ph', '125135135', 'default_avatar.png', '$2y$10$ukVSWkly5c4s9UKZZNMPMekPgv.jNIDiSBirIJ5g48KTGElahPAB6', 'customer', 'ACTIVE', NULL, '2025-10-03 08:19:37', '2025-10-03 08:19:37'),
-(11, 'Eduard Simon', 'Nemiada', 'Miana', 'simonmiana@gmail.com', '09956336238', 'default_avatar.png', '$2y$10$QDBf.AQkpUKMQgTu6r4D6OvmdkqzvIkzl0RKeOG092Ff7ILa/uNIu', 'customer', 'ACTIVE', NULL, '2025-10-04 15:18:40', '2025-10-04 15:18:40'),
+(11, 'Eduard Simon', 'Nemiada', 'Miana', 'simonmiana@gmail.com', '09956336238', 'uploads/profile_pictures/user_11_68e2844c3376f2.15203154.jpg', '$2y$10$QDBf.AQkpUKMQgTu6r4D6OvmdkqzvIkzl0RKeOG092Ff7ILa/uNIu', 'customer', 'ACTIVE', NULL, '2025-10-04 15:18:40', '2025-10-05 14:44:28'),
 (9, 'Admin', NULL, 'User', 'admin@crackcart.com', '123-456-7890', 'default_avatar.png', '21232f297a57a5a743894a0e4a801fc3', 'admin', 'ACTIVE', NULL, '2025-10-04 14:27:06', '2025-10-04 14:33:34');
 
 -- --------------------------------------------------------
@@ -486,7 +490,8 @@ INSERT INTO `user_addresses` (`address_id`, `user_id`, `address_line1`, `address
 (1, 8, '9 Mapalad', '', 'Quezon City', 'Metro Manila', '1104', 'Philippines', 'shipping', 0),
 (3, 7, '9 Mapalad', '', 'Quezon City', 'Metro Manila', '1104', 'Philippines', 'shipping', 0),
 (4, 10, '9 Mapalad', 'Mariblo', 'Quezon City', 'Quezon City', '', 'Philippines', 'shipping', 1),
-(5, 11, '9 Mapalad', 'Mariblo', 'Quezon City', 'Quezon City', '', 'Philippines', 'shipping', 1);
+(5, 11, '9 Mapalad', 'Mariblo', 'Quezon City', 'Quezon City', '', 'Philippines', 'shipping', 1),
+(6, 9, '9 Mapalad', '', 'Quezon City', 'Metro Manila', '1104', 'Philippines', 'shipping', 0);
 
 -- --------------------------------------------------------
 
@@ -614,7 +619,8 @@ ALTER TABLE `product_orders`
   ADD PRIMARY KEY (`order_id`),
   ADD KEY `user_id` (`user_id`),
   ADD KEY `shipping_address_id` (`shipping_address_id`),
-  ADD KEY `payment_id` (`payment_id`);
+  ADD KEY `payment_id` (`payment_id`),
+  ADD KEY `idx_vehicle_id` (`vehicle_id`);
 
 --
 -- Indexes for table `product_order_items`
@@ -732,7 +738,7 @@ ALTER TABLE `orders`
 -- AUTO_INCREMENT for table `Payment`
 --
 ALTER TABLE `Payment`
-  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT for table `PRICE`
@@ -750,13 +756,13 @@ ALTER TABLE `PRODUCER`
 -- AUTO_INCREMENT for table `product_orders`
 --
 ALTER TABLE `product_orders`
-  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
 
 --
 -- AUTO_INCREMENT for table `product_order_items`
 --
 ALTER TABLE `product_order_items`
-  MODIFY `order_item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+  MODIFY `order_item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
 
 --
 -- AUTO_INCREMENT for table `product_returns`
@@ -798,7 +804,7 @@ ALTER TABLE `USER`
 -- AUTO_INCREMENT for table `user_addresses`
 --
 ALTER TABLE `user_addresses`
-  MODIFY `address_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `address_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `Vehicle`
