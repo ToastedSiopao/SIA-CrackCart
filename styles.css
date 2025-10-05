@@ -168,6 +168,10 @@ body::before {
   margin-bottom: 8px;
 }
 
+.input-group {
+    display: flex;
+}
+
 .form-control {
   border: 1px solid #ddd;
   border-radius: 8px;
@@ -186,6 +190,11 @@ body::before {
   border: 1px solid #ddd;
   border-radius: 8px 0 0 8px;
   color: var(--dark-color);
+}
+
+/* Ensure the input field inside an input group is correctly rounded */
+.input-group > .form-control {
+    border-radius: 0 8px 8px 0;
 }
 
 .btn-primary {
@@ -258,7 +267,7 @@ body::before {
   backdrop-filter: blur(10px);
   border-radius: var(--border-radius);
   box-shadow: var(--box-shadow);
-  border: 1px solid rgba(255, 213, 79, 0.3);
+  border: 1px solid rgba(255, 213, 79,.3);
   padding: 60px 40px;
   text-align: center;
   transition: var(--transition);

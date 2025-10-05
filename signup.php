@@ -11,7 +11,7 @@
 <body class="login-page">
   <!-- Header Logo -->
   <div class="header-logo">
-    <img src="assets/Logo.png" alt="CrackCart Logo" class="logo-img">
+    <a href="index.php"><img src="assets/Logo.png" alt="CrackCart Logo" class="logo-img"></a>
   </div>
 
   <div class="container-fluid h-100">
@@ -57,7 +57,7 @@
       <div class="col-lg-4 col-md-5">
         <div class="login-container"> <!-- Using login-container for consistent styling -->
           <div class="text-center mb-4">
-            <img src="assets/Truck.png" alt="Truck Logo" class="truck-logo">
+            <a href="index.php"><img src="assets/Truck.png" alt="Truck Logo" class="truck-logo"></a>
             <h2 class="login-title">Create Account</h2> <!-- Changed title -->
             <p class="text-muted">Fill in your details to get started</p>
           </div>
@@ -78,7 +78,7 @@
               <label class="form-label visually-hidden">Middle Name</label>
               <div class="input-group">
                 <span class="input-group-text"><i class="fas fa-user"></i></span>
-                <input type="text" class="form-control" name="middleName" placeholder="Middle name">
+                <input type="text" class.form-control" name="middleName" placeholder="Middle name">
               </div>
             </div>
             <div class="mb-2">

@@ -16,7 +16,7 @@ if (isset($_GET['reason']) && $_GET['reason'] === 'inactive') {
 <body class="login-page">
   <!-- Header Logo -->
   <div class="header-logo">
-    <img src="assets/Logo.png" alt="CrackCart Logo" class="logo-img">
+    <a href="index.php"><img src="assets/Logo.png" alt="CrackCart Logo" class="logo-img"></a>
   </div>
 
   <div class="container-fluid h-100">
@@ -62,7 +62,7 @@ if (isset($_GET['reason']) && $_GET['reason'] === 'inactive') {
       <div class="col-lg-4 col-md-5">
         <div class="login-container">
           <div class="text-center mb-4">
-            <img src="assets/Truck.png" alt="Truck Logo" class="truck-logo">
+            <a href="index.php"><img src="assets/Truck.png" alt="Truck Logo" class="truck-logo"></a>
             <h2 class="login-title">Welcome Back</h2>
             <p class="text-muted">Sign in to your account</p>
           </div>
@@ -81,7 +81,7 @@ if (isset($_GET['reason']) && $_GET['reason'] === 'inactive') {
 
             <div class="mb-3">
               <label for="loginPassword" class="form-label">Password</label>
-              <div class.input-group">
+              <div class="input-group">
                 <span class="input-group-text"><i class="fas fa-lock"></i></span>
                 <input type="password" class="form-control" id="loginPassword" name="password" placeholder="Enter your password" required>
                 <button class="btn btn-outline-secondary" type="button" id="togglePassword">
