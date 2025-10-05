@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: sql101.infinityfree.com
--- Generation Time: Oct 04, 2025 at 03:26 PM
+-- Generation Time: Oct 05, 2025 at 10:39 AM
 -- Server version: 11.4.7-MariaDB
 -- PHP Version: 7.2.22
 
@@ -186,7 +186,8 @@ INSERT INTO `Payment` (`payment_id`, `booking_id`, `order_id`, `amount`, `curren
 (5, NULL, 11, '205.00', 'PHP', 'cod', 'pending', NULL, NULL),
 (6, NULL, 12, '205.00', 'PHP', 'cod', 'pending', NULL, NULL),
 (7, NULL, 13, '205.00', 'PHP', 'cod', 'pending', NULL, NULL),
-(8, NULL, 14, '205.00', 'PHP', 'paypal', 'completed', NULL, '5PP07558NW4621240');
+(8, NULL, 14, '205.00', 'PHP', 'paypal', 'completed', NULL, '5PP07558NW4621240'),
+(9, NULL, 22, '210.00', 'PHP', 'paypal', 'completed', NULL, '76U764920M824035D');
 
 -- --------------------------------------------------------
 
@@ -221,7 +222,7 @@ INSERT INTO `PRICE` (`PRICE_ID`, `PRODUCER_ID`, `TYPE`, `PRICE`, `PER`, `STATUS`
 (10, 6, 'White Eggs (Large)', '205.00', 'per tray', 'active', 0),
 (11, 7, 'Salted Eggs', '250.00', 'per tray', 'active', 0),
 (12, 8, 'Itik/Ducks Eggs', '290.00', 'per tray', 'active', 0),
-(13, 5, 'Test Egg', '210', 'per tray', 'active', 0);
+(13, 5, 'Test Egg', '210', 'per tray', 'active', 99);
 
 -- --------------------------------------------------------
 
@@ -298,7 +299,8 @@ INSERT INTO `product_orders` (`order_id`, `user_id`, `order_date`, `total_amount
 (18, 7, '2025-10-04 08:03:58', '205.00', '', 3, 'cod', NULL, '2025-10-04 15:03:58', '2025-10-04 15:03:58', NULL, NULL, NULL),
 (19, 8, '2025-10-04 08:14:11', '205.00', '', 1, 'cod', NULL, '2025-10-04 15:14:11', '2025-10-04 15:14:11', NULL, NULL, NULL),
 (20, 8, '2025-10-04 08:14:31', '205.00', '', 1, 'cod', NULL, '2025-10-04 15:14:31', '2025-10-04 15:14:31', NULL, NULL, NULL),
-(21, 8, '2025-10-04 08:14:56', '205.00', '', 1, 'cod', NULL, '2025-10-04 15:14:56', '2025-10-04 15:14:56', NULL, NULL, NULL);
+(21, 8, '2025-10-04 08:14:56', '205.00', '', 1, 'cod', NULL, '2025-10-04 15:14:56', '2025-10-04 15:14:56', NULL, NULL, NULL),
+(22, 11, '2025-10-05 06:44:28', '210.00', 'paid', 5, 'card', 9, '2025-10-05 13:44:28', '2025-10-05 13:44:28', '9BG16867AY442874F', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -340,7 +342,8 @@ INSERT INTO `product_order_items` (`order_item_id`, `order_id`, `producer_id`, `
 (18, 18, 6, 'White Eggs (Large)', 1, '205.00'),
 (19, 19, 6, 'White Eggs (Large)', 1, '205.00'),
 (20, 20, 6, 'White Eggs (Large)', 1, '205.00'),
-(21, 21, 6, 'White Eggs (Large)', 1, '205.00');
+(21, 21, 6, 'White Eggs (Large)', 1, '205.00'),
+(22, 22, 5, 'Test Egg', 1, '210.00');
 
 -- --------------------------------------------------------
 
@@ -435,6 +438,7 @@ CREATE TABLE `USER` (
   `LAST_NAME` varchar(50) NOT NULL,
   `EMAIL` varchar(100) NOT NULL,
   `PHONE` varchar(20) DEFAULT NULL,
+  `PROFILE_PICTURE` varchar(255) DEFAULT 'default_avatar.png',
   `PASSWORD` varchar(255) NOT NULL,
   `ROLE` enum('driver','admin','customer') DEFAULT 'customer',
   `ACCOUNT_STATUS` varchar(20) NOT NULL DEFAULT 'ACTIVE',
@@ -447,13 +451,13 @@ CREATE TABLE `USER` (
 -- Dumping data for table `USER`
 --
 
-INSERT INTO `USER` (`USER_ID`, `FIRST_NAME`, `MIDDLE_NAME`, `LAST_NAME`, `EMAIL`, `PHONE`, `PASSWORD`, `ROLE`, `ACCOUNT_STATUS`, `LOCK_EXPIRES_AT`, `CREATED_AT`, `UPDATED_AT`) VALUES
-(4, 'Rasheed Malachi', 'Ramirez', 'Salamat', 'rasheedmalachi@gmail.com', '', '$2y$10$befzVXETI53dfpYMhMBvUeXykYXzrIK96lTix/3QtQFUoLCEZ4zpW', 'customer', 'ACTIVE', NULL, '2025-09-22 12:09:06', '2025-09-22 12:09:06'),
-(10, 'Eduard Simon', 'Nemiada', 'Miana', 'simonmiana@gmail.co', '09956336238', '$2y$10$Zzi2FrqhC90ptvMdxXzPVuHriuSOqReJ/6wAZNt3L0b56eCsnZKga', 'customer', 'ACTIVE', NULL, '2025-10-04 15:18:01', '2025-10-04 15:18:01'),
-(5, 'Crack', 'Nemiada', 'Cart', 'crackcart.auth@gmail.com', '0995 633 6238', '$2y$10$IwU5AvKjNBEncZ8OeXyYTu67a/fKEKo2eYWEuIdRY.HsBhIuSrpFa', 'customer', 'ACTIVE', NULL, '2025-09-25 08:02:11', '2025-09-25 08:02:11'),
-(6, 'q3rq', 'qr3rq', 'qr3rq', 'qkramirez04@tip.edu.ph', '125135135', '$2y$10$ukVSWkly5c4s9UKZZNMPMekPgv.jNIDiSBirIJ5g48KTGElahPAB6', 'customer', 'ACTIVE', NULL, '2025-10-03 08:19:37', '2025-10-03 08:19:37'),
-(11, 'Eduard Simon', 'Nemiada', 'Miana', 'simonmiana@gmail.com', '09956336238', '$2y$10$QDBf.AQkpUKMQgTu6r4D6OvmdkqzvIkzl0RKeOG092Ff7ILa/uNIu', 'customer', 'ACTIVE', NULL, '2025-10-04 15:18:40', '2025-10-04 15:18:40'),
-(9, 'Admin', NULL, 'User', 'admin@crackcart.com', '123-456-7890', '21232f297a57a5a743894a0e4a801fc3', 'admin', 'ACTIVE', NULL, '2025-10-04 14:27:06', '2025-10-04 14:33:34');
+INSERT INTO `USER` (`USER_ID`, `FIRST_NAME`, `MIDDLE_NAME`, `LAST_NAME`, `EMAIL`, `PHONE`, `PROFILE_PICTURE`, `PASSWORD`, `ROLE`, `ACCOUNT_STATUS`, `LOCK_EXPIRES_AT`, `CREATED_AT`, `UPDATED_AT`) VALUES
+(4, 'Rasheed Malachi', 'Ramirez', 'Salamat', 'rasheedmalachi@gmail.com', '', 'default_avatar.png', '$2y$10$befzVXETI53dfpYMhMBvUeXykYXzrIK96lTix/3QtQFUoLCEZ4zpW', 'customer', 'ACTIVE', NULL, '2025-09-22 12:09:06', '2025-09-22 12:09:06'),
+(10, 'Eduard Simon', 'Nemiada', 'Miana', 'simonmiana@gmail.co', '09956336238', 'default_avatar.png', '$2y$10$Zzi2FrqhC90ptvMdxXzPVuHriuSOqReJ/6wAZNt3L0b56eCsnZKga', 'customer', 'ACTIVE', NULL, '2025-10-04 15:18:01', '2025-10-04 15:18:01'),
+(5, 'Crack', 'Nemiada', 'Cart', 'crackcart.auth@gmail.com', '0995 633 6238', 'default_avatar.png', '$2y$10$IwU5AvKjNBEncZ8OeXyYTu67a/fKEKo2eYWEuIdRY.HsBhIuSrpFa', 'customer', 'ACTIVE', NULL, '2025-09-25 08:02:11', '2025-09-25 08:02:11'),
+(6, 'q3rq', 'qr3rq', 'qr3rq', 'qkramirez04@tip.edu.ph', '125135135', 'default_avatar.png', '$2y$10$ukVSWkly5c4s9UKZZNMPMekPgv.jNIDiSBirIJ5g48KTGElahPAB6', 'customer', 'ACTIVE', NULL, '2025-10-03 08:19:37', '2025-10-03 08:19:37'),
+(11, 'Eduard Simon', 'Nemiada', 'Miana', 'simonmiana@gmail.com', '09956336238', 'default_avatar.png', '$2y$10$QDBf.AQkpUKMQgTu6r4D6OvmdkqzvIkzl0RKeOG092Ff7ILa/uNIu', 'customer', 'ACTIVE', NULL, '2025-10-04 15:18:40', '2025-10-04 15:18:40'),
+(9, 'Admin', NULL, 'User', 'admin@crackcart.com', '123-456-7890', 'default_avatar.png', '21232f297a57a5a743894a0e4a801fc3', 'admin', 'ACTIVE', NULL, '2025-10-04 14:27:06', '2025-10-04 14:33:34');
 
 -- --------------------------------------------------------
 
@@ -498,6 +502,27 @@ CREATE TABLE `Vehicle` (
   `status` varchar(20) DEFAULT NULL,
   `last_maintenance` date DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+
+--
+-- Dumping data for table `Vehicle`
+--
+
+INSERT INTO `Vehicle` (`vehicle_id`, `plate_no`, `type`, `capacity_trays`, `status`, `last_maintenance`) VALUES
+(1, 'MC1021', 'Motorcycle', 10, 'available', NULL),
+(2, 'MC2398', 'Motorcycle', 15, 'available', NULL),
+(3, 'MC5874', 'Motorcycle', 8, 'available', NULL),
+(4, 'MC4862', 'Motorcycle', 12, 'available', NULL),
+(5, 'MC3321', 'Motorcycle', 14, 'available', NULL),
+(6, 'CAR7781', 'Car', 50, 'available', NULL),
+(7, 'CAR1212', 'Car', 45, 'available', NULL),
+(8, 'CAR3434', 'Car', 55, 'available', NULL),
+(9, 'CAR9087', 'Car', 40, 'available', NULL),
+(10, 'CAR5656', 'Car', 48, 'available', NULL),
+(11, 'TRK4501', 'Truck', 200, 'available', NULL),
+(12, 'TRK3320', 'Truck', 250, 'available', NULL),
+(13, 'TRK8791', 'Truck', 300, 'available', NULL),
+(14, 'TRK6055', 'Truck', 220, 'available', NULL),
+(15, 'TRK1109', 'Truck', 150, 'available', NULL);
 
 --
 -- Indexes for dumped tables
@@ -707,7 +732,7 @@ ALTER TABLE `orders`
 -- AUTO_INCREMENT for table `Payment`
 --
 ALTER TABLE `Payment`
-  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT for table `PRICE`
@@ -725,13 +750,13 @@ ALTER TABLE `PRODUCER`
 -- AUTO_INCREMENT for table `product_orders`
 --
 ALTER TABLE `product_orders`
-  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
+  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
 -- AUTO_INCREMENT for table `product_order_items`
 --
 ALTER TABLE `product_order_items`
-  MODIFY `order_item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
+  MODIFY `order_item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
 -- AUTO_INCREMENT for table `product_returns`
@@ -779,7 +804,7 @@ ALTER TABLE `user_addresses`
 -- AUTO_INCREMENT for table `Vehicle`
 --
 ALTER TABLE `Vehicle`
-  MODIFY `vehicle_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `vehicle_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
