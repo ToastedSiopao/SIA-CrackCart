@@ -1,6 +1,4 @@
-<?php
-session_start();
-?>
+<?php session_start(); ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,23 +6,32 @@ session_start();
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>About CrackCart</title>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <link href="styles.css" rel="stylesheet">
   <link href="about-styles.css" rel="stylesheet">
 </head>
 <body>
-  <?php include("navbar.php"); ?>
+  <?php include("public_navbar.php"); ?>
 
   <main class="container">
     <section class="about-section">
       <h2>About CrackCart</h2>
-      <p>CrackCart is a convenient way for customers to book egg deliveries through our dedicated transport system. Many people forget to buy eggs while shopping, which often means another trip to the grocery store and wasted time. CrackCart solves this problem by allowing customers to order eggs online and have them delivered directly to their homes. Our service also helps egg producers by providing an additional way to reach customers without relying solely on grocery stores and restaurants. CrackCart handles fleet management, delivery coordination, order processing, and secure payments to ensure a smooth delivery experience.</p>
-      <p>CrackCart’s system combines all the tools customers need to book egg deliveries quickly and easily. Our Fleet Management System keeps track of available trucks and delivery schedules. The Order Processing System lets customers place delivery requests, confirms their bookings, and provides real-time tracking. The Delivery Coordination System plans the safest and fastest routes for our trucks to transport eggs. Payments are processed through a secure online payment system, while the User Management System stores customer profiles, booking history, and preferences. The platform integrates with maps and GPS services for tracking and payment gateways for seamless transactions.</p>
-      
+      <div class="about-content">
+        <div class="about-text">
+          <p>CrackCart is a revolutionary platform designed to connect egg producers directly with consumers. We believe in providing fresh, high-quality eggs with the convenience of online ordering and direct home delivery.</p>
+          <p>Our mission is to simplify the supply chain, ensuring that you receive the freshest eggs possible while supporting local producers. We handle everything from order processing and payment to delivery coordination and fleet management, creating a seamless experience for both our customers and our partners.</p>
+        </div>
+        <div class="about-image">
+          <img src="about-image.jpg" alt="Fresh eggs in a basket">
+        </div>
+      </div>
       <div class="mission">
-        <h3>Our Mission</h3>
-        <p>To provide a seamless and reliable egg delivery service that connects customers with local producers, saving time and supporting local agriculture.</p>
+          <h3>Our Mission</h3>
+          <p>To provide a simple, reliable, and fresh egg delivery service that supports local communities and brings the farm-to-table experience to your doorstep.</p>
       </div>
     </section>
   </main>
+
+  <script src="public-script.js"></script>
 </body>
 </html>
