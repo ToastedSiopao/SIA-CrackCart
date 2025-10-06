@@ -5,7 +5,7 @@ $sidebar_links = [
     'dashboard.php' => '<i class="bi bi-house-door"></i> Dashboard',
     'products.php' => '<i class="bi bi-box-seam"></i> Products',
     'manage_orders.php' => '<i class="bi bi-pencil-square"></i> Manage Orders',
-    'returns.php' => '<i class="bi bi-arrow-return-left"></i> Returns',
+    'manage_returns.php' => '<i class="bi bi-arrow-return-left"></i> Manage Returns',
     'manage_users.php' => '<i class="bi bi-people"></i> Manage Users',
     'fleet_management.php' => '<i class="bi bi-truck"></i> Fleet Management',
     'logout.php' => '<i class="bi bi-box-arrow-left"></i> Logout'
