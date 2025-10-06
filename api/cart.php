@@ -10,6 +10,7 @@ if (!isset($_SESSION['product_cart'])) {
 if (!isset($_SESSION['product_cart_meta'])) {
     $_SESSION['product_cart_meta'] = [
         'vehicle_type' => null,
+        'delivery_fee' => 0,
         'notes' => ''
     ];
 }
@@ -56,12 +57,17 @@ switch ($method) {
             $subtotal += ($item['price'] ?? 0) * ($item['quantity'] ?? 0);
             $total_items += ($item['quantity'] ?? 0);
         }
+        $delivery_fee = (float)($_SESSION['product_cart_meta']['delivery_fee'] ?? 0);
+        $grand_total = $subtotal + $delivery_fee;
+
         echo json_encode([
             'status' => 'success', 
             'data' => [
                 'items' => array_values($cart), 
                 'meta' => $_SESSION['product_cart_meta'],
                 'subtotal' => $subtotal, 
+                'delivery_fee' => $delivery_fee,
+                'grand_total' => $grand_total,
                 'total_items' => $total_items
             ]
         ]);
@@ -82,7 +88,7 @@ switch ($method) {
                         exit();
                     }
 
-                    $cart_item_key = md5($item_data['producer_id'] . $item_data['product_type'] . $item_data['tray_size']);
+                    $cart_item_key = md5($item_data['producer_id'] . $item_data['product_type'] . ($item_data['tray_size'] ?? 30));
                     $quantity = filter_var($item_data['quantity'], FILTER_VALIDATE_INT);
 
                     if ($quantity > 0) {
@@ -99,9 +105,11 @@ switch ($method) {
                             ];
                         }
                         
-                        // Update cart-level meta information
                         if (isset($item_data['vehicle_type'])) {
                             $_SESSION['product_cart_meta']['vehicle_type'] = $item_data['vehicle_type'];
+                        }
+                         if (isset($item_data['delivery_fee'])) {
+                            $_SESSION['product_cart_meta']['delivery_fee'] = (float)$item_data['delivery_fee'];
                         }
                         if (isset($item_data['notes'])) {
                             $_SESSION['product_cart_meta']['notes'] = $item_data['notes'];
@@ -118,58 +126,9 @@ switch ($method) {
                 }
                 break;
             
-            case 'update-meta':
-                if (isset($data['vehicle_type'])) {
-                    $_SESSION['product_cart_meta']['vehicle_type'] = $data['vehicle_type'];
-                }
-                if (isset($data['notes'])) {
-                    $_SESSION['product_cart_meta']['notes'] = $data['notes'];
-                }
-                echo json_encode(['status' => 'success', 'message' => 'Cart details updated.']);
-                break;
-
-            case 'PUT':
-                if (isset($data['cart_item_key'], $data['quantity'])) {
-                    $cart_item_key = $data['cart_item_key'];
-                    $quantity = filter_var($data['quantity'], FILTER_VALIDATE_INT);
-
-                    if (isset($_SESSION['product_cart'][$cart_item_key])) {
-                        if ($quantity !== false && $quantity > 0) {
-                            $_SESSION['product_cart'][$cart_item_key]['quantity'] = $quantity;
-                            echo json_encode(['status' => 'success', 'message' => 'Cart updated.']);
-                        } else {
-                            unset($_SESSION['product_cart'][$cart_item_key]);
-                            echo json_encode(['status' => 'success', 'message' => 'Item removed from cart.']);
-                        }
-                    } else {
-                        http_response_code(404);
-                        echo json_encode(['status' => 'error', 'message' => 'Item not found in cart.']);
-                    }
-                } else {
-                    http_response_code(400);
-                    echo json_encode(['status' => 'error', 'message' => 'Invalid data provided for update.']);
-                }
-                break;
-
-            case 'DELETE':
-                if (isset($data['cart_item_key'])) {
-                    $cart_item_key = $data['cart_item_key'];
-                    if (isset($_SESSION['product_cart'][$cart_item_key])) {
-                        unset($_SESSION['product_cart'][$cart_item_key]);
-                        echo json_encode(['status' => 'success', 'message' => 'Item removed.']);
-                    } else {
-                        http_response_code(404);
-                        echo json_encode(['status' => 'error', 'message' => 'Item not found.']);
-                    }
-                } else {
-                    http_response_code(400);
-                    echo json_encode(['status' => 'error', 'message' => 'Invalid data for deletion.']);
-                }
-                break;
-                
             case 'clear':
                 $_SESSION['product_cart'] = [];
-                $_SESSION['product_cart_meta'] = ['vehicle_type' => null, 'notes' => ''];
+                $_SESSION['product_cart_meta'] = ['vehicle_type' => null, 'delivery_fee' => 0, 'notes' => ''];
                  echo json_encode(['status' => 'success', 'message' => 'Cart cleared.']);
                 break;
 
@@ -177,6 +136,22 @@ switch ($method) {
                 http_response_code(400);
                 echo json_encode(['status' => 'error', 'message' => "Invalid action: $action"]);
                 break;
+        }
+        break;
+
+    case 'DELETE':
+        if (isset($data['cart_item_key'])) {
+            $cart_item_key = $data['cart_item_key'];
+            if (isset($_SESSION['product_cart'][$cart_item_key])) {
+                unset($_SESSION['product_cart'][$cart_item_key]);
+                echo json_encode(['status' => 'success', 'message' => 'Item removed.']);
+            } else {
+                http_response_code(404);
+                echo json_encode(['status' => 'error', 'message' => 'Item not found.']);
+            }
+        } else {
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'Invalid data for deletion.']);
         }
         break;
 

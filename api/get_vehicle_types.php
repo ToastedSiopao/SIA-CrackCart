@@ -7,19 +7,24 @@ $response = ['status' => 'error', 'message' => 'An unknown error occurred.', 'da
 
 try {
     $query = "SELECT 
-                type, 
-                MIN(capacity_trays) as min_capacity, 
-                MAX(capacity_trays) as max_capacity 
-              FROM Vehicle 
-              WHERE status = 'available'
-              GROUP BY type
-              ORDER BY MIN(capacity_trays)";
+                vt.type_name AS type, 
+                vt.delivery_fee,
+                MIN(v.capacity_trays) as min_capacity, 
+                MAX(v.capacity_trays) as max_capacity 
+              FROM vehicle_types vt
+              JOIN Vehicle v ON vt.type_name = v.type
+              WHERE v.status = 'available'
+              GROUP BY vt.type_name, vt.delivery_fee
+              ORDER BY MIN(v.capacity_trays)";
 
     $result = $conn->query($query);
 
     if ($result) {
         $vehicle_types = [];
         while ($row = $result->fetch_assoc()) {
+            $row['delivery_fee'] = (float)$row['delivery_fee'];
+            $row['min_capacity'] = (int)$row['min_capacity'];
+            $row['max_capacity'] = (int)$row['max_capacity'];
             $vehicle_types[] = $row;
         }
         $response['status'] = 'success';

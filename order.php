@@ -16,7 +16,7 @@ $producer_id = $_GET['producer_id'];
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
-  <link href="dashboard-styles.css?v=3.1" rel="stylesheet">
+  <link href="dashboard-styles.css?v=3.2" rel="stylesheet">
   <style>
     .producer-logo-large {
         width: 80px;
@@ -45,7 +45,7 @@ $producer_id = $_GET['producer_id'];
     }
     .vehicle-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
         gap: 1rem;
     }
     .vehicle-type-card {
@@ -72,6 +72,7 @@ $producer_id = $_GET['producer_id'];
     }
     .vehicle-details { display: flex; flex-direction: column; line-height: 1.3; }
     .vehicle-type-name { font-weight: bold; color: #212529; }
+    .vehicle-fee { font-weight: 500; color: #198754; }
     .vehicle-capacity-range { font-size: 0.85rem; color: #6c757d; }
     .vehicle-type-card .form-check-input:checked + .form-check-label {
         background-color: #fff3cd;
@@ -124,13 +125,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const normalizedType = type ? type.toLowerCase() : '';
         if (normalizedType.includes('motor')) return 'bi-bicycle';
         if (normalizedType.includes('suv')) return 'bi-car-front-fill';
+        if (normalizedType.includes('car')) return 'bi-car-front-fill';
         if (normalizedType.includes('truck')) return 'bi-truck';
         return 'bi-question-circle';
     };
 
     Promise.all([
         fetch(`api/producers.php?producer_id=${producerId}`).then(res => res.json()),
-        fetch('api/get_vehicle_types.php').then(res => res.json()) // Fetch vehicle types
+        fetch('api/get_vehicle_types.php').then(res => res.json())
     ]).then(([producerData, vehicleTypeData]) => {
         if (producerData.status !== 'success' || !producerData.data) {
              throw new Error(producerData.message || 'Could not load producer details.');
@@ -186,11 +188,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 <label class="form-label fw-bold">4. Select Vehicle for Delivery</label>
                 <div class="vehicle-grid">${vehicleTypes.map(vt => `
                     <div class="form-check vehicle-type-card">
-                        <input class="form-check-input" type="radio" name="vehicle_type" id="vehicle_type_${vt.type.replace(/\s+/g, '_')}" value="${vt.type}" required>
-                        <label class="form-check-label" for="vehicle_type_${vt.type.replace(/\s+/g, '_')}">
+                        <input class="form-check-input" type="radio" name="vehicle_details" id="vehicle_type_${vt.type.replace(/[^a-zA-Z0-9]/g, '_')}" value='${JSON.stringify({ type: vt.type, fee: vt.delivery_fee })}' required>
+                        <label class="form-check-label" for="vehicle_type_${vt.type.replace(/[^a-zA-Z0-9]/g, '_')}">
                             <i class="bi ${getVehicleIcon(vt.type)} vehicle-icon"></i>
                             <div class="vehicle-details">
                                 <span class="vehicle-type-name">${vt.type}</span>
+                                <span class="vehicle-fee">₱${vt.delivery_fee.toFixed(2)}</span>
                                 <span class="vehicle-capacity-range">Capacity: ${vt.min_capacity} - ${vt.max_capacity} trays</span>
                             </div>
                         </label>
@@ -220,13 +223,14 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('orderForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const selectedProductRadio = document.querySelector('input[name="product_details"]:checked');
-            const selectedVehicleRadio = document.querySelector('input[name="vehicle_type"]:checked');
+            const selectedVehicleRadio = document.querySelector('input[name="vehicle_details"]:checked');
 
             if (!selectedProductRadio) { alert('Please select an egg type.'); return; }
             if (vehicleTypes.length > 0 && !selectedVehicleRadio) { alert('Please select a delivery vehicle type.'); return; }
             
             const productDetails = JSON.parse(selectedProductRadio.value);
-            const quantity = parseInt(quantityInput.value);
+            const vehicleDetails = selectedVehicleRadio ? JSON.parse(selectedVehicleRadio.value) : { type: null, fee: 0 };
+            const quantity = parseInt(document.getElementById('quantityInput').value);
 
             if (quantity > productDetails.stock) { alert('The order quantity exceeds the available stock.'); return; }
 
@@ -237,7 +241,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 price: productDetails.price,
                 quantity: quantity,
                 tray_size: parseInt(formData.get('tray_size')),
-                vehicle_type: selectedVehicleRadio ? formData.get('vehicle_type') : null,
+                vehicle_type: vehicleDetails.type,
+                delivery_fee: vehicleDetails.fee, // Pass the fee directly
                 notes: formData.get('notes')
             };
 
