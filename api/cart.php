@@ -3,6 +3,17 @@ session_start();
 header("Content-Type: application/json");
 include("../db_connect.php");
 
+// Ensure cart and its meta data are initialized
+if (!isset($_SESSION['product_cart'])) {
+    $_SESSION['product_cart'] = [];
+}
+if (!isset($_SESSION['product_cart_meta'])) {
+    $_SESSION['product_cart_meta'] = [
+        'vehicle_type' => null,
+        'notes' => ''
+    ];
+}
+
 function get_product_price($conn, $producer_id, $product_type) {
     $stmt = $conn->prepare("SELECT PRICE FROM PRICE WHERE PRODUCER_ID = ? AND TYPE = ?");
     if (!$stmt) return null;
@@ -29,10 +40,6 @@ function validate_cart($conn) {
     unset($item);
 }
 
-if (!isset($_SESSION['product_cart'])) {
-    $_SESSION['product_cart'] = [];
-}
-
 $method = $_SERVER['REQUEST_METHOD'];
 $data = json_decode(file_get_contents('php://input'), true);
 
@@ -49,7 +56,15 @@ switch ($method) {
             $subtotal += ($item['price'] ?? 0) * ($item['quantity'] ?? 0);
             $total_items += ($item['quantity'] ?? 0);
         }
-        echo json_encode(['status' => 'success', 'data' => ['items' => array_values($cart), 'subtotal' => $subtotal, 'total_items' => $total_items]]);
+        echo json_encode([
+            'status' => 'success', 
+            'data' => [
+                'items' => array_values($cart), 
+                'meta' => $_SESSION['product_cart_meta'],
+                'subtotal' => $subtotal, 
+                'total_items' => $total_items
+            ]
+        ]);
         break;
 
     case 'POST':
@@ -67,24 +82,31 @@ switch ($method) {
                         exit();
                     }
 
-                    $cart_item_key = md5($item_data['producer_id'] . $item_data['product_type']);
+                    $cart_item_key = md5($item_data['producer_id'] . $item_data['product_type'] . $item_data['tray_size']);
                     $quantity = filter_var($item_data['quantity'], FILTER_VALIDATE_INT);
 
                     if ($quantity > 0) {
                         if (isset($_SESSION['product_cart'][$cart_item_key])) {
                             $_SESSION['product_cart'][$cart_item_key]['quantity'] += $quantity;
                         } else {
-                            $_SESSION['product_cart'][$cart_item_key] = [
+                             $_SESSION['product_cart'][$cart_item_key] = [
                                 'cart_item_key' => $cart_item_key,
                                 'producer_id'   => $item_data['producer_id'],
                                 'product_type'  => $item_data['product_type'],
                                 'price'         => $real_price,
                                 'quantity'      => $quantity,
-                                'tray_size'     => $item_data['tray_size'] ?? 30,
-                                'vehicle_type'  => $item_data['vehicle_type'] ?? null,
-                                'notes'         => $item_data['notes'] ?? ''
+                                'tray_size'     => $item_data['tray_size'] ?? 30
                             ];
                         }
+                        
+                        // Update cart-level meta information
+                        if (isset($item_data['vehicle_type'])) {
+                            $_SESSION['product_cart_meta']['vehicle_type'] = $item_data['vehicle_type'];
+                        }
+                        if (isset($item_data['notes'])) {
+                            $_SESSION['product_cart_meta']['notes'] = $item_data['notes'];
+                        }
+
                         echo json_encode(['status' => 'success', 'message' => 'Item added to cart.']);
                     } else {
                         http_response_code(400);
@@ -94,6 +116,16 @@ switch ($method) {
                     http_response_code(400);
                     echo json_encode(['status' => 'error', 'message' => 'Invalid data for adding item.']);
                 }
+                break;
+            
+            case 'update-meta':
+                if (isset($data['vehicle_type'])) {
+                    $_SESSION['product_cart_meta']['vehicle_type'] = $data['vehicle_type'];
+                }
+                if (isset($data['notes'])) {
+                    $_SESSION['product_cart_meta']['notes'] = $data['notes'];
+                }
+                echo json_encode(['status' => 'success', 'message' => 'Cart details updated.']);
                 break;
 
             case 'PUT':
@@ -135,6 +167,12 @@ switch ($method) {
                 }
                 break;
                 
+            case 'clear':
+                $_SESSION['product_cart'] = [];
+                $_SESSION['product_cart_meta'] = ['vehicle_type' => null, 'notes' => ''];
+                 echo json_encode(['status' => 'success', 'message' => 'Cart cleared.']);
+                break;
+
             default:
                 http_response_code(400);
                 echo json_encode(['status' => 'error', 'message' => "Invalid action: $action"]);

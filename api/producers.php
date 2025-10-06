@@ -4,53 +4,87 @@ require_once '../db_connect.php';
 require_once '../error_handler.php';
 
 // Initialize response
-$response = ['status' => 'error', 'message' => 'Invalid request', 'data' => []];
+$response = ['status' => 'error', 'message' => 'Invalid request', 'data' => null];
 
-// --- Logic for fetching producers ---
 try {
-    // Base SQL query
-    // We join PRICE so we can filter by it. Producers without products matching the filters won't be shown.
-    $sql = "SELECT p.PRODUCER_ID as producer_id, p.NAME as name, p.LOCATION as location, p.LOGO as logo,
-                   pr.PRICE_ID as product_id, pr.TYPE as product_type, pr.PRICE as price, pr.STOCK as stock
-            FROM PRODUCER p
-            JOIN PRICE pr ON p.PRODUCER_ID = pr.PRODUCER_ID
-            WHERE pr.STATUS = 'active'";
+    // --- Logic for fetching a single producer ---
+    if (isset($_GET['producer_id']) && !empty($_GET['producer_id'])) {
+        $producer_id = intval($_GET['producer_id']);
 
-    $params = [];
-    $types = '';
+        $stmt = $conn->prepare("SELECT PRODUCER_ID as producer_id, NAME as name, LOCATION as location, LOGO as logo FROM PRODUCER WHERE PRODUCER_ID = ?");
+        if (!$stmt) {
+            throw new Exception("Prepare failed: (" . $conn->errno . ") " . $conn->error);
+        }
+        $stmt->bind_param("i", $producer_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
 
-    // Handle Category Filter
-    if (!empty($_GET['category'])) {
-        $sql .= " AND pr.TYPE = ?";
-        $params[] = $_GET['category'];
-        $types .= 's';
-    }
+        if ($result && $result->num_rows > 0) {
+            $producer = $result->fetch_assoc();
 
-    // Handle Max Price Filter
-    if (!empty($_GET['max_price'])) {
-        $sql .= " AND pr.PRICE <= ?";
-        $params[] = $_GET['max_price'];
-        $types .= 'd';
-    }
+            $stmt_products = $conn->prepare("SELECT TYPE as type, PRICE as price, PER as per, STOCK as stock FROM PRICE WHERE PRODUCER_ID = ? AND STATUS = 'active'");
+            if (!$stmt_products) {
+                throw new Exception("Prepare failed for products: (" . $conn->errno . ") " . $conn->error);
+            }
+            $stmt_products->bind_param("i", $producer_id);
+            $stmt_products->execute();
+            $products_result = $stmt_products->get_result();
+            
+            $products = [];
+            while ($row = $products_result->fetch_assoc()) {
+                $products[] = [
+                    'type'  => $row['type'],
+                    'price' => floatval($row['price']),
+                    'per'   => $row['per'],
+                    'stock' => intval($row['stock'])
+                ];
+            }
+            $producer['products'] = $products;
 
-    // The main query should return all products that match the filters.
-    // We will then group them by producer.
-    $main_sql = $sql . " ORDER BY p.PRODUCER_ID, pr.PRICE";
+            $response['status'] = 'success';
+            $response['data'] = $producer;
+            $response['message'] = 'Producer details loaded.';
+        } else {
+            $response['message'] = 'Producer not found.';
+            $response['data'] = null;
+        }
+        $stmt->close();
 
-    $stmt = $conn->prepare($main_sql);
-    if ($types) {
-        $stmt->bind_param($types, ...$params);
-    }
-    $stmt->execute();
-    $result = $stmt->get_result();
+    // --- Logic for fetching a list of producers ---
+    } else {
+        $sql = "SELECT DISTINCT p.PRODUCER_ID as producer_id, p.NAME as name, p.LOCATION as location, p.LOGO as logo
+                FROM PRODUCER p
+                JOIN PRICE pr ON p.PRODUCER_ID = pr.PRODUCER_ID
+                WHERE pr.STATUS = 'active'";
 
-    $producers = [];
-    if ($result && $result->num_rows > 0) {
-        while ($row = $result->fetch_assoc()) {
-            $producer_id = intval($row['producer_id']);
+        $params = [];
+        $types = '';
 
-            // If producer is not yet in our list, add them
-            if (!isset($producers[$producer_id])) {
+        if (!empty($_GET['category'])) {
+            $sql .= " AND pr.TYPE = ?";
+            $params[] = $_GET['category'];
+            $types .= 's';
+        }
+
+        if (!empty($_GET['max_price'])) {
+            $sql .= " AND pr.PRICE <= ?";
+            $params[] = $_GET['max_price'];
+            $types .= 'd';
+        }
+
+        $stmt = $conn->prepare($sql);
+        if ($types) {
+            $stmt->bind_param($types, ...$params);
+        }
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        $producers = [];
+        $producer_ids = [];
+        if ($result && $result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                $producer_id = intval($row['producer_id']);
+                $producer_ids[] = $producer_id;
                 $producers[$producer_id] = [
                     'producer_id' => $producer_id,
                     'name'        => $row['name'],
@@ -60,44 +94,41 @@ try {
                 ];
             }
         }
-    }
-    
-    // For producers that match the filter, we still want to show their *other* products.
-    // Get all IDs of producers that have at least one product matching the filter.
-    $matching_producer_ids = array_keys($producers);
-
-    if (!empty($matching_producer_ids)) {
-        // Now, fetch ALL active products for those producers
-        $all_products_sql = "SELECT p.PRODUCER_ID as producer_id, pr.TYPE as product_type, pr.PRICE as price, pr.STOCK as stock
-                             FROM PRODUCER p
-                             JOIN PRICE pr ON p.PRODUCER_ID = pr.PRODUCER_ID
-                             WHERE pr.STATUS = 'active' AND p.PRODUCER_ID IN (". implode(',', $matching_producer_ids) . ")
-                             ORDER BY p.PRODUCER_ID, pr.PRICE";
+        $stmt->close();
         
-        $all_products_result = $conn->query($all_products_sql);
-        
-        // First, clear the products list for our matching producers
-        foreach ($producers as &$producer) {
-            $producer['products'] = [];
-        }
-        unset($producer); // Unset reference
+        if (!empty($producer_ids)) {
+            $ids_placeholder = implode(',', array_fill(0, count($producer_ids), '?'));
+            $all_products_sql = "SELECT PRODUCER_ID as producer_id, TYPE as type, PRICE as price, PER as per, STOCK as stock
+                                 FROM PRICE
+                                 WHERE STATUS = 'active' AND PRODUCER_ID IN ($ids_placeholder)
+                                 ORDER BY PRODUCER_ID, PRICE";
+            
+            $stmt_products = $conn->prepare($all_products_sql);
+            $stmt_products->bind_param(str_repeat('i', count($producer_ids)), ...$producer_ids);
+            $stmt_products->execute();
+            $all_products_result = $stmt_products->get_result();
 
-        // Now, repopulate with all products
-        while ($row = $all_products_result->fetch_assoc()) {
-             $producer_id = intval($row['producer_id']);
-             $producers[$producer_id]['products'][] = [
-                'type'  => $row['product_type'],
-                'price' => floatval($row['price']),
-                'stock' => intval($row['stock'])
-            ];
+            while ($row = $all_products_result->fetch_assoc()) {
+                 $producer_id = intval($row['producer_id']);
+                 if(isset($producers[$producer_id])) {
+                     $producers[$producer_id]['products'][] = [
+                        'type'  => $row['type'],
+                        'price' => floatval($row['price']),
+                        'per'   => $row['per'],
+                        'stock' => intval($row['stock'])
+                    ];
+                 }
+            }
+             $stmt_products->close();
         }
+
+        $response = ['status' => 'success', 'data' => array_values($producers)];
     }
-
-    $response = ['status' => 'success', 'data' => array_values($producers)];
 
 } catch (Exception $e) {
-    // Catch any exceptions and return a proper error response
+    http_response_code(500);
     $response['message'] = 'Database error: ' . $e->getMessage();
+    $response['data'] = null;
 }
 
 $conn->close();

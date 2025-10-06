@@ -124,8 +124,8 @@ function getStatusClass($status) {
                                                     <div class="btn-group">
                                                         <button class="btn btn-sm btn-outline-primary" 
                                                                 onclick='openAssignVehicleModal(<?php echo json_encode($order); ?>)' 
-                                                                <?php echo $order['status'] !== 'processing' || !$order['requested_vehicle_type'] || $order['vehicle_id'] != null ? 'disabled' : ''; ?>
-                                                                title="<?php echo $order['status'] !== 'processing' ? 'Order must be in processing status.' : (!$order['requested_vehicle_type'] ? 'No vehicle type requested.' : ($order['vehicle_id'] != null ? 'Vehicle already assigned.' : 'Assign a vehicle to this order')); ?>">
+                                                                <?php echo $order['status'] !== 'processing' || $order['vehicle_id'] != null ? 'disabled' : ''; ?>
+                                                                title="<?php echo $order['status'] !== 'processing' ? 'Order must be in processing status to assign a vehicle.' : ($order['vehicle_id'] != null ? 'A vehicle has already been assigned.' : 'Assign a vehicle to this order'); ?>">
                                                             <i class="bi bi-truck"></i> Assign
                                                         </button>
                                                         <div class="dropdown">
@@ -194,42 +194,51 @@ document.addEventListener("DOMContentLoaded", function() {
 
 function openAssignVehicleModal(order) {
     document.getElementById('modalOrderId').value = order.order_id;
-    
     const requestedType = order.requested_vehicle_type;
     const vehicleSelect = document.getElementById('vehicleSelect');
     const requestedVehicleTypeElem = document.getElementById('requestedVehicleType');
     const assignBtn = document.getElementById('assignVehicleBtn');
     vehicleSelect.innerHTML = ''; // Clear previous options
 
-    if (requestedType) {
-        requestedVehicleTypeElem.textContent = requestedType;
-        const matchingVehicles = available_vehicles.filter(v => v.type === requestedType);
+    requestedVehicleTypeElem.textContent = requestedType || 'Not specified';
 
+    const matchingVehicles = available_vehicles.filter(v => v.type === requestedType);
+    const otherVehicles = available_vehicles.filter(v => v.type !== requestedType);
+
+    if (available_vehicles.length > 0) {
         if (matchingVehicles.length > 0) {
+            const matchingGroup = document.createElement('optgroup');
+            matchingGroup.label = 'Matching Request';
             matchingVehicles.forEach(vehicle => {
                 const option = document.createElement('option');
                 option.value = vehicle.vehicle_id;
                 option.textContent = `${vehicle.type} (${vehicle.plate_no})`;
-                vehicleSelect.appendChild(option);
+                matchingGroup.appendChild(option);
             });
-            vehicleSelect.disabled = false;
-            assignBtn.disabled = false;
-        } else {
-            const option = document.createElement('option');
-            option.textContent = `No "${requestedType}" vehicles are available.`;
-            vehicleSelect.appendChild(option);
-            vehicleSelect.disabled = true;
-            assignBtn.disabled = true;
+            vehicleSelect.appendChild(matchingGroup);
         }
+
+        if (otherVehicles.length > 0) {
+            const otherGroup = document.createElement('optgroup');
+            otherGroup.label = 'Other Available';
+            otherVehicles.forEach(vehicle => {
+                const option = document.createElement('option');
+                option.value = vehicle.vehicle_id;
+                option.textContent = `${vehicle.type} (${vehicle.plate_no})`;
+                otherGroup.appendChild(option);
+            });
+            vehicleSelect.appendChild(otherGroup);
+        }
+        vehicleSelect.disabled = false;
+        assignBtn.disabled = false;
     } else {
-        requestedVehicleTypeElem.textContent = 'Not specified';
         const option = document.createElement('option');
-        option.textContent = 'No vehicle type was requested for this order.';
+        option.textContent = 'No vehicles are available.';
         vehicleSelect.appendChild(option);
         vehicleSelect.disabled = true;
         assignBtn.disabled = true;
     }
-    
+
     assignVehicleModal.show();
 }
 

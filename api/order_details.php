@@ -32,8 +32,8 @@ if (!$order) {
     exit();
 }
 
-// Fetch order items
-$stmt_items = $conn->prepare("SELECT product_type as product_name, price_per_item as price, quantity FROM product_order_items WHERE order_id = ?");
+// Fetch order items with the correct column names that the frontend expects
+$stmt_items = $conn->prepare("SELECT product_type, price_per_item, quantity FROM product_order_items WHERE order_id = ?");
 $stmt_items->bind_param("i", $order_id);
 $stmt_items->execute();
 $items_result = $stmt_items->get_result();

@@ -59,32 +59,30 @@ include("api/paypal_config.php");
       let cartData = null;
       let selectedPaymentMethod = 'paypal';
 
-      // Check user status before proceeding with checkout
       const checkUserStatus = async () => {
           try {
               const response = await fetch('api/user_status_check.php');
-              if (response.status === 403) { // 403 Forbidden indicates a lock
+              if (response.status === 403) {
                   const result = await response.json();
                   mainContainer.innerHTML = `<div class="alert alert-warning"><h3>Account Locked</h3><p>${result.message}</p></div>`;
-                  return false; // User is locked
+                  return false;
               }
               if (!response.ok) {
-                  // Handle other non-OK responses that aren't a lock
                   const result = await response.json();
                   showAlert('danger', result.message || 'Could not verify your account status. Please try again later.');
                   return false;
               }
-              return true; // User is not locked
+              return true;
           } catch (error) {
               showAlert('danger', 'Could not connect to verify your account status. Please check your connection and try again.');
-              checkoutContent.innerHTML = ''; // Clear the checkout form
+              checkoutContent.innerHTML = '';
               return false;
           }
       };
 
       const isUserActive = await checkUserStatus();
       if (!isUserActive) {
-        checkoutContent.innerHTML = ''; // Ensure checkout form is cleared if user is not active
+        checkoutContent.innerHTML = '';
         return; 
       }
 
@@ -216,7 +214,7 @@ include("api/paypal_config.php");
           if (!button || !confirm('Are you sure you want to remove this item?')) return;
 
           const cartItemKey = button.dataset.cartItemKey;
-          await updateCartQuantity(cartItemKey, 0); // Removing is same as setting quantity to 0
+          await updateCartQuantity(cartItemKey, 0);
       };
 
       const handleQuantityChange = async (event) => {
@@ -254,7 +252,7 @@ include("api/paypal_config.php");
               });
               const result = await response.json();
               if (result.status === 'success') {
-                  fetchCartAndAddresses(); // Refresh everything
+                  fetchCartAndAddresses();
               } else {
                   showAlert('danger', result.message || 'Could not update cart.');
               }
@@ -298,7 +296,8 @@ include("api/paypal_config.php");
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     shipping_address_id: selectedAddressId,
-                    payment_method: 'cod'
+                    payment_method: 'cod',
+                    vehicle_type: cartData.meta.vehicle_type
                 })
             });
             const result = await response.json();
@@ -321,12 +320,18 @@ include("api/paypal_config.php");
               paypal.Buttons.instances.forEach(instance => instance.close());
           }
           paypal.Buttons({
-              createOrder: (data, actions) => {
+              createOrder: (data, a, actions) => {
                   if (!selectedAddressId) {
                       showAlert('warning', 'Please select a shipping address first.');
                       return Promise.reject(new Error("No shipping address selected"));
                   }
-                  return fetch('api/paypal_create_order.php', { method: 'POST' })
+                  return fetch('api/paypal_create_order.php', { 
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ 
+                          vehicle_type: cartData.meta.vehicle_type 
+                      })
+                  })
                       .then(res => res.json())
                       .then(data => {
                           if(data.id) return data.id;
@@ -339,7 +344,10 @@ include("api/paypal_config.php");
                   return fetch('api/paypal_capture_order.php', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ orderID: data.orderID, shipping_address_id: selectedAddressId })
+                      body: JSON.stringify({ 
+                          orderID: data.orderID, 
+                          shipping_address_id: selectedAddressId
+                      })
                   })
                   .then(res => res.json())
                   .then(result => {
@@ -347,7 +355,7 @@ include("api/paypal_config.php");
                           window.location.href = 'order_confirmation.php';
                       } else {
                           showAlert('danger', result.message || 'Payment failed.');
-                          renderPaymentMethod(); // Re-render payment options on failure
+                          renderPaymentMethod();
                       }
                   });
               },
@@ -358,7 +366,6 @@ include("api/paypal_config.php");
           }).render('#paypal-button-container');
       }
 
-      // Initial data fetch
       fetchCartAndAddresses();
   });
   </script>
