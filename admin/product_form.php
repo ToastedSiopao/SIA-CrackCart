@@ -64,7 +64,7 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
                         </div>
 
                         <div class="row">
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label for="status" class="form-label">Status</label>
                                 <select class="form-select" id="status" name="status" required>
                                     <option value="active">Active</option>
@@ -72,9 +72,16 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
                                     <option value="out_of_stock">Out of Stock</option>
                                 </select>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label for="stock" class="form-label">Stock</label>
                                 <input type="number" class="form-control" id="stock" name="stock" value="0" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="tray-size" class="form-label">Tray Size</label>
+                                <select class="form-select" id="tray-size" name="tray_size" required>
+                                    <option value="12">12</option>
+                                    <option value="30" selected>30</option>
+                                </select>
                             </div>
                         </div>
 
@@ -106,7 +113,8 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
                 const result = await response.json();
                 if (result.status === 'success') {
                     producerSelect.innerHTML = result.data.map(p => `<option value="${p.PRODUCER_ID}">${p.NAME}</option>`).join('');
-                } else {
+                }
+                 else {
                      showAlert('danger', 'Could not load producers.');
                 }
             } catch (error) {
@@ -126,6 +134,7 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
                         form.elements.unit.value = product.PER;
                         form.elements.status.value = product.STATUS;
                         form.elements.stock.value = product.STOCK;
+                        form.elements.tray_size.value = product.TRAY_SIZE;
                     } else {
                         showAlert('danger', result.message);
                     }
