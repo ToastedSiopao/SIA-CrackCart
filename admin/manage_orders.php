@@ -69,18 +69,14 @@ function getStatusClass($status) {
   </style>
 </head>
 <body>
+    <?php include('admin_header.php'); ?>
 
-<div id="alert-container"></div>
+    <div class="container-fluid">
+        <div class="row flex-nowrap">
+            <?php include('admin_sidebar.php'); ?>
+            <?php include('admin_offcanvas_sidebar.php'); ?>
 
-<div class="container-fluid">
-    <div class="row flex-nowrap">
-        <?php include 'admin_sidebar.php'; ?>
-        <?php include 'admin_offcanvas_sidebar.php'; ?>
-
-        <div class="col p-0">
-            <?php include 'admin_header.php'; ?>
-
-            <main class="container-fluid p-4">
+            <main class="col p-4 main-content">
                 <h1 class="mb-4">Manage Customer Orders</h1>
 
                 <div class="card shadow-sm">
@@ -155,7 +151,6 @@ function getStatusClass($status) {
             </main>
         </div>
     </div>
-</div>
 
 <!-- Assign Vehicle Modal -->
 <div class="modal fade" id="assignVehicleModal" tabindex="-1" aria-labelledby="assignVehicleModalLabel" aria-hidden="true">

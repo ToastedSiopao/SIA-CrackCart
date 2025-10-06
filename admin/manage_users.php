@@ -33,19 +33,18 @@ $conn->close();
   <title>Manage Users</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
   <link href="admin-styles.css?v=1.3" rel="stylesheet">
 </head>
 <body>
+    <?php include('admin_header.php'); ?>
 
-<div class="container-fluid">
-    <div class="row flex-nowrap">
-        <?php include 'admin_sidebar.php'; ?>
-        <?php include 'admin_offcanvas_sidebar.php'; ?>
+    <div class="container-fluid">
+        <div class="row flex-nowrap">
+            <?php include('admin_sidebar.php'); ?>
+            <?php include('admin_offcanvas_sidebar.php'); ?>
 
-        <div class="col p-0">
-            <?php include 'admin_header.php'; ?>
-
-            <main class="container-fluid p-4">
+            <main class="col p-4 main-content">
                 <h1 class="mb-4">Manage User Accounts</h1>
 
                 <div id="alert-container"></div>
@@ -104,7 +103,6 @@ $conn->close();
             </main>
         </div>
     </div>
-</div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
