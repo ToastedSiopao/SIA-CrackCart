@@ -6,7 +6,79 @@
   <title>CrackCart - Sign Up</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
+  <style>
+    :root {
+      --primary-color: #FFD500;
+      --secondary-color: #333;
+      --light-color: #f8f9fa;
+      --dark-color: #212529;
+      --border-radius: 12px;
+      --box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    body.login-page {
+      background-color: var(--light-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .header-logo {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+    }
+    .logo-img {
+      width: 150px;
+    }
+    .login-container {
+      background-color: #fff;
+      padding: 40px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      width: 100%;
+      max-width: 450px;
+    }
+    .truck-logo {
+      width: 80px;
+      margin-bottom: 20px;
+    }
+    .login-title {
+      font-weight: 700;
+      color: var(--dark-color);
+    }
+    .carousel-container {
+      background-color: var(--dark-color);
+      color: #fff;
+      padding: 40px;
+      border-radius: var(--border-radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+    }
+    .carousel-content {
+      text-align: center;
+    }
+    .carousel-content i {
+      font-size: 3rem;
+      color: var(--primary-color);
+    }
+    .carousel-content h3 {
+      font-size: 2rem;
+      margin-top: 20px;
+    }
+    .btn-primary {
+      background-color: var(--primary-color);
+      border-color: var(--primary-color);
+      color: var(--dark-color);
+      font-weight: 600;
+    }
+    .btn-primary:hover {
+      background-color: #ffc107;
+      border-color: #ffc107;
+    }
+  </style>
 </head>
 <body class="login-page">
   <!-- Header Logo -->
@@ -17,7 +89,7 @@
   <div class="container-fluid h-100">
     <div class="row h-100 align-items-center justify-content-center">
       <!-- Carousel Section -->
-      <div class="col-lg-5 col-md-6 mb-4 mb-md-0">
+      <div class="col-lg-5 col-md-6 mb-4 mb-md-0 d-none d-md-block">
         <div class="carousel-container">
           <div id="promoCarousel" class="carousel slide" data-bs-ride="carousel">
             <div class="carousel-inner">
@@ -78,7 +150,7 @@
               <label class="form-label visually-hidden">Middle Name</label>
               <div class="input-group">
                 <span class="input-group-text"><i class="fas fa-user"></i></span>
-                <input type="text" class.form-control" name="middleName" placeholder="Middle name">
+                <input type="text" class="form-control" name="middleName" placeholder="Middle name">
               </div>
             </div>
             <div class="mb-2">
