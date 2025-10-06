@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once '../../db_connect.php';
+require_once '../../notification_function.php'; // Include the notification function
 
 // Admin-only access
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
@@ -31,8 +32,8 @@ if (!in_array($new_status, $valid_statuses)) {
 $conn->begin_transaction();
 
 try {
-    // Check current order details
-    $stmt_check = $conn->prepare("SELECT status, vehicle_id FROM product_orders WHERE order_id = ?");
+    // Check current order details and get user_id for notification
+    $stmt_check = $conn->prepare("SELECT user_id, status, vehicle_id FROM product_orders WHERE order_id = ?");
     $stmt_check->bind_param("i", $order_id);
     $stmt_check->execute();
     $result = $stmt_check->get_result();
@@ -40,11 +41,12 @@ try {
         throw new Exception('Order not found.', 404);
     }
     $current_order = $result->fetch_assoc();
+    $user_id = $current_order['user_id'];
     $current_status = $current_order['status'];
     $vehicle_id = $current_order['vehicle_id'];
     $stmt_check->close();
 
-    // Update the order status first
+    // Update the order status
     $stmt_update = $conn->prepare("UPDATE product_orders SET status = ? WHERE order_id = ?");
     $stmt_update->bind_param("si", $new_status, $order_id);
     if (!$stmt_update->execute()) {
@@ -54,7 +56,7 @@ try {
 
     $message = "Order #$order_id status updated to $new_status.";
 
-    // If order is delivered or cancelled, release the vehicle if one is assigned
+    // If order is delivered or cancelled, release the vehicle
     if (($new_status === 'delivered' || ($new_status === 'cancelled' && $current_status !== 'cancelled')) && $vehicle_id) {
         $stmt_release_vehicle = $conn->prepare("UPDATE Vehicle SET status = 'available' WHERE vehicle_id = ?");
         $stmt_release_vehicle->bind_param("i", $vehicle_id);
@@ -65,7 +67,7 @@ try {
         $message .= ' Assigned vehicle has been released.';
     }
 
-    // If changing status to 'cancelled' and it wasn't already cancelled, return stock
+    // If status changed to 'cancelled', return stock
     if ($new_status === 'cancelled' && $current_status !== 'cancelled') {
         $stmt_get_items = $conn->prepare("SELECT producer_id, product_type, quantity FROM product_order_items WHERE order_id = ?");
         $stmt_get_items->bind_param("i", $order_id);
@@ -82,6 +84,12 @@ try {
         $stmt_get_items->close();
         $stmt_update_stock->close();
         $message .= ' Product stock has been returned.';
+    }
+
+    // Create a notification for the user
+    if ($user_id) {
+        $notification_message = "Your order #{$order_id} status has been updated to '{$new_status}'.";
+        create_notification($conn, $user_id, $notification_message);
     }
     
     $conn->commit();

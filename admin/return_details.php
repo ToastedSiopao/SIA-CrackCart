@@ -8,6 +8,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role
 
 include '../db_connect.php';
 include '../log_function.php';
+include '../notification_function.php'; // Include the notification function
 
 $return_id = isset($_GET['return_id']) ? intval($_GET['return_id']) : 0;
 $return_statuses = ['pending', 'approved', 'rejected', 'processing', 'completed'];
@@ -17,22 +18,47 @@ $return_details = null;
 if ($return_id <= 0) {
     $error_message = "Invalid Return ID specified.";
 } else {
+    // Handle status update POST request
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
         $admin_id = $_SESSION['user_id'];
         $new_status = $_POST['return_status'];
+
         if (in_array($new_status, $return_statuses)) {
-            $stmt = $conn->prepare("UPDATE returns SET status = ? WHERE return_id = ?");
-            $stmt->bind_param("si", $new_status, $return_id);
-            if ($stmt->execute()) {
-                log_action('Return Status Update', "Admin ID: {$admin_id} changed return #{$return_id} to {$new_status}");
+            // First, get the user_id and order_id for the notification
+            $stmt_user = $conn->prepare("SELECT user_id, order_id FROM returns WHERE return_id = ?");
+            $stmt_user->bind_param("i", $return_id);
+            $user_id_for_notification = null;
+            $order_id_for_notification = null;
+            if ($stmt_user->execute()) {
+                $result = $stmt_user->get_result();
+                if ($row = $result->fetch_assoc()) {
+                    $user_id_for_notification = $row['user_id'];
+                    $order_id_for_notification = $row['order_id'];
+                }
             }
-            $stmt->close();
+            $stmt_user->close();
+
+            // Now, update the return status
+            $stmt_update = $conn->prepare("UPDATE returns SET status = ? WHERE return_id = ?");
+            $stmt_update->bind_param("si", $new_status, $return_id);
+
+            if ($stmt_update->execute()) {
+                log_action('Return Status Update', "Admin ID: {$admin_id} changed return #{$return_id} to {$new_status}");
+
+                // Send notification if we found the user
+                if ($user_id_for_notification && $order_id_for_notification) {
+                    $message = "Your return request for order #{$order_id_for_notification} has been updated to '{$new_status}'.";
+                    create_notification($conn, $user_id_for_notification, $message);
+                }
+            }
+            $stmt_update->close();
+
             header("Location: return_details.php?return_id=" . $return_id);
             exit;
         }
     }
 
-    // Query to fetch return details
+    // Query to fetch return details for display
     $query = "
         SELECT
             r.return_id,
@@ -42,17 +68,15 @@ if ($return_id <= 0) {
             r.requested_at,
             poi.product_type,
             poi.quantity,
-            po.user_id AS customer_id,
+            r.user_id AS customer_id, // Use user_id from returns table
             CONCAT(u.FIRST_NAME, ' ', u.LAST_NAME) AS customer_name,
             u.EMAIL AS customer_email
         FROM
             returns AS r
         LEFT JOIN
-            product_orders AS po ON r.order_id = po.order_id
+            USER AS u ON r.user_id = u.USER_ID
         LEFT JOIN
-            USER AS u ON po.user_id = u.USER_ID
-        LEFT JOIN
-            product_order_items AS poi ON r.order_item_id = poi.order_item_id
+            product_order_items AS poi ON r.product_id = poi.order_item_id
         WHERE
             r.return_id = ?
     ";
@@ -67,7 +91,7 @@ if ($return_id <= 0) {
             $result = $stmt->get_result();
             $return_details = $result->fetch_assoc();
             if (!$return_details) {
-                $error_message = "Return request not found. This may be an old, broken record.";
+                $error_message = "Return request not found.";
             }
         } else {
             $error_message = "Database query execution failed: " . htmlspecialchars($stmt->error);
@@ -78,6 +102,7 @@ if ($return_id <= 0) {
 
 $user_name = $_SESSION['user_first_name'] ?? 'Admin';
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>

@@ -36,3 +36,71 @@ $user_name = $_SESSION['user_first_name'] ?? 'Guest';
       </div>
     </div>
   </nav>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const notificationList = document.getElementById('notification-list');
+    const notificationCount = document.getElementById('notification-count');
+
+    function fetchNotifications() {
+        fetch('api/get_notifications.php')
+            .then(response => response.json())
+            .then(data => {
+                updateNotificationUI(data.notifications, data.unread_count);
+            })
+            .catch(error => console.error('Error fetching notifications:', error));
+    }
+
+    function updateNotificationUI(notifications, unreadCount) {
+        notificationList.innerHTML = ''; // Clear existing notifications
+
+        if (notifications.length === 0) {
+            notificationList.innerHTML = '<li><a class="dropdown-item text-muted">No new notifications</a></li>';
+        }
+
+        notifications.forEach(notification => {
+            const item = document.createElement('li');
+            const link = document.createElement('a');
+            link.href = '#'; 
+            link.className = `dropdown-item ${notification.IS_READ == 0 ? 'fw-bold' : ''}`;
+            link.innerHTML = `<div>${notification.MESSAGE}</div><div class="text-muted small">${new Date(notification.CREATED_AT).toLocaleString()}</div>`;
+            link.onclick = (e) => {
+                e.preventDefault();
+                if (notification.IS_READ == 0) {
+                    markAsRead(notification.NOTIFICATION_ID);
+                }
+            };
+            item.appendChild(link);
+            notificationList.appendChild(item);
+        });
+
+        if (unreadCount > 0) {
+            notificationCount.textContent = unreadCount;
+            notificationCount.style.display = 'block';
+        } else {
+            notificationCount.style.display = 'none';
+        }
+    }
+
+    function markAsRead(notificationId) {
+        fetch('api/mark_notification_read.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ notification_id: notificationId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                fetchNotifications(); // Refresh notifications after marking as read
+            } 
+        })
+        .catch(error => console.error('Error marking notification as read:', error));
+    }
+
+    // Initial fetch
+    fetchNotifications();
+
+    // Poll for new notifications every 30 seconds
+    setInterval(fetchNotifications, 30000);
+});
+</script>
