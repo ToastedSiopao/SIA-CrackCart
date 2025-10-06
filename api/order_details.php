@@ -33,13 +33,13 @@ if (!$order) {
 }
 
 // Fetch order items and join with returns to get return status for each specific item.
-// This now works because the `returns` table has the `order_item_id` column.
 $stmt_items = $conn->prepare("
     SELECT 
         poi.order_item_id, 
         poi.product_type, 
         poi.price_per_item, 
         poi.quantity, 
+        poi.is_reviewed, 
         r.status AS return_status 
     FROM 
         product_order_items poi
@@ -51,7 +51,11 @@ $stmt_items = $conn->prepare("
 $stmt_items->bind_param("i", $order_id);
 $stmt_items->execute();
 $items_result = $stmt_items->get_result();
-$items = $items_result->fetch_all(MYSQLI_ASSOC);
+$items = [];
+while($item = $items_result->fetch_assoc()) {
+    $item['is_reviewed'] = (bool)$item['is_reviewed']; // Cast to boolean for correct JSON type
+    $items[] = $item;
+}
 
 $order['items'] = $items;
 

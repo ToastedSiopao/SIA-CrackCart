@@ -21,6 +21,24 @@ $order_id = $_GET['order_id'];
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
     <link href="dashboard-styles.css?v=3.1" rel="stylesheet">
+    <style>
+        .star-rating {
+            font-size: 2.5rem;
+            cursor: pointer;
+        }
+        .star-rating > i {
+            color: #ccc;
+            transition: color 0.2s;
+        }
+        .star-rating > i:hover,
+        .star-rating > i:hover ~ i {
+            color: #ccc;
+        }
+        .star-rating > i.selected,
+        .star-rating > i.hovered {
+            color: #ffc107;
+        }
+    </style>
 </head>
 <body>
     <?php include("navbar.php"); ?>
@@ -40,12 +58,8 @@ $order_id = $_GET['order_id'];
                         <div class="col-12">
                             <div class="card">
                                 <div class="card-body">
-                                    <div id="order-details-container">
-                                        <div class="text-center"><div class="spinner-border"></div></div>
-                                    </div>
-                                    <div class="mt-3">
-                                        <a href="my_orders.php" class="btn btn-secondary">Go Back</a>
-                                    </div>
+                                    <div id="order-details-container"><div class="text-center"><div class="spinner-border"></div></div></div>
+                                    <div class="mt-3"><a href="my_orders.php" class="btn btn-secondary">Go Back</a></div>
                                 </div>
                             </div>
                         </div>
@@ -65,17 +79,14 @@ $order_id = $_GET['order_id'];
                 </div>
                 <div class="modal-body">
                     <form id="reviewForm">
-                        <input type="hidden" id="reviewOrderId" name="order_id">
-                        <input type="hidden" id="reviewProductType" name="product_type">
+                        <input type="hidden" id="reviewOrderItemId" name="order_item_id">
                         <div class="mb-3">
-                            <label for="rating" class="form-label">Rating</label>
-                            <select id="rating" name="rating" class="form-select">
-                                <option value="5">5 Stars</option>
-                                <option value="4">4 Stars</option>
-                                <option value="3">3 Stars</option>
-                                <option value="2">2 Stars</option>
-                                <option value="1">1 Star</option>
-                            </select>
+                            <label class="form-label">Rating</label>
+                            <div class="star-rating" id="starRatingContainer">
+                                <i class="bi bi-star" data-value="1"></i><i class="bi bi-star" data-value="2"></i><i class="bi bi-star" data-value="3"></i><i class="bi bi-star" data-value="4"></i><i class="bi bi-star" data-value="5"></i>
+                            </div>
+                            <input type="hidden" id="rating" name="rating" value="0">
+                            <div class="invalid-feedback">Please select a rating.</div>
                         </div>
                         <div class="mb-3">
                             <label for="reviewText" class="form-label">Review</label>
@@ -96,70 +107,48 @@ $order_id = $_GET['order_id'];
         const orderId = new URLSearchParams(window.location.search).get('order_id');
         const reviewModal = new bootstrap.Modal(document.getElementById('reviewModal'));
         const reviewForm = document.getElementById('reviewForm');
+        const reviewOrderItemIdInput = document.getElementById('reviewOrderItemId');
+        const starRatingContainer = document.getElementById('starRatingContainer');
+        const stars = starRatingContainer.querySelectorAll('i');
+        const ratingInput = document.getElementById('rating');
 
         const showAlert = (type, message) => {
-            alertContainer.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">${message}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`;
+            alertContainer.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
         };
 
         const fetchOrderDetails = async () => {
-            if (!orderId) {
-                showAlert('danger', 'Order ID is missing.');
-                return;
-            }
+            if (!orderId) { showAlert('danger', 'Order ID is missing.'); return; }
             try {
                 const response = await fetch(`api/order_details.php?order_id=${orderId}`);
                 const result = await response.json();
-                if (result.status === 'success') {
-                    renderOrderDetails(result.data);
-                } else {
-                    orderDetailsContainer.innerHTML = `<div class="alert alert-danger">${result.message || 'Could not load order details.'}</div>`;
-                }
-            } catch (error) {
-                showAlert('danger', 'Could not connect to the server to get order details.');
-            }
+                if (result.status === 'success') { renderOrderDetails(result.data); } 
+                else { orderDetailsContainer.innerHTML = `<div class="alert alert-danger">${result.message || 'Could not load order details.'}</div>`; }
+            } catch (error) { showAlert('danger', 'Could not connect to the server to get order details.'); }
         };
 
         const renderOrderDetails = (order) => {
             const itemsHtml = order.items.map(item => {
                 let itemActions = '';
                 const isDelivered = order.status.toLowerCase() === 'delivered';
-
                 if (item.return_status) {
                     itemActions = `<span class="badge bg-secondary">Return ${item.return_status}</span>`;
-                } else if (isDelivered) {
+                } else if (isDelivered && !item.is_reviewed) {
                     itemActions = `
-                        <button class="btn btn-outline-primary btn-sm review-btn" data-product-type="${item.product_type}">Leave a Review</button>
+                        <button class="btn btn-outline-primary btn-sm review-btn" data-order-item-id="${item.order_item_id}">Leave a Review</button>
                         <a href="request_return.php?order_item_id=${item.order_item_id}" class="btn btn-outline-secondary btn-sm">Request Return</a>
                     `;
+                } else if (isDelivered && item.is_reviewed) {
+                    itemActions = `<span class="badge bg-success">Reviewed</span>`;
                 }
-
-                return `
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <div>
-                            <p class="mb-0">${item.product_type}</p>
-                            <small class="text-muted">₱${parseFloat(item.price_per_item).toFixed(2)} x ${item.quantity}</small>
-                        </div>
-                        <div class="d-flex gap-2">${itemActions}</div>
-                    </li>`;
+                return `<li class="list-group-item d-flex justify-content-between align-items-center"><div><p class="mb-0">${item.product_type}</p><small class="text-muted">₱${parseFloat(item.price_per_item).toFixed(2)} x ${item.quantity}</small></div><div class="d-flex gap-2">${itemActions}</div></li>`;
             }).join('');
 
-            const orderDetailsHtml = `
-                <div>
-                    <p><strong>Order ID:</strong> ${order.order_id}</p>
-                    <p><strong>Order Date:</strong> ${new Date(order.order_date).toLocaleDateString()}</p>
-                    <p><strong>Total Amount:</strong> ₱${parseFloat(order.total_amount).toFixed(2)}</p>
-                    <p><strong>Status:</strong> <span class="badge bg-${getStatusClass(order.status)}">${order.status}</span></p>
-                    <h5 class="mt-4">Items</h5>
-                    <ul class="list-group">${itemsHtml}</ul>
-                </div>`;
+            orderDetailsContainer.innerHTML = `<div><p><strong>Order ID:</strong> ${order.order_id}</p><p><strong>Order Date:</strong> ${new Date(order.order_date).toLocaleDateString()}</p><p><strong>Total Amount:</strong> ₱${parseFloat(order.total_amount).toFixed(2)}</p><p><strong>Status:</strong> <span class="badge bg-${getStatusClass(order.status)}">${order.status}</span></p><h5 class="mt-4">Items</h5><ul class="list-group">${itemsHtml}</ul></div>`;
             
-            orderDetailsContainer.innerHTML = orderDetailsHtml;
-
             document.querySelectorAll('.review-btn').forEach(button => {
                 button.addEventListener('click', (e) => {
-                    const productType = e.target.dataset.productType;
-                    document.getElementById('reviewOrderId').value = orderId;
-                    document.getElementById('reviewProductType').value = productType;
+                    reviewOrderItemIdInput.value = e.target.dataset.orderItemId;
+                    resetStars();
                     reviewModal.show();
                 });
             });
@@ -167,43 +156,65 @@ $order_id = $_GET['order_id'];
         
         reviewForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            if (ratingInput.value === '0') { 
+                ratingInput.classList.add('is-invalid');
+                ratingInput.previousElementSibling.querySelector('.invalid-feedback').style.display = 'block';
+                 showAlert('danger', 'Please select a star rating.');
+                return;
+            }
+            ratingInput.classList.remove('is-invalid');
+
             const formData = new FormData(reviewForm);
             const submitButton = reviewForm.querySelector('button[type="submit"]');
             submitButton.disabled = true;
 
             try {
-                const response = await fetch('api/submit_review.php', {
-                    method: 'POST',
-                    body: formData
-                });
+                const response = await fetch('api/submit_review.php', { method: 'POST', body: formData });
                 const result = await response.json();
                 if (result.status === 'success') {
                     showAlert('success', result.message);
                     reviewModal.hide();
-                } else {
-                    showAlert('danger', result.message || 'Failed to submit review.');
-                }
-            } catch (error) {
-                showAlert('danger', 'Could not connect to the server.');
-            } finally {
-                submitButton.disabled = false;
-            }
+                    fetchOrderDetails();
+                } else { showAlert('danger', result.message || 'Failed to submit review.'); }
+            } catch (error) { showAlert('danger', 'Could not connect to the server.');
+            } finally { submitButton.disabled = false; }
+        });
+
+        const resetStars = () => {
+            stars.forEach(s => s.classList.remove('selected', 'hovered'));
+            ratingInput.value = 0;
+        }
+
+        stars.forEach(star => {
+            star.addEventListener('mouseover', () => {
+                const value = star.dataset.value;
+                stars.forEach(s => {
+                    s.classList.toggle('hovered', s.dataset.value <= value);
+                });
+            });
+            star.addEventListener('mouseout', () => stars.forEach(s => s.classList.remove('hovered')));
+            star.addEventListener('click', () => {
+                const value = star.dataset.value;
+                ratingInput.value = value;
+                stars.forEach(s => {
+                    s.classList.toggle('selected', s.dataset.value <= value);
+                });
+            });
+        });
+
+        reviewModal._element.addEventListener('hidden.bs.modal', () => {
+            reviewForm.reset();
+            resetStars();
         });
 
         const getStatusClass = (status) => {
-            switch (status.toLowerCase()) {
-                case 'pending': return 'warning';
-                case 'processing': return 'info';
-                case 'shipped': return 'primary';
-                case 'delivered': return 'success';
-                case 'cancelled': return 'secondary';
-                case 'failed': return 'danger';
-                case 'requested': return 'warning';
-                case 'approved': return 'info';
-                case 'rejected': return 'danger';
-                case 'completed': return 'success';
-                default: return 'light';
-            }
+            const s = status.toLowerCase();
+            if (s === 'delivered' || s === 'completed') return 'success';
+            if (s === 'pending' || s === 'requested') return 'warning';
+            if (s === 'shipped' || s === 'approved' || s === 'processing') return 'info';
+            if (s === 'cancelled') return 'secondary';
+            if (s === 'failed' || s === 'rejected') return 'danger';
+            return 'light';
         };
 
         fetchOrderDetails();
