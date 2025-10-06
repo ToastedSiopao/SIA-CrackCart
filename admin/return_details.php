@@ -10,22 +10,53 @@ include '../db_connect.php';
 include '../log_function.php';
 
 $return_id = isset($_GET['return_id']) ? intval($_GET['return_id']) : 0;
-$return_statuses = ['requested', 'approved', 'rejected', 'processing', 'completed'];
+$return_statuses = ['pending', 'approved', 'rejected', 'processing', 'completed'];
 $error_message = null;
 $return_details = null;
 
 if ($return_id <= 0) {
     $error_message = "Invalid Return ID specified.";
 } else {
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        // ... (rest of the POST handling logic is unchanged) ...
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
+        $admin_id = $_SESSION['user_id'];
+        $new_status = $_POST['return_status'];
+        if (in_array($new_status, $return_statuses)) {
+            $stmt = $conn->prepare("UPDATE returns SET status = ? WHERE return_id = ?");
+            $stmt->bind_param("si", $new_status, $return_id);
+            if ($stmt->execute()) {
+                log_action('Return Status Update', "Admin ID: {$admin_id} changed return #{$return_id} to {$new_status}");
+            }
+            $stmt->close();
+            header("Location: return_details.php?return_id=" . $return_id);
+            exit;
+        }
     }
 
-    // FINAL CORRECTED QUERY: Based on the provided db.sql schema.
-    // - `returns.product_id` joins with `product_order_items.order_item_id`.
-    // - `product_orders.user_id` (lowercase) is the correct foreign key.
-    // - `returns.requested_at` is the correct date column.
-    $query = "SELECT r.*, poi.product_type, poi.quantity, poi.price_per_item, CONCAT(u.FIRST_NAME, ' ', u.LAST_NAME) AS customer_name, u.EMAIL as customer_email FROM returns r JOIN product_order_items poi ON r.product_id = poi.order_item_id JOIN product_orders po ON r.order_id = po.order_id JOIN `USER` u ON po.user_id = u.USER_ID WHERE r.return_id = ?";
+    // Query to fetch return details
+    $query = "
+        SELECT
+            r.return_id,
+            r.order_id,
+            r.reason,
+            r.status,
+            r.requested_at,
+            poi.product_type,
+            poi.quantity,
+            po.user_id AS customer_id,
+            CONCAT(u.FIRST_NAME, ' ', u.LAST_NAME) AS customer_name,
+            u.EMAIL AS customer_email
+        FROM
+            returns AS r
+        LEFT JOIN
+            product_orders AS po ON r.order_id = po.order_id
+        LEFT JOIN
+            USER AS u ON po.user_id = u.USER_ID
+        LEFT JOIN
+            product_order_items AS poi ON r.order_item_id = poi.order_item_id
+        WHERE
+            r.return_id = ?
+    ";
+    
     $stmt = $conn->prepare($query);
     
     if ($stmt === false) {
@@ -36,7 +67,7 @@ if ($return_id <= 0) {
             $result = $stmt->get_result();
             $return_details = $result->fetch_assoc();
             if (!$return_details) {
-                $error_message = "Return request not found.";
+                $error_message = "Return request not found. This may be an old, broken record.";
             }
         } else {
             $error_message = "Database query execution failed: " . htmlspecialchars($stmt->error);
@@ -54,7 +85,7 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Return Details - CrackCart Admin</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="admin-styles.css?v=1.2" rel="stylesheet">
+    <link href="admin-styles.css?v=2.2" rel="stylesheet"> 
 </head>
 <body>
     <?php include('admin_header.php'); ?>
@@ -78,16 +109,39 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
                                 <div class="card mb-4">
                                     <div class="card-header">Return #<?php echo htmlspecialchars($return_details['return_id']); ?></div>
                                     <div class="card-body">
-                                        <!-- ... (rest of the card body is unchanged) ... -->
+                                        <h5>Customer Information</h5>
+                                        <p><strong>Customer ID:</strong> <?php echo htmlspecialchars($return_details['customer_id'] ?? 'N/A'); ?></p>
+                                        <p><strong>Customer Name:</strong> <?php echo htmlspecialchars($return_details['customer_name'] ?? 'Unknown User'); ?> (<?php echo htmlspecialchars($return_details['customer_email'] ?? 'N/A'); ?>)</p>
+                                        <p><strong>Order ID:</strong> <a href="order_details.php?order_id=<?php echo $return_details['order_id']; ?>"><?php echo htmlspecialchars($return_details['order_id']); ?></a></p>
                                         <hr>
                                         <h5>Return Details</h5>
+                                        <p><strong>Product:</strong> <?php echo htmlspecialchars($return_details['product_type'] ?? 'N/A'); ?></p>
+                                        <p><strong>Quantity:</strong> <?php echo htmlspecialchars($return_details['quantity'] ?? 'N/A'); ?></p>
                                         <p><strong>Reason:</strong> <?php echo htmlspecialchars(ucfirst($return_details['reason'])); ?></p>
-                                        <!-- CORRECTED `created_at` to `requested_at` -->
                                         <p><strong>Date Requested:</strong> <?php echo date("M d, Y, h:i A", strtotime($return_details['requested_at'])); ?></p>
                                     </div>
                                 </div>
                             </div>
-                            <!-- ... (rest of the file is unchanged) ... -->
+                            <div class="col-lg-4">
+                                <div class="card position-sticky" style="top: 20px;">
+                                    <div class="card-header">Return Actions</div>
+                                    <div class="card-body">
+                                        <p>Current Status: <span class="badge bg-primary fs-6"><?php echo htmlspecialchars($return_details['status']); ?></span></p>
+                                        <hr>
+                                        <form method="POST">
+                                            <label for="return_status" class="form-label"><strong>Update Status</strong></label>
+                                            <div class="input-group">
+                                                <select class="form-select" id="return_status" name="return_status">
+                                                    <?php foreach ($return_statuses as $status): ?>
+                                                        <option value="<?php echo $status; ?>" <?php echo ($return_details['status'] == $status) ? 'selected' : ''; ?>><?php echo ucfirst($status); ?></option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                                <button class="btn btn-primary" type="submit" name="update_status">Update</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     <?php endif; ?>
                 </div>

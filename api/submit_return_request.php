@@ -42,7 +42,8 @@ try {
     $order_id = $order_data['order_id'];
 
     // 2. Check if a return request already exists for this item
-    $stmt_check = $conn->prepare("SELECT return_id FROM returns WHERE order_item_id = ?");
+    // Corrected to check against `product_id` which stores the `order_item_id`
+    $stmt_check = $conn->prepare("SELECT return_id FROM returns WHERE product_id = ?");
     $stmt_check->bind_param("i", $order_item_id);
     $stmt_check->execute();
     if ($stmt_check->get_result()->num_rows > 0) {
@@ -50,8 +51,10 @@ try {
     }
 
     // 3. Insert the new return request
-    $stmt_insert = $conn->prepare("INSERT INTO returns (order_id, order_item_id, reason, comments, status) VALUES (?, ?, ?, ?, 'Requested')");
-    $stmt_insert->bind_param("iiss", $order_id, $order_item_id, $reason, $comments);
+    // CORRECTED: Inserts into `product_id` instead of the non-existent `order_item_id` column.
+    $full_reason = $reason . ($comments ? "; Comments: " . $comments : '');
+    $stmt_insert = $conn->prepare("INSERT INTO returns (order_id, user_id, product_id, reason, status) VALUES (?, ?, ?, ?, 'pending')");
+    $stmt_insert->bind_param("iiis", $order_id, $user_id, $order_item_id, $full_reason);
     $stmt_insert->execute();
 
     // Commit the transaction
