@@ -8,7 +8,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role
 
 include '../db_connect.php';
 include '../log_function.php';
-include '../notification_function.php'; // Include the notification function
+include '../notification_function.php'; // Added notification function
 
 $return_id = isset($_GET['return_id']) ? intval($_GET['return_id']) : 0;
 $return_statuses = ['pending', 'approved', 'rejected', 'processing', 'completed'];
@@ -18,47 +18,55 @@ $return_details = null;
 if ($return_id <= 0) {
     $error_message = "Invalid Return ID specified.";
 } else {
-    // Handle status update POST request
+    // Updated POST handling to include notifications and transactions
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
         $admin_id = $_SESSION['user_id'];
         $new_status = $_POST['return_status'];
 
         if (in_array($new_status, $return_statuses)) {
-            // First, get the user_id and order_id for the notification
-            $stmt_user = $conn->prepare("SELECT user_id, order_id FROM returns WHERE return_id = ?");
-            $stmt_user->bind_param("i", $return_id);
-            $user_id_for_notification = null;
-            $order_id_for_notification = null;
-            if ($stmt_user->execute()) {
-                $result = $stmt_user->get_result();
-                if ($row = $result->fetch_assoc()) {
-                    $user_id_for_notification = $row['user_id'];
-                    $order_id_for_notification = $row['order_id'];
+            $conn->begin_transaction();
+            try {
+                // Get user_id and order_id for notification
+                $stmt_info = $conn->prepare(
+                    "SELECT po.user_id, r.order_id 
+                     FROM returns r 
+                     JOIN product_orders po ON r.order_id = po.order_id 
+                     WHERE r.return_id = ?"
+                );
+                $stmt_info->bind_param("i", $return_id);
+                $stmt_info->execute();
+                $result_info = $stmt_info->get_result();
+                if (!($info = $result_info->fetch_assoc())) {
+                    throw new Exception("Return information not found.");
                 }
-            }
-            $stmt_user->close();
+                $user_id_for_notification = $info['user_id'];
+                $order_id_for_notification = $info['order_id'];
+                $stmt_info->close();
 
-            // Now, update the return status
-            $stmt_update = $conn->prepare("UPDATE returns SET status = ? WHERE return_id = ?");
-            $stmt_update->bind_param("si", $new_status, $return_id);
+                // Update return status
+                $stmt_update = $conn->prepare("UPDATE returns SET status = ? WHERE return_id = ?");
+                $stmt_update->bind_param("si", $new_status, $return_id);
+                $stmt_update->execute();
+                $stmt_update->close();
 
-            if ($stmt_update->execute()) {
+                // Log the action
                 log_action('Return Status Update', "Admin ID: {$admin_id} changed return #{$return_id} to {$new_status}");
 
-                // Send notification if we found the user
-                if ($user_id_for_notification && $order_id_for_notification) {
-                    $message = "Your return request for order #{$order_id_for_notification} has been updated to '{$new_status}'.";
-                    create_notification($conn, $user_id_for_notification, $message);
-                }
+                // Create a notification for the user
+                $message = "Your return request for order #{$order_id_for_notification} has been updated to '{$new_status}'.";
+                create_notification($conn, $user_id_for_notification, $message);
+                
+                $conn->commit();
+                header("Location: return_details.php?return_id=" . $return_id);
+                exit;
+            } catch (Exception $e) {
+                $conn->rollback();
+                $error_message = "Error updating status: " . $e->getMessage();
             }
-            $stmt_update->close();
-
-            header("Location: return_details.php?return_id=" . $return_id);
-            exit;
         }
     }
 
-    // Query to fetch return details for display
+    // User-provided query to fetch return details
     $query = "
         SELECT
             r.return_id,
@@ -68,15 +76,17 @@ if ($return_id <= 0) {
             r.requested_at,
             poi.product_type,
             poi.quantity,
-            r.user_id AS customer_id, // Use user_id from returns table
+            po.user_id AS customer_id,
             CONCAT(u.FIRST_NAME, ' ', u.LAST_NAME) AS customer_name,
             u.EMAIL AS customer_email
         FROM
             returns AS r
         LEFT JOIN
-            USER AS u ON r.user_id = u.USER_ID
+            product_orders AS po ON r.order_id = po.order_id
         LEFT JOIN
-            product_order_items AS poi ON r.product_id = poi.order_item_id
+            USER AS u ON po.user_id = u.USER_ID
+        LEFT JOIN
+            product_order_items AS poi ON r.order_item_id = poi.order_item_id
         WHERE
             r.return_id = ?
     ";
@@ -91,7 +101,7 @@ if ($return_id <= 0) {
             $result = $stmt->get_result();
             $return_details = $result->fetch_assoc();
             if (!$return_details) {
-                $error_message = "Return request not found.";
+                $error_message = "Return request not found. This may be an old, broken record.";
             }
         } else {
             $error_message = "Database query execution failed: " . htmlspecialchars($stmt->error);
@@ -102,7 +112,6 @@ if ($return_id <= 0) {
 
 $user_name = $_SESSION['user_first_name'] ?? 'Admin';
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
