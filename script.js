@@ -101,7 +101,7 @@ function initLoginForm() {
         }
 
         if (data.success && data.two_factor) {
-            window.location.href = '2fa.php';
+            window.location.href = '2fa_page.html';
         } else if (data.success) {
             window.location.href = 'dashboard.php'; 
         }
