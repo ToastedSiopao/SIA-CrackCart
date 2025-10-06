@@ -3,18 +3,13 @@ header('Content-Type: application/json');
 require_once '../db_connect.php';
 require_once '../error_handler.php';
 
-// Initialize response
 $response = ['status' => 'error', 'message' => 'Invalid request', 'data' => null];
 
 try {
-    // --- Logic for fetching a single producer ---
     if (isset($_GET['producer_id']) && !empty($_GET['producer_id'])) {
         $producer_id = intval($_GET['producer_id']);
 
         $stmt = $conn->prepare("SELECT PRODUCER_ID as producer_id, NAME as name, LOCATION as location, LOGO as logo FROM PRODUCER WHERE PRODUCER_ID = ?");
-        if (!$stmt) {
-            throw new Exception("Prepare failed: (" . $conn->errno . ") " . $conn->error);
-        }
         $stmt->bind_param("i", $producer_id);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -23,20 +18,20 @@ try {
             $producer = $result->fetch_assoc();
 
             $stmt_products = $conn->prepare("SELECT TYPE as type, PRICE as price, PER as per, STOCK as stock FROM PRICE WHERE PRODUCER_ID = ? AND STATUS = 'active'");
-            if (!$stmt_products) {
-                throw new Exception("Prepare failed for products: (" . $conn->errno . ") " . $conn->error);
-            }
             $stmt_products->bind_param("i", $producer_id);
             $stmt_products->execute();
             $products_result = $stmt_products->get_result();
             
             $products = [];
             while ($row = $products_result->fetch_assoc()) {
+                $image_name = str_replace([' ', '/'], '_', strtolower($row['type']));
+                $image_url = 'assets/' . $image_name . '.jpg';
                 $products[] = [
                     'type'  => $row['type'],
                     'price' => floatval($row['price']),
                     'per'   => $row['per'],
-                    'stock' => intval($row['stock'])
+                    'stock' => intval($row['stock']),
+                    'image_url' => $image_url
                 ];
             }
             $producer['products'] = $products;
@@ -46,11 +41,9 @@ try {
             $response['message'] = 'Producer details loaded.';
         } else {
             $response['message'] = 'Producer not found.';
-            $response['data'] = null;
         }
         $stmt->close();
 
-    // --- Logic for fetching a list of producers ---
     } else {
         $sql = "SELECT DISTINCT p.PRODUCER_ID as producer_id, p.NAME as name, p.LOCATION as location, p.LOGO as logo
                 FROM PRODUCER p
@@ -66,12 +59,6 @@ try {
             $types .= 's';
         }
 
-        if (!empty($_GET['max_price'])) {
-            $sql .= " AND pr.PRICE <= ?";
-            $params[] = $_GET['max_price'];
-            $types .= 'd';
-        }
-
         $stmt = $conn->prepare($sql);
         if ($types) {
             $stmt->bind_param($types, ...$params);
@@ -80,13 +67,10 @@ try {
         $result = $stmt->get_result();
 
         $producers = [];
-        $producer_ids = [];
         if ($result && $result->num_rows > 0) {
             while ($row = $result->fetch_assoc()) {
-                $producer_id = intval($row['producer_id']);
-                $producer_ids[] = $producer_id;
-                $producers[$producer_id] = [
-                    'producer_id' => $producer_id,
+                $producers[intval($row['producer_id'])] = [
+                    'producer_id' => intval($row['producer_id']),
                     'name'        => $row['name'],
                     'location'    => $row['location'],
                     'logo'        => $row['logo'],
@@ -96,8 +80,10 @@ try {
         }
         $stmt->close();
         
-        if (!empty($producer_ids)) {
+        if (!empty($producers)) {
+            $producer_ids = array_keys($producers);
             $ids_placeholder = implode(',', array_fill(0, count($producer_ids), '?'));
+            
             $all_products_sql = "SELECT PRODUCER_ID as producer_id, TYPE as type, PRICE as price, PER as per, STOCK as stock
                                  FROM PRICE
                                  WHERE STATUS = 'active' AND PRODUCER_ID IN ($ids_placeholder)
@@ -111,11 +97,14 @@ try {
             while ($row = $all_products_result->fetch_assoc()) {
                  $producer_id = intval($row['producer_id']);
                  if(isset($producers[$producer_id])) {
+                     $image_name = str_replace([' ', '/'], '_', strtolower($row['type']));
+                     $image_url = 'assets/' . $image_name . '.jpg';
                      $producers[$producer_id]['products'][] = [
                         'type'  => $row['type'],
                         'price' => floatval($row['price']),
                         'per'   => $row['per'],
-                        'stock' => intval($row['stock'])
+                        'stock' => intval($row['stock']),
+                        'image_url' => $image_url
                     ];
                  }
             }
@@ -128,7 +117,6 @@ try {
 } catch (Exception $e) {
     http_response_code(500);
     $response['message'] = 'Database error: ' . $e->getMessage();
-    $response['data'] = null;
 }
 
 $conn->close();
