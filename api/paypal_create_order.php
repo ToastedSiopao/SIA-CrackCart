@@ -5,19 +5,14 @@ header("Content-Type: application/json");
 include("../db_connect.php");
 include("paypal_config.php");
 
-// Function to get the real price of a product from the database
 function get_product_price($conn, $producer_id, $product_type) {
     $stmt = $conn->prepare("SELECT PRICE FROM PRICE WHERE PRODUCER_ID = ? AND TYPE = ?");
     $stmt->bind_param("is", $producer_id, $product_type);
     $stmt->execute();
     $result = $stmt->get_result();
-    if ($result->num_rows > 0) {
-        return $result->fetch_assoc()['PRICE'];
-    }
-    return null;
+    return $result->num_rows > 0 ? $result->fetch_assoc()['PRICE'] : null;
 }
 
-// Function to get PayPal Access Token
 function get_paypal_access_token() {
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, PAYPAL_API_BASE_URL . '/v1/oauth2/token');
@@ -46,17 +41,14 @@ function get_paypal_access_token() {
     return ['access_token' => $json->access_token ?? null];
 }
 
-// --- Main Logic --- 
-
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['product_cart']) || empty($_SESSION['product_cart'])) {
     http_response_code(400);
     echo json_encode(['error' => 'Invalid request: Missing user or cart data.']);
     exit();
 }
 
-// --- SECURE PRICE VALIDATION ---
 $validated_cart = [];
-$total_amount = 0;
+$subtotal = 0;
 
 foreach ($_SESSION['product_cart'] as $item) {
     if (!isset($item['producer_id'], $item['product_type'], $item['quantity'])) {
@@ -73,26 +65,27 @@ foreach ($_SESSION['product_cart'] as $item) {
         exit();
     }
 
-    $total_amount += $real_price * $item['quantity'];
+    $subtotal += $real_price * $item['quantity'];
     
-    // Build a validated version of the cart item
     $validated_cart[] = [
         'producer_id' => $item['producer_id'],
         'product_type' => $item['product_type'],
         'quantity' => $item['quantity'],
-        'price' => $real_price // Use the validated price
+        'price' => $real_price
     ];
 }
 
-$total_amount = round($total_amount, 2);
+$cart_meta = $_SESSION['product_cart_meta'] ?? ['delivery_fee' => 0];
+$delivery_fee = (float)($cart_meta['delivery_fee'] ?? 0);
+$total_amount = round($subtotal + $delivery_fee, 2);
 
-// Store the securely validated details in the session for the capture step
 $_SESSION['validated_paypal_order'] = [
     'cart' => $validated_cart,
-    'total' => $total_amount
+    'total' => $total_amount,
+    'delivery_fee' => $delivery_fee,
+    'notes' => $cart_meta['notes'] ?? '',
+    'vehicle_type' => $cart_meta['vehicle_type'] ?? null
 ];
-
-// --- PayPal Order Creation --- 
 
 $token_response = get_paypal_access_token();
 if (isset($token_response['error']) || empty($token_response['access_token'])) {
@@ -108,7 +101,17 @@ $order_data = [
         [
             'amount' => [
                 'currency_code' => 'PHP',
-                'value' => number_format($total_amount, 2, '.', '')
+                'value' => number_format($total_amount, 2, '.', ''),
+                'breakdown' => [
+                    'item_total' => [
+                        'currency_code' => 'PHP',
+                        'value' => number_format($subtotal, 2, '.', '')
+                    ],
+                    'shipping' => [
+                        'currency_code' => 'PHP',
+                        'value' => number_format($delivery_fee, 2, '.', '')
+                    ]
+                ]
             ]
         ]
     ]
@@ -141,7 +144,7 @@ if ($http_status >= 400) {
     exit();
 }
 
-// Return the PayPal order ID to the client
 echo json_encode($json);
 
+$conn->close();
 ?>

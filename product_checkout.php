@@ -10,7 +10,7 @@ include("api/paypal_config.php");
   <title>Checkout - CrackCart</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-  <link href="dashboard-styles.css?v=2.9" rel="stylesheet">
+  <link href="dashboard-styles.css?v=3.0" rel="stylesheet">
   <script src="https://www.paypal.com/sdk/js?client-id=<?php echo PAYPAL_CLIENT_ID; ?>&currency=PHP"></script>
 </head>
 <body>
@@ -170,16 +170,23 @@ include("api/paypal_config.php");
                       </div>
                       <span class="fw-bold me-3 ms-3">₱${(parseFloat(item.price) * item.quantity).toFixed(2)}</span>
                       <button class="btn btn-sm btn-outline-danger remove-item-btn" data-cart-item-key="${item.cart_item_key}">
-                          <i class="fas fa-trash"></i>
+                          <i class="bi bi-trash"></i>
                       </button>
                   </div>
               </li>`).join('');
 
           orderSummaryContainer.innerHTML = `
               <h5 class="card-title">Order Summary</h5>
-              <ul class="list-group list-group-flush">${itemsHtml}
-                  <li class="list-group-item d-flex justify-content-between align-items-center fw-bold fs-5">
+              <ul class="list-group list-group-flush">
+                  ${itemsHtml}
+                  <li class="list-group-item d-flex justify-content-between align-items-center">
                       Subtotal <span>₱${parseFloat(data.subtotal).toFixed(2)}</span>
+                  </li>
+                  <li class="list-group-item d-flex justify-content-between align-items-center">
+                      Delivery Fee (${data.meta.vehicle_type || 'Not Selected'}) <span>₱${parseFloat(data.delivery_fee).toFixed(2)}</span>
+                  </li>
+                  <li class="list-group-item d-flex justify-content-between align-items-center fw-bold fs-5">
+                      Grand Total <span>₱${parseFloat(data.grand_total).toFixed(2)}</span>
                   </li>
               </ul>
               <h5 class="mt-4">Payment Method</h5>
@@ -214,7 +221,21 @@ include("api/paypal_config.php");
           if (!button || !confirm('Are you sure you want to remove this item?')) return;
 
           const cartItemKey = button.dataset.cartItemKey;
-          await updateCartQuantity(cartItemKey, 0);
+          try {
+            const response = await fetch(`api/cart.php`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cart_item_key: cartItemKey })
+            });
+            const result = await response.json();
+            if (result.status === 'success') {
+                fetchCartAndAddresses();
+            } else {
+                showAlert('danger', result.message || 'Could not remove item from cart.');
+            }
+        } catch (error) {
+            showAlert('danger', 'Could not connect to the server to update cart.');
+        }
       };
 
       const handleQuantityChange = async (event) => {
@@ -230,22 +251,37 @@ include("api/paypal_config.php");
           let newQuantity = parseInt(item.quantity, 10);
           newQuantity = (action === 'increase') ? newQuantity + 1 : newQuantity - 1;
           
-          if (newQuantity <= 0) {
-              if (confirm('Do you want to remove this item from the cart?')) {
-                  await updateCartQuantity(cartItemKey, 0);
-              }
-          } else {
-              await updateCartQuantity(cartItemKey, newQuantity);
-          }
+          await updateCartQuantity(cartItemKey, newQuantity);
       };
 
       const updateCartQuantity = async (cartItemKey, quantity) => {
+          if (quantity <= 0) {
+             if (confirm('Do you want to remove this item from the cart?')) {
+                try {
+                    const response = await fetch(`api/cart.php`, {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ cart_item_key: cartItemKey })
+                    });
+                    const result = await response.json();
+                    if (result.status === 'success') {
+                        fetchCartAndAddresses();
+                    } else {
+                        showAlert('danger', result.message || 'Could not remove item from cart.');
+                    }
+                } catch (error) {
+                    showAlert('danger', 'Could not connect to the server to update cart.');
+                }
+             } 
+             return;
+          }
+
           try {
               const response = await fetch('api/cart.php', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
-                      _method: 'PUT',
+                      action: 'PUT',
                       cart_item_key: cartItemKey,
                       quantity: quantity
                   })
@@ -291,7 +327,7 @@ include("api/paypal_config.php");
         placeOrderBtn.innerHTML = '<div class="spinner-border spinner-border-sm"></div><span class="ms-2">Placing Order...</span>';
         
         try {
-            const response = await fetch('api/checkout.php', {
+            const response = await fetch('api/cod_create_order.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -329,7 +365,8 @@ include("api/paypal_config.php");
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ 
-                          vehicle_type: cartData.meta.vehicle_type 
+                          vehicle_type: cartData.meta.vehicle_type,
+                          shipping_address_id: selectedAddressId
                       })
                   })
                       .then(res => res.json())

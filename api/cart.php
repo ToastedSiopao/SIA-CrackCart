@@ -126,6 +126,29 @@ switch ($method) {
                 }
                 break;
             
+            case 'PUT': // Update item quantity
+                if (isset($data['cart_item_key'], $data['quantity'])) {
+                    $cart_item_key = $data['cart_item_key'];
+                    $quantity = filter_var($data['quantity'], FILTER_VALIDATE_INT);
+
+                    if (isset($_SESSION['product_cart'][$cart_item_key])) {
+                        if ($quantity !== false && $quantity > 0) {
+                            $_SESSION['product_cart'][$cart_item_key]['quantity'] = $quantity;
+                            echo json_encode(['status' => 'success', 'message' => 'Cart updated.']);
+                        } else {
+                            unset($_SESSION['product_cart'][$cart_item_key]);
+                            echo json_encode(['status' => 'success', 'message' => 'Item removed from cart.']);
+                        }
+                    } else {
+                        http_response_code(404);
+                        echo json_encode(['status' => 'error', 'message' => 'Item not found in cart.']);
+                    }
+                } else {
+                    http_response_code(400);
+                    echo json_encode(['status' => 'error', 'message' => 'Invalid data provided for update.']);
+                }
+                break;
+
             case 'clear':
                 $_SESSION['product_cart'] = [];
                 $_SESSION['product_cart_meta'] = ['vehicle_type' => null, 'delivery_fee' => 0, 'notes' => ''];
@@ -140,8 +163,15 @@ switch ($method) {
         break;
 
     case 'DELETE':
-        if (isset($data['cart_item_key'])) {
-            $cart_item_key = $data['cart_item_key'];
+        // This is kept for direct delete requests, e.g., from the cart view page
+        $request_data = $data;
+        if(empty($request_data)) {
+            parse_str(file_get_contents("php://input"), $request_data);
+            $request_data = json_decode(array_keys($request_data)[0], true);
+        }
+
+        if (isset($request_data['cart_item_key'])) {
+            $cart_item_key = $request_data['cart_item_key'];
             if (isset($_SESSION['product_cart'][$cart_item_key])) {
                 unset($_SESSION['product_cart'][$cart_item_key]);
                 echo json_encode(['status' => 'success', 'message' => 'Item removed.']);
