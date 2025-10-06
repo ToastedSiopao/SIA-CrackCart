@@ -4,7 +4,6 @@ require_once 'session_handler.php';
 $user_id = $_SESSION['user_id'];
 $user_name = $_SESSION['user_name'];
 
-// --- Fetch Categories for Filter ---
 require_once 'db_connect.php';
 $categories = [];
 try {
@@ -16,7 +15,6 @@ try {
         }
     }
 } catch (Exception $e) {
-    // Log error if needed, but don't crash the page
     error_log('Error fetching categories: ' . $e->getMessage());
 }
 $conn->close();
@@ -29,7 +27,59 @@ $conn->close();
   <title>CrackCart Producers</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-  <link href="dashboard-styles.css?v=2.9" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="dashboard-styles.css?v=3.3" rel="stylesheet">
+  <style>
+    .producer-card-new {
+        background-color: #fff;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .producer-card-new:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+    }
+    .producer-banner {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+    }
+    .producer-info {
+        padding: 20px;
+    }
+    .product-list {
+        padding: 0 20px 20px;
+    }
+    .product-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .product-item:last-child {
+        margin-bottom: 0;
+        border-bottom: none;
+    }
+    .product-image {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 10px;
+        margin-right: 15px;
+    }
+    .product-details {
+        flex-grow: 1;
+    }
+    .star-rating {
+        cursor: pointer;
+    }
+    .star-rating .bi-star-fill {
+        color: #ffc107;
+    }
+  </style>
 </head>
 <body>
   <?php include("navbar.php"); ?>
@@ -39,31 +89,42 @@ $conn->close();
       <?php include("sidebar.php"); ?>
       <?php include("offcanvas_sidebar.php"); ?>
 
-      <div class="col p-4">
-        <h3 class="mb-4 text-warning fw-bold">Choose a Producer</h3>
+      <main class="col p-4">
+        <header class="mb-4">
+          <h2 class="text-dark fw-bold">Our Producers</h2>
+          <p class="text-muted">Fresh eggs from trusted local farms.</p>
+        </header>
 
         <!-- Filter Controls -->
         <div class="row mb-4 g-3">
           <div class="col-md-4">
-            <label for="categoryFilter" class="form-label">Category</label>
+            <label for="categoryFilter" class="form-label">Filter by Category</label>
             <select id="categoryFilter" class="form-select">
-              <option value="">All</option>
+              <option value="">All Categories</option>
               <?php foreach ($categories as $category): ?>
                 <option value="<?php echo htmlspecialchars($category); ?>"><?php echo htmlspecialchars($category); ?></option>
               <?php endforeach; ?>
             </select>
           </div>
-          <div class="col-md-4">
-            <label for="priceFilter" class="form-label">Max Price</label>
-            <input type="number" id="priceFilter" class="form-control" placeholder="e.g., 500">
-          </div>
-          <div class="col-md-4 d-flex align-items-end">
-            <button id="filterBtn" class="btn btn-warning">Apply Filters</button>
-          </div>
         </div>
 
         <div class="row g-4" id="producersContainer">
-          <!-- Producers will be loaded here by JavaScript -->
+          <!-- Producers will be loaded here -->
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Reviews Modal -->
+  <div class="modal fade" id="reviewsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="reviewsModalTitle">Product Reviews</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="reviewsModalBody">
+          <!-- Reviews will be loaded here -->
         </div>
       </div>
     </div>
@@ -74,79 +135,140 @@ $conn->close();
     document.addEventListener('DOMContentLoaded', function() {
       const producersContainer = document.getElementById('producersContainer');
       const categoryFilter = document.getElementById('categoryFilter');
-      const priceFilter = document.getElementById('priceFilter');
-      const filterBtn = document.getElementById('filterBtn');
+      const reviewsModal = new bootstrap.Modal(document.getElementById('reviewsModal'));
 
-      const fetchProducers = () => {
+      const fetchAndRenderProducers = async () => {
         const category = categoryFilter.value;
-        const maxPrice = priceFilter.value;
+        const url = `api/producers.php${category ? '?category=' + encodeURIComponent(category) : ''}`;
         
-        let queryString = '';
-        if (category) {
-            queryString += `category=${encodeURIComponent(category)}`;
-        }
-        if (maxPrice) {
-            queryString += (queryString ? '&' : '') + `max_price=${encodeURIComponent(maxPrice)}`;
-        }
+        producersContainer.innerHTML = '<div class="text-center p-5"><div class="spinner-border text-warning"></div></div>';
 
-        producersContainer.innerHTML = '<div class="d-flex justify-content-center p-5"><div class="spinner-border text-warning" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+        try {
+            const response = await fetch(url);
+            const result = await response.json();
 
-        fetch(`api/producers.php?${queryString}`)
-            .then(response => response.json())
-            .then(data => {
-                producersContainer.innerHTML = ''; // Clear loading spinner
-                if (data.status === 'success' && data.data.length > 0) {
-                    data.data.forEach(producer => {
-                        const areAllProductsOutOfStock = producer.products.every(p => p.stock <= 0);
-                        const producerCard = `
-                            <div class="col-12 col-md-4 col-lg-3 producer-item">
-                                <div class="producer-card">
-                                    <img src="${producer.logo}" class="producer-logo" alt="${producer.name}">
-                                    <h5 class="fw-bold">${producer.name}</h5>
-                                    <p class="text-muted">${producer.location}</p>
-                                    <div class="price-list mb-3">
-                                        <h6 class="fw-bold mb-2">Available Products:</h6>
-                                        ${producer.products.map(product => `
-                                            <div class="d-flex justify-content-between ${product.stock > 0 ? '' : 'text-muted'}">
-                                                <span class="small">${product.type}</span>
-                                                <div class="d-flex flex-column align-items-end">
-                                                    <span class="price-tag small">₱${product.price.toFixed(2)} / 30-pc tray</span>
-                                                    ${product.stock > 0 ? `<span class="small text-success">In Stock: ${product.stock}</span>` : '<span class="small text-danger">Out of Stock</span>'}
-                                                </div>
-                                            </div>
-                                        `).join('')}
-                                    </div>
-                                    <button class="btn btn-warning order-btn" 
-                                            data-producer-id="${producer.producer_id}"
-                                            ${areAllProductsOutOfStock ? 'disabled' : ''}>
-                                        ${areAllProductsOutOfStock ? 'Out of Stock' : 'Order From Here'}
-                                    </button>
-                                </div>
-                            </div>
-                        `;
-                        producersContainer.innerHTML += producerCard;
-                    });
-                } else {
-                     producersContainer.innerHTML = '<div class="col-12"><p class="text-center p-5 bg-light rounded">No producers match the current filters. Please try a different selection.</p></div>';
+            if (result.status === 'success' && result.data.length > 0) {
+                producersContainer.innerHTML = '';
+                for (const producer of result.data) {
+                    const producerCard = await createProducerCard(producer);
+                    producersContainer.innerHTML += producerCard;
                 }
-            })
-            .catch(error => {
-                producersContainer.innerHTML = '<div class="col-12"><p class="text-center text-danger p-5 bg-light rounded">An error occurred while fetching data. Please try again later.</p></div>';
-                console.error("Fetch Error:", error);
-            });
+            } else {
+                producersContainer.innerHTML = '<p class="text-center text-muted">No producers found for this category.</p>';
+            }
+        } catch (error) {
+            producersContainer.innerHTML = '<p class="text-center text-danger">Failed to load producers.</p>';
+            console.error('Fetch Error:', error);
+        }
       };
 
-      filterBtn.addEventListener('click', fetchProducers);
-
-      producersContainer.addEventListener('click', function(e) {
-          if (e.target.classList.contains('order-btn')) {
-              const producerId = e.target.dataset.producerId;
-              window.location.href = `order.php?producer_id=${producerId}`;
+      const getReviewSummary = async (productType) => {
+          try {
+              const response = await fetch(`api/get_reviews.php?product_type=${encodeURIComponent(productType)}`);
+              const result = await response.json();
+              if (result.status === 'success') {
+                  return result.data;
+              }
+          } catch (error) {
+              console.error('Error fetching reviews:', error);
           }
+          return { average_rating: 0, total_reviews: 0, reviews: [] };
+      };
+
+      const createProducerCard = async (producer) => {
+        let productsHtml = '';
+        for (const product of producer.products) {
+            const reviewSummary = await getReviewSummary(product.type);
+            const avgRating = reviewSummary.average_rating.toFixed(1);
+            const totalReviews = reviewSummary.total_reviews;
+            const starRatingHtml = getStarRating(reviewSummary.average_rating);
+
+            productsHtml += `
+                <div class="product-item">
+                    <img src="${getCorrectedImagePath(product.image_url)}" alt="${product.type}" class="product-image">
+                    <div class="product-details">
+                        <h6 class="mb-0">${product.type}</h6>
+                        <p class="mb-1 small text-muted">₱${product.price.toFixed(2)} / tray</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                             <div class="star-rating small" title="${avgRating} out of 5 stars" data-product-type="${product.type}" data-bs-toggle="modal" data-bs-target="#reviewsModal">
+                                 ${starRatingHtml} <span class="text-muted">(${totalReviews})</span>
+                             </div>
+                             ${product.stock > 0 ? `<span class="badge bg-success-light text-success">In Stock</span>` : '<span class="badge bg-danger-light text-danger">Out of Stock</span>'}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        const bannerPath = `assets/${producer.name.toLowerCase().replace(/\s+/g, '_')}.jpg`;
+        const correctedBannerPath = getCorrectedImagePath(bannerPath);
+
+        return `
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="producer-card-new">
+                    <img src="${correctedBannerPath}" alt="${producer.name} Banner" class="producer-banner">
+                    <div class="producer-info">
+                        <h4 class="fw-bold mb-1">${producer.name}</h4>
+                        <p class="text-muted small"><i class="bi bi-geo-alt-fill"></i> ${producer.location}</p>
+                    </div>
+                    <div class="product-list">${productsHtml}</div>
+                    <div class="p-3 bg-light">
+                         <a href="order.php?producer_id=${producer.producer_id}" class="btn btn-warning w-100 fw-bold">Shop Now</a>
+                    </div>
+                </div>
+            </div>
+        `;
+      };
+      
+      const getCorrectedImagePath = (path) => {
+          return path.replace('assets/images', 'assets');
+      };
+
+      const getStarRating = (rating) => {
+        let stars = '';
+        for (let i = 1; i <= 5; i++) {
+            if (i <= rating) stars += '<i class="bi bi-star-fill"></i>';
+            else if (i - 0.5 <= rating) stars += '<i class="bi bi-star-half"></i>';
+            else stars += '<i class="bi bi-star"></i>';
+        }
+        return stars;
+      };
+
+      document.getElementById('producersContainer').addEventListener('click', async (e) => {
+        const starRatingEl = e.target.closest('.star-rating');
+        if (starRatingEl) {
+            const productType = starRatingEl.dataset.productType;
+            document.getElementById('reviewsModalTitle').innerText = `Reviews for ${productType}`;
+            const modalBody = document.getElementById('reviewsModalBody');
+            modalBody.innerHTML = '<div class="text-center"><div class="spinner-border"></div></div>';
+
+            const reviewData = await getReviewSummary(productType);
+
+            if (reviewData.reviews.length > 0) {
+                let reviewsHtml = reviewData.reviews.map(review => {
+                    const reviewRatingHtml = getStarRating(review.rating);
+                    return `
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <h6 class="card-title">${review.username}</h6>
+                                    <small class="text-muted">${new Date(review.created_at).toLocaleDateString()}</small>
+                                </div>
+                                <div class="mb-2">${reviewRatingHtml}</div>
+                                <p class="card-text">${review.review_text}</p>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                modalBody.innerHTML = reviewsHtml;
+            } else {
+                modalBody.innerHTML = '<p class="text-center text-muted">No reviews yet for this product.</p>';
+            }
+        }
       });
 
-      // Initial fetch on page load
-      fetchProducers();
+      categoryFilter.addEventListener('change', fetchAndRenderProducers);
+      fetchAndRenderProducers(); // Initial load
     });
   </script>
 </body>

@@ -174,6 +174,11 @@
           <h3>Producer Support</h3>
           <p>We provide a platform for egg producers to reach a wider customer base and grow their business.</p>
         </div>
+        <div class="feature-item">
+          <div class="feature-icon"><i class="fas fa-star"></i></div>
+          <h3>Reviews and Ratings</h3>
+          <p>Leave reviews and ratings for products you've purchased to help others make informed decisions.</p>
+        </div>
       </div>
     </section>
   </main>

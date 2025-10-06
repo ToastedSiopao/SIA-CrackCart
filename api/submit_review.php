@@ -29,41 +29,39 @@ if ($rating < 1 || $rating > 5) {
     exit();
 }
 
-if ($conn) {
-    try {
-        // Verify that the user has purchased this product and the order is complete
-        $stmt = $conn->prepare(
-            "SELECT po.status FROM product_orders po JOIN product_order_items oi ON po.order_id = oi.order_id WHERE po.order_id = ? AND po.user_id = ? AND oi.product_type = ?"
-        );
-        $stmt->bind_param("iis", $order_id, $user_id, $product_type);
-        $stmt->execute();
-        $result = $stmt->get_result();
+try {
+    // Check if the user has purchased this product in the specified order
+    $stmt_check = $conn->prepare(
+        "SELECT od.id FROM order_details od
+         JOIN orders o ON od.order_id = o.order_id
+         WHERE o.order_id = ? AND o.user_id = ? AND od.product_type = ?"
+    );
+    $stmt_check->bind_param("iis", $order_id, $user_id, $product_type);
+    $stmt_check->execute();
+    $result_check = $stmt_check->get_result();
 
-        if ($result->num_rows === 0) {
-            http_response_code(403);
-            echo json_encode(['status' => 'error', 'message' => 'You are not authorized to review this product as it was not part of this order.']);
-            exit();
+    if ($result_check->num_rows === 0) {
+        throw new Exception('You can only review products you have purchased.');
+    }
+
+    // Check if a review already exists for this product in this order
+    $stmt_exists = $conn->prepare("SELECT review_id FROM product_reviews WHERE user_id = ? AND order_id = ? AND product_type = ?");
+    $stmt_exists->bind_param("iis", $user_id, $order_id, $product_type);
+    $stmt_exists->execute();
+    $result_exists = $stmt_exists->get_result();
+
+    if ($result_exists->num_rows > 0) {
+        // Update existing review
+        $review = $result_exists->fetch_assoc();
+        $review_id = $review['review_id'];
+        $stmt_update = $conn->prepare("UPDATE product_reviews SET rating = ?, review_text = ? WHERE review_id = ?");
+        $stmt_update->bind_param("isi", $rating, $review_text, $review_id);
+        if ($stmt_update->execute()) {
+            echo json_encode(['status' => 'success', 'message' => 'Your review has been updated successfully!']);
+        } else {
+            throw new Exception('Failed to update your review.');
         }
-
-        $order = $result->fetch_assoc();
-        $status = strtolower($order['status']);
-
-        if ($status !== 'delivered' && $status !== 'completed') {
-            http_response_code(400);
-            echo json_encode(['status' => 'error', 'message' => 'You can only review products from delivered orders.']);
-            exit();
-        }
-
-        // Check if a review for this product in this order already exists
-        $stmt_check = $conn->prepare("SELECT review_id FROM product_reviews WHERE user_id = ? AND order_id = ? AND product_type = ?");
-        $stmt_check->bind_param("iis", $user_id, $order_id, $product_type);
-        $stmt_check->execute();
-        if ($stmt_check->get_result()->num_rows > 0) {
-             http_response_code(409);
-             echo json_encode(['status' => 'error', 'message' => 'You have already submitted a review for this product.']);
-             exit();
-        }
-
+    } else {
         // Insert the new review
         $stmt_insert = $conn->prepare("INSERT INTO product_reviews (user_id, order_id, product_type, rating, review_text) VALUES (?, ?, ?, ?, ?)");
         $stmt_insert->bind_param("iisis", $user_id, $order_id, $product_type, $rating, $review_text);
@@ -73,19 +71,10 @@ if ($conn) {
         } else {
             throw new Exception('Failed to save your review.');
         }
-
-    } catch (Exception $e) {
-        http_response_code(500);
-        error_log($e->getMessage());
-        echo json_encode(['status' => 'error', 'message' => 'A server error occurred. Please try again later.']);
-    } finally {
-        if (isset($stmt)) $stmt->close();
-        if (isset($stmt_check)) $stmt_check->close();
-        if (isset($stmt_insert)) $stmt_insert->close();
-        $conn->close();
     }
-} else {
-    http_response_code(503);
-    echo json_encode(['status' => 'error', 'message' => 'Database connection failed.']);
+
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
 }
 ?>

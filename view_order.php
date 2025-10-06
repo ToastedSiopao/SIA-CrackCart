@@ -19,7 +19,7 @@ $order_id = $_GET['order_id'];
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>View Order - CrackCart</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
     <link href="dashboard-styles.css?v=3.1" rel="stylesheet">
 </head>
 <body>
@@ -55,7 +55,38 @@ $order_id = $_GET['order_id'];
         </div>
     </div>
 
-    <!-- Review Modal (keep this as it is) -->
+    <!-- Review Modal -->
+    <div class="modal fade" id="reviewModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Leave a Review</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="reviewForm">
+                        <input type="hidden" id="reviewOrderId" name="order_id">
+                        <input type="hidden" id="reviewProductType" name="product_type">
+                        <div class="mb-3">
+                            <label for="rating" class="form-label">Rating</label>
+                            <select id="rating" name="rating" class="form-select">
+                                <option value="5">5 Stars</option>
+                                <option value="4">4 Stars</option>
+                                <option value="3">3 Stars</option>
+                                <option value="2">2 Stars</option>
+                                <option value="1">1 Star</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="reviewText" class="form-label">Review</label>
+                            <textarea id="reviewText" name="review_text" class="form-control" rows="4"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Submit Review</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -63,6 +94,8 @@ $order_id = $_GET['order_id'];
         const orderDetailsContainer = document.getElementById('order-details-container');
         const alertContainer = document.getElementById('order-details-alert-container');
         const orderId = new URLSearchParams(window.location.search).get('order_id');
+        const reviewModal = new bootstrap.Modal(document.getElementById('reviewModal'));
+        const reviewForm = document.getElementById('reviewForm');
 
         const showAlert = (type, message) => {
             alertContainer.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">${message}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`;
@@ -94,7 +127,10 @@ $order_id = $_GET['order_id'];
                 if (item.return_status) {
                     itemActions = `<span class="badge bg-secondary">Return ${item.return_status}</span>`;
                 } else if (isDelivered) {
-                    itemActions = `<a href="request_return.php?order_item_id=${item.order_item_id}" class="btn btn-outline-secondary btn-sm">Request Return</a>`;
+                    itemActions = `
+                        <button class="btn btn-outline-primary btn-sm review-btn" data-product-type="${item.product_type}">Leave a Review</button>
+                        <a href="request_return.php?order_item_id=${item.order_item_id}" class="btn btn-outline-secondary btn-sm">Request Return</a>
+                    `;
                 }
 
                 return `
@@ -103,7 +139,7 @@ $order_id = $_GET['order_id'];
                             <p class="mb-0">${item.product_type}</p>
                             <small class="text-muted">₱${parseFloat(item.price_per_item).toFixed(2)} x ${item.quantity}</small>
                         </div>
-                        ${itemActions}
+                        <div class="d-flex gap-2">${itemActions}</div>
                     </li>`;
             }).join('');
 
@@ -118,7 +154,41 @@ $order_id = $_GET['order_id'];
                 </div>`;
             
             orderDetailsContainer.innerHTML = orderDetailsHtml;
+
+            document.querySelectorAll('.review-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const productType = e.target.dataset.productType;
+                    document.getElementById('reviewOrderId').value = orderId;
+                    document.getElementById('reviewProductType').value = productType;
+                    reviewModal.show();
+                });
+            });
         };
+        
+        reviewForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(reviewForm);
+            const submitButton = reviewForm.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+
+            try {
+                const response = await fetch('api/submit_review.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                if (result.status === 'success') {
+                    showAlert('success', result.message);
+                    reviewModal.hide();
+                } else {
+                    showAlert('danger', result.message || 'Failed to submit review.');
+                }
+            } catch (error) {
+                showAlert('danger', 'Could not connect to the server.');
+            } finally {
+                submitButton.disabled = false;
+            }
+        });
 
         const getStatusClass = (status) => {
             switch (status.toLowerCase()) {
@@ -128,7 +198,6 @@ $order_id = $_GET['order_id'];
                 case 'delivered': return 'success';
                 case 'cancelled': return 'secondary';
                 case 'failed': return 'danger';
-                // Return Statuses
                 case 'requested': return 'warning';
                 case 'approved': return 'info';
                 case 'rejected': return 'danger';
