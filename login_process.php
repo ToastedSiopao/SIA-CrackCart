@@ -48,6 +48,13 @@ try {
     if ($result && $result->num_rows === 1) {
         $user = $result->fetch_assoc();
 
+        // Check if account is deactivated
+        if ($user['ACCOUNT_STATUS'] === 'INACTIVE') {
+            http_response_code(403); // Forbidden
+            echo json_encode(['error' => ['message' => 'Your account has been deactivated. Please contact support.']]);
+            exit();
+        }
+
         if (password_verify($password, $user['PASSWORD'])) {
             // Reset login attempts on success
             unset($_SESSION['login_attempts']);

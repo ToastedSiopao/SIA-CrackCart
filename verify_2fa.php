@@ -30,6 +30,11 @@ if ($two_fa_code === $_SESSION['2fa_code']) {
     $user_id = intval($_SESSION['2fa_user_id']);
 
     try {
+        // --- Update last_login_at timestamp ---
+        $update_stmt = $conn->prepare("UPDATE USER SET last_login_at = NOW() WHERE USER_ID = ?");
+        $update_stmt->bind_param("i", $user_id);
+        $update_stmt->execute();
+
         $stmt = $conn->prepare("SELECT * FROM USER WHERE USER_ID = ? LIMIT 1");
         $stmt->bind_param("i", $user_id);
         $stmt->execute();
@@ -44,6 +49,10 @@ if ($two_fa_code === $_SESSION['2fa_code']) {
             $_SESSION['user_id'] = $user['USER_ID'];
             $_SESSION['user_first_name'] = $user['FIRST_NAME'];
             $_SESSION['user_role'] = $user['ROLE'];
+            
+            // Set the role in a separate session variable for easier access
+            $_SESSION['role'] = $user['ROLE'];
+
 
             // Clear 2FA data
             unset($_SESSION['2fa_code']);

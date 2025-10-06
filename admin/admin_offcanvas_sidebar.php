@@ -16,10 +16,13 @@
                 <a class="nav-link" href="manage_orders.php"><i class="bi bi-pencil-square"></i> Manage Orders</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="returns.php"><i class="bi bi-arrow-return-left"></i> Returns</a>
+                <a class="nav-link" href="manage_returns.php"><i class="bi bi-arrow-return-left"></i> Manage Returns</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link" href="manage_users.php"><i class="bi bi-people"></i> Manage Users</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="user_activity.php"><i class="bi bi-person-check"></i> User Activity</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link" href="fleet_management.php"><i class="bi bi-truck"></i> Fleet Management</a>
