@@ -19,7 +19,7 @@ if ($order_id === 0) {
     exit();
 }
 
-// Fetch order details
+// Fetch the main order details
 $stmt = $conn->prepare("SELECT po.*, a.address_line1 AS street, a.city, a.state, a.zip_code, a.country FROM product_orders po JOIN user_addresses a ON po.shipping_address_id = a.address_id WHERE po.order_id = ? AND po.user_id = ?");
 $stmt->bind_param("ii", $order_id, $user_id);
 $stmt->execute();
@@ -32,8 +32,22 @@ if (!$order) {
     exit();
 }
 
-// Fetch order items with the correct column names that the frontend expects
-$stmt_items = $conn->prepare("SELECT product_type, price_per_item, quantity FROM product_order_items WHERE order_id = ?");
+// Fetch order items and join with returns to get return status for each specific item.
+// This now works because the `returns` table has the `order_item_id` column.
+$stmt_items = $conn->prepare("
+    SELECT 
+        poi.order_item_id, 
+        poi.product_type, 
+        poi.price_per_item, 
+        poi.quantity, 
+        r.status AS return_status 
+    FROM 
+        product_order_items poi
+    LEFT JOIN 
+        returns r ON poi.order_item_id = r.order_item_id
+    WHERE 
+        poi.order_id = ?
+");
 $stmt_items->bind_param("i", $order_id);
 $stmt_items->execute();
 $items_result = $stmt_items->get_result();

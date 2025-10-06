@@ -13,6 +13,7 @@
                   <li><a href="profilePage.php" class="nav-link"><i class="bi bi-gear me-2"></i> Setting</a></li>
                   <li><a href="producers.php" class="nav-link"><i class="bi bi-egg me-2"></i> Producers</a></li>
                   <li><a href="terms.php" class="nav-link" target="_blank"><i class="bi bi-file-text me-2"></i> Terms & Privacy</a></li>
+                  <li><a href="return-policy.php" class="nav-link"><i class="bi bi-box-arrow-in-left me-2"></i> Return Policy</a></li>
                 </ul>
                 <div class="upgrade-box">
                   <p>Upgrade your Account to Get Free Voucher</p>

@@ -16,6 +16,9 @@
                 <a class="nav-link" href="manage_orders.php"><i class="bi bi-pencil-square"></i> Manage Orders</a>
             </li>
             <li class="nav-item">
+                <a class="nav-link" href="returns.php"><i class="bi bi-arrow-return-left"></i> Returns</a>
+            </li>
+            <li class="nav-item">
                 <a class="nav-link" href="manage_users.php"><i class="bi bi-people"></i> Manage Users</a>
             </li>
             <li class="nav-item">

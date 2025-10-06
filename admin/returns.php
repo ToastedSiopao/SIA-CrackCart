@@ -1,21 +1,25 @@
 <?php
 session_start();
-// Security check
+// Security & permission check
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-    header("Location: index.php?error=Please log in to access the admin panel.");
+    header("Location: ../login.php?error=Unauthorized access");
     exit();
 }
 
 include '../db_connect.php';
 
-// Fetch all returns with customer information
-$query = "SELECT pr.return_id, pr.order_id, pr.return_status, pr.created_at, CONCAT(u.FIRST_NAME, ' ', u.LAST_NAME) AS customer_name
-          FROM product_returns pr
-          JOIN product_orders po ON pr.order_id = po.order_id
-          JOIN USER u ON po.user_id = u.USER_ID
-          ORDER BY pr.created_at DESC";
-
+// CORRECTED QUERY: Using correct uppercase table 'USER' and column names 'USER_ID', 'FIRST_NAME', 'LAST_NAME'
+$query = "
+    SELECT 
+        r.return_id, r.order_id, r.status, r.created_at,
+        CONCAT(u.FIRST_NAME, ' ', u.LAST_NAME) AS customer_name
+    FROM returns r
+    JOIN product_orders po ON r.order_id = po.order_id
+    JOIN `USER` u ON po.user_id = u.USER_ID
+    ORDER BY r.created_at DESC
+";
 $result = $conn->query($query);
+$returns = $result->fetch_all(MYSQLI_ASSOC);
 
 $user_name = $_SESSION['user_first_name'] ?? 'Admin';
 
@@ -25,11 +29,10 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manage Returns - CrackCart</title>
+    <title>Manage Returns - CrackCart Admin</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
-    <link href="admin-styles.css?v=1.0" rel="stylesheet">
+    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <link href="admin-styles.css?v=1.1" rel="stylesheet">
 </head>
 <body>
     <?php include('admin_header.php'); ?>
@@ -41,12 +44,9 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
 
             <main class="col p-4 main-content">
                 <div class="card shadow-sm border-0 p-4">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h4 class="mb-0">Manage Returns</h4>
-                    </div>
-
+                    <h4 class="mb-4">Return Requests</h4>
                     <div class="table-responsive">
-                        <table class="table table-striped table-hover">
+                        <table id="returnsTable" class="table table-striped table-bordered" style="width:100%">
                             <thead>
                                 <tr>
                                     <th>Return ID</th>
@@ -54,28 +54,22 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
                                     <th>Customer</th>
                                     <th>Status</th>
                                     <th>Date Requested</th>
-                                    <th>Actions</th>
+                                    <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php if ($result && $result->num_rows > 0): ?>
-                                    <?php while ($row = $result->fetch_assoc()): ?>
-                                        <tr>
-                                            <td><?php echo htmlspecialchars($row['return_id']); ?></td>
-                                            <td><a href="order_details.php?order_id=<?php echo $row['order_id']; ?>"><?php echo htmlspecialchars($row['order_id']); ?></a></td>
-                                            <td><?php echo htmlspecialchars($row['customer_name']); ?></td>
-                                            <td><span class="badge bg-info"><?php echo ucfirst(htmlspecialchars($row['return_status'])); ?></span></td>
-                                            <td><?php echo date("M d, Y, h:i A", strtotime($row['created_at'])); ?></td>
-                                            <td>
-                                                <a href="return_details.php?return_id=<?php echo $row['return_id']; ?>" class="btn btn-sm btn-primary">View Details</a>
-                                            </td>
-                                        </tr>
-                                    <?php endwhile; ?>
-                                <?php else: ?>
+                                <?php foreach ($returns as $return): ?>
                                     <tr>
-                                        <td colspan="6" class="text-center">No return requests found.</td>
+                                        <td><?php echo htmlspecialchars($return['return_id']); ?></td>
+                                        <td><?php echo htmlspecialchars($return['order_id']); ?></td>
+                                        <td><?php echo htmlspecialchars($return['customer_name']); ?></td>
+                                        <td><span class="badge bg-secondary"><?php echo htmlspecialchars($return['status']); ?></span></td>
+                                        <td><?php echo date("M d, Y, h:i A", strtotime($return['created_at'])); ?></td>
+                                        <td>
+                                            <a href="return_details.php?return_id=<?php echo $return['return_id']; ?>" class="btn btn-primary btn-sm">View</a>
+                                        </td>
                                     </tr>
-                                <?php endif; ?>
+                                <?php endforeach; ?>
                             </tbody>
                         </table>
                     </div>
@@ -84,6 +78,14 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
         </div>
     </div>
 
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    $(document).ready(function() {
+        $('#returnsTable').DataTable();
+    });
+    </script>
 </body>
 </html>

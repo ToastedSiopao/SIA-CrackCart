@@ -7,6 +7,7 @@
           <li><a href="eggspress.php" class="nav-link"><i class="bi bi-truck me-2"></i> Eggspress</a></li>
           <li><a href="settings.php" class="nav-link"><i class="bi bi-gear me-2"></i> Setting</a></li>
           <li><a href="terms.php" class="nav-link" target="_blank"><i class="bi bi-file-text me-2"></i> Terms & Privacy</a></li>
+          <li><a href="return-policy.php" class="nav-link"><i class="bi bi-box-arrow-in-left me-2"></i> Return Policy</a></li>
 
         </ul>
         <div class="upgrade-box">
