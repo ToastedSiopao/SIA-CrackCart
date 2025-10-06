@@ -4,12 +4,12 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 $user_name = $_SESSION['user_first_name'] ?? 'Guest';
 ?>
-<nav class="navbar navbar-expand-lg shadow-sm px-3">
+<nav class="navbar navbar-expand-lg shadow-sm px-3" style="background-color: #ffeb3b;">
     <div class="container-fluid">
-      <button class="btn btn-outline-dark d-md-none me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasSidebar">
+      <button class="btn btn-dark d-md-none me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasSidebar">
         <i class="bi bi-list"></i>
       </button>
-      <a class="navbar-brand fw-bold" href="dashboard.php">CrackCart.</a>
+      <a class="navbar-brand fw-bold" href="dashboard.php" style="color: #000;">CrackCart.</a>
       <div class="ms-auto d-flex align-items-center gap-4">
         <div class="dropdown">
           <a href="#" class="text-dark fs-5" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">

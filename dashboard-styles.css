@@ -61,7 +61,7 @@ body {
 }
 
 .navbar {
-    background-color: #ffeb3b;
+    background-color: #ffeb3b !important;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
@@ -71,11 +71,11 @@ body {
 }
 
 .navbar .ms-auto .dropdown-toggle {
-    color: #000000;
+    color: #000000 !important;
 }
 
 .navbar .ms-auto .dropdown-toggle:hover {
-    color: #333333;
+    color: #333333 !important;
 }
 
 .notification-dropdown .dropdown-item {

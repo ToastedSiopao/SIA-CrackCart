@@ -21,3 +21,16 @@
                 </div>
                </div>
              </div>
+      <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const links = document.querySelectorAll(".offcanvas-body .nav-link");
+            const currentPage = window.location.pathname.split("/").pop();
+
+            links.forEach(link => {
+                const linkPage = link.getAttribute("href").split("/").pop();
+                if (linkPage === currentPage) {
+                    link.classList.add("active");
+                }
+            });
+        });
+      </script>
