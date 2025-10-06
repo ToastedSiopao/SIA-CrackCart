@@ -29,6 +29,21 @@ $conn->close();
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="dashboard-styles.css?v=2.9" rel="stylesheet">
+    <style>
+        .chat-prompt {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            height: 60vh;
+        }
+        .chat-prompt .fa-comments {
+            font-size: 5rem;
+            color: #0d6efd;
+            margin-bottom: 1rem;
+        }
+    </style>
 </head>
 <body>
     <?php include("navbar.php"); ?>
@@ -49,30 +64,10 @@ $conn->close();
                     <div class="row justify-content-center">
                         <div class="col-lg-8 col-md-10">
                             <div class="card">
-                                <div class="card-body">
-                                    <p class="text-center">Have a question or need help? Fill out the form below to get in touch with our team.</p>
-                                    <div id="contact-alert-container"></div>
-                                    <form id="contactForm">
-                                        <div class="mb-3">
-                                            <label for="name" class="form-label">Name</label>
-                                            <input type="text" class="form-control" id="name" name="name" value="<?php echo htmlspecialchars($name); ?>" required>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="email" class="form-label">Email Address</label>
-                                            <input type="email" class="form-control" id="email" name="email" value="<?php echo htmlspecialchars($email); ?>" required>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="subject" class="form-label">Subject</label>
-                                            <input type="text" class="form-control" id="subject" name="subject" required>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="message" class="form-label">Message</label>
-                                            <textarea class="form-control" id="message" name="message" rows="5" required></textarea>
-                                        </div>
-                                        <div class="text-center">
-                                            <button type="submit" class="btn btn-primary">Send Message</button>
-                                        </div>
-                                    </form>
+                                <div class="card-body chat-prompt">
+                                    <i class="fas fa-comments"></i>
+                                    <h2>Have a Question?</h2>
+                                    <p class="lead">Our team is here to help! Click the live chat bubble in the corner to start a conversation.</p>
                                 </div>
                             </div>
                         </div>
@@ -83,45 +78,19 @@ $conn->close();
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-    document.getElementById('contactForm').addEventListener('submit', async function(event) {
-        event.preventDefault();
-        const form = event.target;
-        const formData = new FormData(form);
-        const alertContainer = document.getElementById('contact-alert-container');
-        const submitButton = form.querySelector('button[type="submit"]');
 
-        submitButton.disabled = true;
-        submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sending...';
-
-        const showAlert = (type, message) => {
-            alertContainer.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>`;
-        };
-
-        try {
-            const response = await fetch('api/submit_contact.php', {
-                method: 'POST',
-                body: formData
-            });
-
-            const result = await response.json();
-
-            if (result.status === 'success') {
-                showAlert('success', 'Your message has been sent successfully! We will get back to you shortly.');
-                form.reset();
-            } else {
-                showAlert('danger', result.message || 'An error occurred. Please try again.');
-            }
-        } catch (error) {
-            showAlert('danger', 'Could not connect to the server. Please check your internet connection and try again.');
-        } finally {
-            submitButton.disabled = false;
-            submitButton.innerHTML = 'Send Message';
-        }
-    });
+    <!--Start of Tawk.to Script-->
+    <script type="text/javascript">
+    var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+    (function(){
+    var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
+    s1.async=true;
+    s1.src='https://embed.tawk.to/68e341b3cacd7619509222d3/1j6rrh9d2';
+    s1.charset='UTF-8';
+    s1.setAttribute('crossorigin','*');
+    s0.parentNode.insertBefore(s1,s0);
+    })();
     </script>
+    <!--End of Tawk.to Script-->
 </body>
 </html>
