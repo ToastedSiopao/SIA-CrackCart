@@ -85,7 +85,11 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
                 <div class="card shadow-sm border-0 p-4">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h4 class="mb-0">Order Details</h4>
-                        <a href="orders.php" class="btn btn-outline-secondary">Back to Orders</a>
+                        <div>
+                            <a href="print_invoice.php?order_id=<?php echo $order_id; ?>" class="btn btn-outline-secondary">Print Invoice</a>
+                            <a href="print_packing_slip.php?order_id=<?php echo $order_id; ?>" class="btn btn-outline-primary">Print Packing Slip</a>
+                            <a href="orders.php" class="btn btn-outline-secondary">Back to Orders</a>
+                        </div>
                     </div>
 
                     <?php if (isset($error_message)): ?>
