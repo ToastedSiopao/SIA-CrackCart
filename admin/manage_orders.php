@@ -7,12 +7,66 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     exit;
 }
 
-// Fetch all orders with customer and vehicle information
-$query = "SELECT po.order_id, CONCAT(u.FIRST_NAME, ' ', u.LAST_NAME) as user_name, po.order_date, po.total_amount, po.status, po.vehicle_type as requested_vehicle_type, v.type as vehicle_name, v.plate_no as vehicle_plate, po.vehicle_id
+// --- Filtering & Sorting --- //
+$status_filter = isset($_GET['status']) && $_GET['status'] !== 'all' ? $_GET['status'] : '';
+$sort_order = isset($_GET['sort']) ? $_GET['sort'] : 'status_priority';
+
+$where_clause = '';
+if ($status_filter) {
+    $where_clause = "WHERE po.status = '" . $conn->real_escape_string($status_filter) . "'";
+}
+
+$order_by_clause = '';
+switch ($sort_order) {
+    case 'date_desc':
+        $order_by_clause = 'ORDER BY po.order_date DESC';
+        break;
+    case 'date_asc':
+        $order_by_clause = 'ORDER BY po.order_date ASC';
+        break;
+    case 'history_desc':
+        $order_by_clause = 'ORDER BY user_order_count DESC, po.order_date DESC';
+        break;
+    case 'total_desc':
+        $order_by_clause = 'ORDER BY po.total_amount DESC';
+        break;
+    case 'total_asc':
+        $order_by_clause = 'ORDER BY po.total_amount ASC';
+        break;
+    default: // status_priority
+        $order_by_clause = "ORDER BY 
+            CASE po.status
+                WHEN 'pending' THEN 1
+                WHEN 'paid' THEN 2
+                WHEN 'processing' THEN 3
+                WHEN 'shipped' THEN 4
+                WHEN 'delivered' THEN 5
+                WHEN 'cancelled' THEN 6
+                ELSE 7
+            END,
+            user_order_count DESC,
+            po.order_date DESC";
+        break;
+}
+
+$query = "SELECT 
+            po.order_id, 
+            CONCAT(u.FIRST_NAME, ' ', u.LAST_NAME) as user_name, 
+            po.user_id,
+            po.order_date, 
+            po.total_amount, 
+            po.status, 
+            po.vehicle_type as requested_vehicle_type, 
+            v.type as vehicle_name, 
+            v.plate_no as vehicle_plate, 
+            po.vehicle_id,
+            (SELECT COUNT(*) FROM product_orders WHERE user_id = po.user_id) as user_order_count
           FROM product_orders po
           JOIN USER u ON po.user_id = u.USER_ID
           LEFT JOIN Vehicle v ON po.vehicle_id = v.vehicle_id
-          ORDER BY po.order_date DESC";
+          $where_clause
+          $order_by_clause";
+
 $result = $conn->query($query);
 
 $orders = [];
@@ -22,7 +76,8 @@ if ($result && $result->num_rows > 0) {
     }
 }
 
-// Fetch all available vehicles
+$all_statuses = ['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'];
+
 $vehicles_result = $conn->query("SELECT vehicle_id, type, plate_no FROM Vehicle WHERE status = 'available'");
 $available_vehicles = [];
 if ($vehicles_result && $vehicles_result->num_rows > 0) {
@@ -34,7 +89,7 @@ if ($vehicles_result && $vehicles_result->num_rows > 0) {
 $conn->close();
 
 function getStatusClass($status) {
-    switch ($status) {
+    switch (strtolower($status)) {
         case 'delivered': return 'bg-success';
         case 'shipped': return 'bg-info text-dark';
         case 'processing': return 'bg-primary';
@@ -53,11 +108,8 @@ function getStatusClass($status) {
   <title>Manage Orders</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-  <link href="admin-styles.css?v=1.6" rel="stylesheet">
+  <link href="admin-styles.css?v=1.9" rel="stylesheet">
   <style>
-      .status-badge { font-size: 0.9em; }
-      .vehicle-info { font-size: 0.8em; color: #6c757d; }
-      .vehicle-info .bi { vertical-align: middle; }
       #alert-container {
           position: fixed;
           top: 20px;
@@ -65,7 +117,9 @@ function getStatusClass($status) {
           z-index: 1055; 
           width: auto;
           max-width: 400px;
-      }     
+      }
+      .card-text small { font-size: 0.9em; }
+      .vehicle-info { font-size: 0.9em; }
   </style>
 </head>
 <body>
@@ -77,76 +131,108 @@ function getStatusClass($status) {
             <?php include('admin_offcanvas_sidebar.php'); ?>
 
             <main class="col p-4 main-content">
-                <h1 class="mb-4">Manage Customer Orders</h1>
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1 class="mb-0 h2">Manage Customer Orders</h1>
+                </div>
 
-                <div class="card shadow-sm">
+                <div class="card shadow-sm mb-4">
                     <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Order ID</th>
-                                        <th>Customer</th>
-                                        <th>Order Date</th>
-                                        <th>Total</th>
-                                        <th>Status & Vehicle</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php if (empty($orders)): ?>
-                                        <tr><td colspan="6" class="text-center">No orders found.</td></tr>
-                                    <?php else: ?>
-                                        <?php foreach ($orders as $order): ?>
-                                            <tr id="order-row-<?php echo $order['order_id']; ?>">
-                                                <td>#<?php echo htmlspecialchars($order['order_id']); ?></td>
-                                                <td><?php echo htmlspecialchars($order['user_name']); ?></td>
-                                                <td><?php echo date("F j, Y, g:i a", strtotime($order['order_date'])); ?></td>
-                                                <td>$<?php echo number_format($order['total_amount'], 2); ?></td>
-                                                <td>
-                                                    <span class="badge rounded-pill <?php echo getStatusClass($order['status']); ?> status-badge" id="status-<?php echo $order['order_id']; ?>">
-                                                        <?php echo htmlspecialchars(ucfirst($order['status'])); ?>
-                                                    </span>
-                                                    <div class="vehicle-info mt-1" id="vehicle-info-<?php echo $order['order_id']; ?>">
-                                                        <?php if ($order['requested_vehicle_type']): ?>
-                                                            <div><i class="bi bi-card-list"></i> Req: <?php echo htmlspecialchars($order['requested_vehicle_type']); ?></div>
-                                                        <?php endif; ?>
-                                                        <?php if ($order['vehicle_name']): ?>
-                                                            <div><i class="bi bi-truck-front"></i> Assigned: <?php echo htmlspecialchars($order['vehicle_name'] . ' (' . $order['vehicle_plate'] . ')'); ?></div>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div class="btn-group">
-                                                        <button class="btn btn-sm btn-outline-primary" 
-                                                                onclick='openAssignVehicleModal(<?php echo json_encode($order); ?>)' 
-                                                                <?php echo $order['status'] !== 'processing' || $order['vehicle_id'] != null ? 'disabled' : ''; ?>
-                                                                title="<?php echo $order['status'] !== 'processing' ? 'Order must be in processing status to assign a vehicle.' : ($order['vehicle_id'] != null ? 'A vehicle has already been assigned.' : 'Assign a vehicle to this order'); ?>">
-                                                            <i class="bi bi-truck"></i> Assign
-                                                        </button>
-                                                        <div class="dropdown">
-                                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                                                Update
-                                                            </button>
-                                                            <ul class="dropdown-menu">
-                                                                <li><a class="dropdown-item" href="#" onclick="updateStatus(<?php echo $order['order_id']; ?>, 'pending')">Pending</a></li>
-                                                                <li><a class="dropdown-item" href="#" onclick="updateStatus(<?php echo $order['order_id']; ?>, 'paid')">Paid</a></li>
-                                                                <li><a class="dropdown-item" href="#" onclick="updateStatus(<?php echo $order['order_id']; ?>, 'processing')">Processing</a></li>
-                                                                <li><a class="dropdown-item" href="#" onclick="updateStatus(<?php echo $order['order_id']; ?>, 'shipped')">Shipped</a></li>
-                                                                <li><a class="dropdown-item" href="#" onclick="updateStatus(<?php echo $order['order_id']; ?>, 'delivered')">Delivered</a></li>
-                                                                <li><hr class="dropdown-divider"></li>
-                                                                <li><a class="dropdown-item text-danger" href="#" onclick="updateStatus(<?php echo $order['order_id']; ?>, 'cancelled')">Cancelled</a></li>
-                                                            </ul>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        <?php endforeach; ?>
-                                    <?php endif; ?>
-                                </tbody>
-                            </table>
-                        </div>
+                        <form id="filterForm" action="manage_orders.php" method="GET" class="row g-3 align-items-center">
+                            <div class="col-md-5">
+                                <label for="status-filter" class="form-label">Filter by Status</label>
+                                <select id="status-filter" name="status" class="form-select">
+                                    <option value="all" <?php echo ($status_filter === '') ? 'selected' : ''; ?>>All Statuses</option>
+                                    <?php foreach ($all_statuses as $status): ?>
+                                        <option value="<?php echo $status; ?>" <?php echo ($status_filter === $status) ? 'selected' : ''; ?>><?php echo ucfirst($status); ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="col-md-5">
+                                <label for="sort-order" class="form-label">Sort By</label>
+                                <select id="sort-order" name="sort" class="form-select">
+                                    <option value="status_priority" <?php echo ($sort_order === 'status_priority') ? 'selected' : ''; ?>>Priority</option>
+                                    <option value="date_desc" <?php echo ($sort_order === 'date_desc') ? 'selected' : ''; ?>>Date (Newest First)</option>
+                                    <option value="date_asc" <?php echo ($sort_order === 'date_asc') ? 'selected' : ''; ?>>Date (Oldest First)</option>
+                                    <option value="history_desc" <?php echo ($sort_order === 'history_desc') ? 'selected' : ''; ?>>Customer History</option>
+                                    <option value="total_desc" <?php echo ($sort_order === 'total_desc') ? 'selected' : ''; ?>>Total (High to Low)</option>
+                                    <option value="total_asc" <?php echo ($sort_order === 'total_asc') ? 'selected' : ''; ?>>Total (Low to High)</option>
+                                </select>
+                            </div>
+                             <div class="col-md-2 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary w-100">Apply</button>
+                            </div>
+                        </form>
                     </div>
+                </div>
+
+                <div class="row">
+                    <?php if (empty($orders)): ?>
+                        <div class="col-12">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <h5 class="card-title">No Orders Found</h5>
+                                    <p class="card-text">No orders match the selected filter criteria. Try selecting a different filter.</p>
+                                </div>
+                            </div>
+                        </div>
+                    <?php else: ?>
+                        <?php foreach ($orders as $order): ?>
+                            <div class="col-lg-6 col-xl-4 mb-4">
+                                <div class="card h-100 shadow-sm">
+                                    <div class="card-header d-flex justify-content-between align-items-center bg-light">
+                                        <h6 class="mb-0 fw-bold">Order #<?php echo htmlspecialchars($order['order_id']); ?></h6>
+                                        <span class="badge rounded-pill <?php echo getStatusClass($order['status']); ?>">
+                                            <?php echo htmlspecialchars(ucfirst($order['status'])); ?>
+                                        </span>
+                                    </div>
+                                    <div class="card-body pb-2">
+                                        <p class="card-text mb-1"><strong>Customer:</strong> <?php echo htmlspecialchars($order['user_name']); ?></p>
+                                        <p class="card-text mb-1"><small class="text-muted">History: <?php echo htmlspecialchars($order['user_order_count']); ?> total orders</small></p>
+                                        <p class="card-text mb-2"><small class="text-muted">Date: <?php echo date("M j, Y, g:i a", strtotime($order['order_date'])); ?></small></p>
+                                        
+                                        <h5 class="card-title my-3 text-center">₱<?php echo number_format($order['total_amount'], 2); ?></h5>
+
+                                        <div class="vehicle-info border-top pt-2">
+                                            <?php if ($order['requested_vehicle_type']): ?>
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                   <span><i class="bi bi-card-list me-2"></i>Requested:</span> 
+                                                   <strong><?php echo htmlspecialchars($order['requested_vehicle_type']); ?></strong>
+                                                </div>
+                                            <?php endif; ?>
+                                            <?php if ($order['vehicle_name']): ?>
+                                                 <div class="d-flex justify-content-between align-items-center text-primary">
+                                                    <span><i class="bi bi-truck-front-fill me-2"></i>Assigned:</span> 
+                                                    <strong><?php echo htmlspecialchars($order['vehicle_name'] . ' (' . $order['vehicle_plate'] . ')'); ?></strong>
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                    <div class="card-footer bg-white d-flex gap-2">
+                                        <button class="btn btn-sm btn-outline-primary w-50" 
+                                                onclick='openAssignVehicleModal(<?php echo json_encode($order); ?>)' 
+                                                <?php echo $order['status'] !== 'processing' || $order['vehicle_id'] != null ? 'disabled' : ''; ?>
+                                                title="<?php echo $order['status'] !== 'processing' ? 'Order must be in processing status.' : ($order['vehicle_id'] != null ? 'Vehicle already assigned.' : 'Assign a vehicle'); ?>">
+                                            <i class="bi bi-truck"></i> Assign
+                                        </button>
+                                        <div class="dropdown w-50">
+                                            <button class="btn btn-sm btn-secondary dropdown-toggle w-100" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                Update Status
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                <li><a class="dropdown-item" href="#" onclick="updateStatus(<?php echo $order['order_id']; ?>, 'pending')">Pending</a></li>
+                                                <li><a class="dropdown-item" href="#" onclick="updateStatus(<?php echo $order['order_id']; ?>, 'paid')">Paid</a></li>
+                                                <li><a class="dropdown-item" href="#" onclick="updateStatus(<?php echo $order['order_id']; ?>, 'processing')">Processing</a></li>
+                                                <li><a class="dropdown-item" href="#" onclick="updateStatus(<?php echo $order['order_id']; ?>, 'shipped')">Shipped</a></li>
+                                                <li><a class="dropdown-item" href="#" onclick="updateStatus(<?php echo $order['order_id']; ?>, 'delivered')">Delivered</a></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li><a class="dropdown-item text-danger" href="#" onclick="updateStatus(<?php echo $order['order_id']; ?>, 'cancelled')">Cancelled</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
             </main>
         </div>
@@ -247,23 +333,20 @@ function assignVehicle() {
 
     fetch('api/assign_vehicle.php', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({ order_id: orderId, vehicle_id: vehicleId })
     })
     .then(response => {
-         if (!response.ok) {
-            return response.json().then(err => {throw new Error(err.message || 'Server error');});
-        }
+         if (!response.ok) { return response.json().then(err => { throw new Error(err.message || 'Server error'); }); }
         return response.json();
     })
     .then(data => {
+        assignVehicleModal.hide();
         if (data.status === 'success') {
-            showAlert(data.message, 'success');
-            assignVehicleModal.hide();
-            setTimeout(() => location.reload(), 1500);
+            showAlert(data.message, 'success', () => {
+                const params = new URLSearchParams(window.location.search);
+                window.location.search = params.toString();
+            });
         } else {
             showAlert(data.message || 'An unknown error occurred.', 'danger');
         }
@@ -288,15 +371,15 @@ function updateStatus(orderId, newStatus) {
         body: JSON.stringify({ order_id: orderId, status: newStatus })
     })
     .then(response => {
-        if (!response.ok) {
-             return response.json().then(err => {throw new Error(err.message || 'Server error');});
-        }
+        if (!response.ok) { return response.json().then(err => {throw new Error(err.message || 'Server error');}); }
         return response.json();
     })
     .then(data => {
         if (data.status === 'success') {
-            showAlert(data.message, 'success');
-            setTimeout(() => location.reload(), 1500);
+            showAlert(data.message, 'success', () => {
+                const params = new URLSearchParams(window.location.search);
+                window.location.search = params.toString();
+            });
         } else {
              showAlert(data.message || 'An unknown error occurred.', 'danger');
         }
@@ -307,7 +390,7 @@ function updateStatus(orderId, newStatus) {
     });
 }
 
-function showAlert(message, type) {
+function showAlert(message, type, onClosedCallback) {
     const alertContainer = document.getElementById('alert-container');
     const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
     const alertDiv = document.createElement('div');
@@ -317,12 +400,19 @@ function showAlert(message, type) {
         ${message}
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     `;
-    alertContainer.appendChild(alertDiv);
+    
+    if (onClosedCallback) {
+        alertDiv.addEventListener('closed.bs.alert', onClosedCallback, { once: true });
+    }
 
+    alertContainer.appendChild(alertDiv);
     const bsAlert = new bootstrap.Alert(alertDiv);
-    setTimeout(() => {
-        bsAlert.close();
-    }, 5000);
+
+    if (!onClosedCallback) {
+         setTimeout(() => {
+            bsAlert.close();
+        }, 5000);
+    }
 }
 </script>
 </body>
