@@ -207,26 +207,29 @@ function getStatusClass($status) {
                                             <?php endif; ?>
                                         </div>
                                     </div>
-                                    <div class="card-footer bg-white d-flex gap-2">
-                                        <button class="btn btn-sm btn-outline-primary w-50" 
-                                                onclick='openAssignVehicleModal(<?php echo json_encode($order); ?>)' 
-                                                <?php echo $order['status'] !== 'processing' || $order['vehicle_id'] != null ? 'disabled' : ''; ?>
-                                                title="<?php echo $order['status'] !== 'processing' ? 'Order must be in processing status.' : ($order['vehicle_id'] != null ? 'Vehicle already assigned.' : 'Assign a vehicle'); ?>">
-                                            <i class="bi bi-truck"></i> Assign
-                                        </button>
-                                        <div class="dropdown w-50">
-                                            <button class="btn btn-sm btn-secondary dropdown-toggle w-100" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                                Update Status
+                                    <div class="card-footer bg-white d-flex flex-column gap-2">
+                                        <a href="order_details.php?order_id=<?php echo $order['order_id']; ?>" class="btn btn-sm btn-outline-info w-100">View Details</a>
+                                        <div class="d-flex gap-2 w-100">
+                                            <button class="btn btn-sm btn-outline-primary w-50" 
+                                                    onclick='openAssignVehicleModal(<?php echo json_encode($order); ?>)' 
+                                                    <?php echo $order['status'] !== 'processing' || $order['vehicle_id'] != null ? 'disabled' : ''; ?>
+                                                    title="<?php echo $order['status'] !== 'processing' ? 'Order must be in processing status.' : ($order['vehicle_id'] != null ? 'Vehicle already assigned.' : 'Assign a vehicle'); ?>">
+                                                <i class="bi bi-truck"></i> Assign
                                             </button>
-                                            <ul class="dropdown-menu dropdown-menu-end">
-                                                <li><a class="dropdown-item" href="#" onclick="updateStatus(<?php echo $order['order_id']; ?>, 'pending')">Pending</a></li>
-                                                <li><a class="dropdown-item" href="#" onclick="updateStatus(<?php echo $order['order_id']; ?>, 'paid')">Paid</a></li>
-                                                <li><a class="dropdown-item" href="#" onclick="updateStatus(<?php echo $order['order_id']; ?>, 'processing')">Processing</a></li>
-                                                <li><a class="dropdown-item" href="#" onclick="updateStatus(<?php echo $order['order_id']; ?>, 'shipped')">Shipped</a></li>
-                                                <li><a class="dropdown-item" href="#" onclick="updateStatus(<?php echo $order['order_id']; ?>, 'delivered')">Delivered</a></li>
-                                                <li><hr class="dropdown-divider"></li>
-                                                <li><a class="dropdown-item text-danger" href="#" onclick="updateStatus(<?php echo $order['order_id']; ?>, 'cancelled')">Cancelled</a></li>
-                                            </ul>
+                                            <div class="dropdown w-50">
+                                                <button class="btn btn-sm btn-secondary dropdown-toggle w-100" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    Update Status
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end">
+                                                    <li><a class="dropdown-item" href="#" onclick="updateStatus(<?php echo $order['order_id']; ?>, 'pending')">Pending</a></li>
+                                                    <li><a class="dropdown-item" href="#" onclick="updateStatus(<?php echo $order['order_id']; ?>, 'paid')">Paid</a></li>
+                                                    <li><a class="dropdown-item" href="#" onclick="updateStatus(<?php echo $order['order_id']; ?>, 'processing')">Processing</a></li>
+                                                    <li><a class="dropdown-item" href="#" onclick="updateStatus(<?php echo $order['order_id']; ?>, 'shipped')">Shipped</a></li>
+                                                    <li><a class="dropdown-item" href="#" onclick="updateStatus(<?php echo $order['order_id']; ?>, 'delivered')">Delivered</a></li>
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li><a class="dropdown-item text-danger" href="#" onclick="updateStatus(<?php echo $order['order_id']; ?>, 'cancelled')">Cancelled</a></li>
+                                                </ul>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
