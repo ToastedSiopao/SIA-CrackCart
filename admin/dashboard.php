@@ -1,6 +1,7 @@
 <?php
 session_start();
-// Security check: ensure the user is an admin
+
+// --- Security check: ensure the user is an admin ---
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
     header("Location: index.php?error=Please log in to access the admin panel.");
     exit();
@@ -8,36 +9,37 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role
 
 $user_name = $_SESSION['user_first_name'] ?? 'Admin';
 
-include_once("../db_connect.php"); 
+include_once("../db_connect.php");
+
+// --- Check if DB connection is valid ---
+if (!$conn || $conn->connect_error) {
+    die("Database connection failed: " . $conn->connect_error);
+}
 
 // --- Fetch Dashboard Metrics ---
 $total_trays = 0;
 $active_orders = 0;
 $total_revenue = 0;
 
-if ($conn) {
-    // 1. Calculate total stock in trays
-    $tray_result = $conn->query("SELECT SUM(FLOOR(STOCK / tray_size)) as total_trays FROM PRICE WHERE tray_size > 0");
-    if ($tray_result && $tray_result->num_rows > 0) {
-        $total_trays = $tray_result->fetch_assoc()['total_trays'] ?? 0;
-    }
-
-    // 2. Calculate Active Orders (not 'delivered' or 'cancelled')
-    $order_result = $conn->query("SELECT COUNT(*) as active_orders FROM product_orders WHERE order_status NOT IN ('delivered', 'cancelled')");
-    if ($order_result && $order_result->num_rows > 0) {
-        $active_orders = $order_result->fetch_assoc()['active_orders'] ?? 0;
-    }
-
-    // 3. --- NEW: Calculate Total Revenue from delivered orders ---
-    $revenue_result = $conn->query("SELECT SUM(total_price) as total_revenue FROM product_orders WHERE order_status = 'delivered'");
-    if ($revenue_result && $revenue_result->num_rows > 0) {
-        $total_revenue = $revenue_result->fetch_assoc()['total_revenue'] ?? 0;
-    }
-    
-    $conn->close();
+// 1️⃣ Calculate total stock in trays
+$tray_result = $conn->query("SELECT SUM(FLOOR(STOCK / tray_size)) AS total_trays FROM PRICE WHERE tray_size > 0");
+if ($tray_result && $tray_result->num_rows > 0) {
+    $total_trays = $tray_result->fetch_assoc()['total_trays'] ?? 0;
 }
-// --- END ---
 
+// 2️⃣ Calculate active (incomplete) orders
+$order_result = $conn->query("SELECT COUNT(*) AS active_orders FROM product_orders WHERE status NOT IN ('delivered', 'cancelled')");
+if ($order_result && $order_result->num_rows > 0) {
+    $active_orders = $order_result->fetch_assoc()['active_orders'] ?? 0;
+}
+
+// 3️⃣ Calculate total revenue from delivered orders
+$revenue_result = $conn->query("SELECT SUM(total_amount) AS total_revenue FROM product_orders WHERE status = 'delivered'");
+if ($revenue_result && $revenue_result->num_rows > 0) {
+    $total_revenue = $revenue_result->fetch_assoc()['total_revenue'] ?? 0;
+}
+
+$conn->close();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -64,6 +66,7 @@ if ($conn) {
                     <h4 class="mb-4">Welcome back, <?php echo htmlspecialchars($user_name); ?> 👋</h4>
                     
                     <div class="row g-4">
+                        <!-- Total Stock -->
                         <div class="col-md-4">
                             <div class="category-card dashboard-metric h-100">
                                 <i class="bi bi-box-seam"></i>
@@ -74,6 +77,8 @@ if ($conn) {
                                 <a href="products.php" class="stretched-link" title="Manage Products"></a>
                             </div>
                         </div>
+
+                        <!-- Active Orders -->
                         <div class="col-md-4">
                              <div class="category-card dashboard-metric h-100">
                                 <i class="bi bi-cart3"></i>
@@ -84,7 +89,9 @@ if ($conn) {
                                 <a href="manage_orders.php" class="stretched-link" title="Manage Orders"></a>
                             </div>
                         </div>
-                         <div class="col-md-4">
+
+                        <!-- Total Revenue -->
+                        <div class="col-md-4">
                              <div class="category-card dashboard-metric h-100">
                                 <i class="bi bi-cash-coin"></i>
                                 <div>
@@ -95,7 +102,6 @@ if ($conn) {
                             </div>
                         </div>
                     </div>
-
                 </div>
             </main>
         </div>

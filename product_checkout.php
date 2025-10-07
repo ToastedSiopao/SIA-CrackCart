@@ -10,7 +10,7 @@ include("api/paypal_config.php");
   <title>Checkout - CrackCart</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-  <link href="dashboard-styles.css?v=3.2" rel="stylesheet">
+  <link href="dashboard-styles.css?v=3.3" rel="stylesheet"> 
   <script src="https://www.paypal.com/sdk/js?client-id=<?php echo PAYPAL_CLIENT_ID; ?>&currency=PHP"></script>
 </head>
 <body>
@@ -59,6 +59,7 @@ include("api/paypal_config.php");
       let cartData = null;
       let selectedPaymentMethod = 'paypal';
 
+      // --- Existing User Status Check ---
       const checkUserStatus = async () => {
           try {
               const response = await fetch('api/user_status_check.php');
@@ -86,6 +87,7 @@ include("api/paypal_config.php");
         return; 
       }
 
+      // --- Existing Cart and Address Fetching ---
       const fetchCartAndAddresses = async () => {
           try {
             const [cartResponse, addressResponse] = await Promise.all([
@@ -111,6 +113,7 @@ include("api/paypal_config.php");
           }
       };
 
+      // --- Existing Alert Function ---
       const showAlert = (type, message) => {
           alertContainer.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
               ${message}
@@ -118,6 +121,7 @@ include("api/paypal_config.php");
           </div>`;
       };
       
+      // --- Existing Address Rendering ---
       const renderAddressSelection = (addresses) => {
           if(addresses.length === 0) {
               addressSelectionContainer.innerHTML = `
@@ -150,6 +154,7 @@ include("api/paypal_config.php");
           });
       };
 
+      // --- MODIFIED Order Summary Rendering ---
       const renderOrderSummary = (data) => {
           if (!data || !data.items || data.items.length === 0) {
               mainContainer.innerHTML = `
@@ -186,18 +191,45 @@ include("api/paypal_config.php");
                   </div>
               </li>`).join('');
 
+          const rawDeliveryFee = (data.meta && data.meta.delivery_fee) ?? data.delivery_fee ?? 0;
+          const deliveryFee = isFinite(parseFloat(rawDeliveryFee)) ? parseFloat(rawDeliveryFee) : 0.0;
+          // NEW: Get discount from data
+          const discount = data.applied_coupon ? parseFloat(data.applied_coupon.discount_value) : 0;
+          const grandTotal = (data.subtotal + deliveryFee) - discount;
+
+          // NEW: Coupon HTML section
+          const couponHtml = data.applied_coupon
+            ? `<div class="d-flex justify-content-between align-items-center">
+                  <p class="mb-0">Coupon Applied: <strong class="text-success">${data.applied_coupon.coupon_code}</strong></p>
+                  <button class="btn btn-sm btn-outline-danger" id="remove-coupon-btn">Remove</button>
+               </div>`
+            : `<label for="coupon-code" class="form-label">Have a coupon?</label>
+               <div class="input-group">
+                  <input type="text" class="form-control" id="coupon-code" placeholder="Enter coupon code">
+                  <button class="btn btn-primary" type="button" id="apply-coupon-btn">Apply</button>
+               </div>`;
+
           orderSummaryContainer.innerHTML = `
               <h5 class="card-title">Order Summary</h5>
               <ul class="list-group list-group-flush">
                   ${itemsHtml}
+              </ul>
+              <div class="mt-3" id="coupon-section">
+                  ${couponHtml}
+                  <div id="coupon-message" class="mt-2 small"></div>
+              </div>
+              <ul class="list-group list-group-flush mt-3">
                   <li class="list-group-item d-flex justify-content-between align-items-center">
-                      Subtotal <span>₱${parseFloat(data.subtotal).toFixed(2)}</span>
+                      Subtotal <span>₱${parseFloat(data.subtotal || 0).toFixed(2)}</span>
                   </li>
                   <li class="list-group-item d-flex justify-content-between align-items-center">
-                      Delivery Fee (${data.meta.vehicle_type || 'Not Selected'}) <span>₱${parseFloat(data.delivery_fee).toFixed(2)}</span>
+                      Delivery Fee (${(data.meta && data.meta.vehicle_type) || 'Not Selected'}) <span>₱${deliveryFee.toFixed(2)}</span>
                   </li>
+                  ${discount > 0 ? `<li class="list-group-item d-flex justify-content-between align-items-center text-danger">
+                      Discount <span>-₱${discount.toFixed(2)}</span>
+                  </li>` : ''}
                   <li class="list-group-item d-flex justify-content-between align-items-center fw-bold fs-5">
-                      Grand Total <span>₱${parseFloat(data.grand_total).toFixed(2)}</span>
+                      Grand Total <span>₱${grandTotal.toFixed(2)}</span>
                   </li>
               </ul>
               <div class="mt-3 p-3 bg-light border rounded">
@@ -221,7 +253,52 @@ include("api/paypal_config.php");
           setupPaymentListeners();
           renderPaymentMethod();
       };
+
+      // --- NEW: Coupon Handling Functions ---
+      const handleApplyCoupon = async () => {
+          const couponCodeInput = document.getElementById('coupon-code');
+          const couponCode = couponCodeInput.value.trim();
+          if (!couponCode) {
+              showAlert('warning', 'Please enter a coupon code.');
+              return;
+          }
+
+          try {
+              const response = await fetch('api/apply_coupon.php', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ coupon_code: couponCode })
+              });
+              const result = await response.json();
+              if (result.success) {
+                  showAlert('success', result.message);
+                  fetchCartAndAddresses(); // Refresh cart to show discount
+              } else {
+                  showAlert('danger', result.message);
+              }
+          } catch (error) {
+              showAlert('danger', 'Could not connect to apply coupon. Please try again.');
+          }
+      };
+
+      const handleRemoveCoupon = async () => {
+          try {
+              const response = await fetch('api/remove_coupon.php', { 
+                  method: 'POST' 
+              });
+              const result = await response.json();
+              if (result.success) {
+                  showAlert('success', result.message);
+                  fetchCartAndAddresses(); // Refresh cart to remove discount
+              } else {
+                  showAlert('danger', result.message);
+              }
+          } catch (error) {
+              showAlert('danger', 'Could not connect to remove coupon. Please try again.');
+          }
+      };
       
+      // --- MODIFIED Event Listener ---
       orderSummaryContainer.addEventListener('click', (event) => {
           const removeButton = event.target.closest('.remove-item-btn');
           const quantityButton = event.target.closest('.quantity-btn');
@@ -230,9 +307,14 @@ include("api/paypal_config.php");
               handleRemoveItem(event);
           } else if (quantityButton) {
               handleQuantityChange(event);
+          } else if (event.target.id === 'apply-coupon-btn') { // NEW
+              handleApplyCoupon();
+          } else if (event.target.id === 'remove-coupon-btn') { // NEW
+              handleRemoveCoupon();
           }
       });
 
+      // --- All other existing functions below are UNCHANGED ---
       const handleRemoveItem = async (event) => {
           const button = event.target.closest('.remove-item-btn');
           if (!button || !confirm('Are you sure you want to remove this item?')) return;
@@ -277,7 +359,7 @@ include("api/paypal_config.php");
              if (confirm('Do you want to remove this item from the cart?')) {
                 action = 'delete';
              } else {
-                 return; // Do nothing if user cancels removal
+                 return; 
              }
           }
 
@@ -288,7 +370,7 @@ include("api/paypal_config.php");
                   body: JSON.stringify({
                       action: action,
                       cart_item_key: cartItemKey,
-                      quantity: quantity // Quantity is ignored by server on 'delete' but good to send
+                      quantity: quantity
                   })
               });
               const result = await response.json();
@@ -316,7 +398,7 @@ include("api/paypal_config.php");
         if (selectedPaymentMethod === 'paypal') {
             paymentContainer.innerHTML = '<div id="paypal-button-container"></div>';
             renderPayPalButton();
-        } else { // Cash on Delivery
+        } else { 
             paymentContainer.innerHTML = '<button id="cod-place-order" class="btn btn-primary w-100">Place Order (COD)</button>';
             document.getElementById('cod-place-order').addEventListener('click', handleCodOrder);
         }

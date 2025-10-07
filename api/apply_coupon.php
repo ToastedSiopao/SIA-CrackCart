@@ -1,73 +1,50 @@
 <?php
 session_start();
 header('Content-Type: application/json');
-require_once '../db_connect.php';
+include '../db_connect.php';
 
-// 1. Security Check: Ensure user is logged in
 if (!isset($_SESSION['user_id'])) {
-    http_response_code(403);
+    http_response_code(401);
     echo json_encode(['success' => false, 'message' => 'You must be logged in to apply a coupon.']);
     exit;
 }
 
-// 2. Input Validation
 $data = json_decode(file_get_contents('php://input'), true);
-$coupon_code = trim($data['coupon_code'] ?? '');
+$coupon_code = $data['coupon_code'] ?? '';
+$user_id = $_SESSION['user_id'];
 
 if (empty($coupon_code)) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Please enter a coupon code.']);
+    echo json_encode(['success' => false, 'message' => 'Please provide a coupon code.']);
     exit;
 }
 
-// 3. Coupon Verification Logic
-try {
-    // Prepare a query to find the coupon
-    $stmt = $conn->prepare("SELECT coupon_id, user_id, discount_value, is_used FROM coupons WHERE coupon_code = ?");
-    $stmt->bind_param('s', $coupon_code);
-    $stmt->execute();
-    $result = $stmt->get_result();
-
-    if ($result->num_rows === 0) {
-        http_response_code(404); // Not Found
-        echo json_encode(['success' => false, 'message' => 'Coupon code not found.']);
-        exit;
-    }
-
-    $coupon = $result->fetch_assoc();
-
-    // Check if the coupon is assigned to the current user
-    if ($coupon['user_id'] != $_SESSION['user_id']) {
-        http_response_code(403); // Forbidden
-        echo json_encode(['success' => false, 'message' => 'This coupon is not valid for your account.']);
-        exit;
-    }
-
-    // Check if the coupon has already been used
-    if ($coupon['is_used'] == 1) {
-        http_response_code(409); // Conflict
-        echo json_encode(['success' => false, 'message' => 'This coupon has already been used.']);
-        exit;
-    }
-
-    // --- Success Case ---
-    // Store the valid coupon details in the session to be used at checkout
-    $_SESSION['applied_coupon'] = [
-        'coupon_code' => $coupon_code,
-        'discount_value' => $coupon['discount_value']
-    ];
-
-    echo json_encode([
-        'success' => true, 
-        'message' => 'Coupon applied successfully!', 
-        'discount_value' => $coupon['discount_value']
-    ]);
-
-} catch (Exception $e) {
-    http_response_code(500); // Internal Server Error
-    echo json_encode(['success' => false, 'message' => 'An internal error occurred while applying the coupon.']);
-} finally {
-    if (isset($stmt)) $stmt->close();
-    $conn->close();
+if (isset($_SESSION['applied_coupon'])) {
+    echo json_encode(['success' => false, 'message' => 'A coupon is already applied. Please remove it first.']);
+    exit;
 }
+
+$stmt = $conn->prepare("SELECT * FROM coupons WHERE coupon_code = ? AND user_id = ?");
+$stmt->bind_param("si", $coupon_code, $user_id);
+$stmt->execute();
+$result = $stmt->get_result();
+
+if ($coupon = $result->fetch_assoc()) {
+    if ($coupon['is_used']) {
+        echo json_encode(['success' => false, 'message' => 'This coupon has already been used.']);
+    } elseif (new DateTime() > new DateTime($coupon['expiry_date'])) {
+        echo json_encode(['success' => false, 'message' => 'This coupon has expired.']);
+    } else {
+        $_SESSION['applied_coupon'] = [
+            'coupon_id' => $coupon['coupon_id'],
+            'coupon_code' => $coupon['coupon_code'],
+            'discount_value' => $coupon['discount_value']
+        ];
+        echo json_encode(['success' => true, 'message' => 'Coupon applied successfully!']);
+    }
+} else {
+    echo json_encode(['success' => false, 'message' => 'Invalid or expired coupon code.']);
+}
+
+$stmt->close();
+$conn->close();
 ?>
