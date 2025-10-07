@@ -22,20 +22,44 @@ if ($order_item_id === 0 || empty($reason)) {
     exit;
 }
 
+// --- SECURITY FIX: File Upload Validation ---
 if ($reason === 'Damaged in transit') {
     if (isset($_FILES['damaged_image']) && $_FILES['damaged_image']['error'] == 0) {
+        $file = $_FILES['damaged_image'];
+        $allowed_mimes = ['image/jpeg', 'image/png', 'image/gif'];
+        $max_file_size = 5 * 1024 * 1024; // 5 MB
+
+        // 1. Check file size
+        if ($file['size'] > $max_file_size) {
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'File is too large. Maximum size is 5 MB.']);
+            exit;
+        }
+
+        // 2. Check MIME type
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mime_type = $finfo->file($file['tmp_name']);
+        if (!in_array($mime_type, $allowed_mimes)) {
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'Invalid file type. Only JPG, PNG, and GIF are allowed.']);
+            exit;
+        }
+
+        // 3. Secure filename generation
         $upload_dir = '../uploads/';
         if (!file_exists($upload_dir)) {
-            mkdir($upload_dir, 0777, true);
+            mkdir($upload_dir, 0755, true); // Use more secure permissions
         }
-        $file_name = uniqid('return_', true) . '_' . basename($_FILES['damaged_image']['name']);
+        $file_extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $file_name = bin2hex(random_bytes(16)) . '.' . $file_extension;
         $target_file = $upload_dir . $file_name;
         
-        if (move_uploaded_file($_FILES['damaged_image']['tmp_name'], $target_file)) {
+        // 4. Move the uploaded file
+        if (move_uploaded_file($file['tmp_name'], $target_file)) {
             $image_path = 'uploads/' . $file_name;
         } else {
             http_response_code(500);
-            echo json_encode(['status' => 'error', 'message' => 'Failed to upload the image.']);
+            echo json_encode(['status' => 'error', 'message' => 'Failed to store the uploaded image.']);
             exit;
         }
     } else {
@@ -44,12 +68,13 @@ if ($reason === 'Damaged in transit') {
         exit;
     }
 }
+// --- END SECURITY FIX ---
 
 $conn->begin_transaction();
 
 try {
     $verify_stmt = $conn->prepare(
-        "SELECT po.order_id, poi.product_type, poi.producer_id
+        "SELECT po.order_id, poi.product_type, poi.producer_id, poi.tray_size
          FROM product_order_items poi 
          JOIN product_orders po ON poi.order_id = po.order_id 
          WHERE poi.order_item_id = ? AND po.user_id = ? AND po.status = 'delivered'"
@@ -58,16 +83,18 @@ try {
     $verify_stmt->execute();
     $result = $verify_stmt->get_result();
     if ($result->num_rows == 0) {
-        throw new Exception('This item is not eligible for return. It might not belong to you or the order has not been delivered yet.');
+        throw new Exception('This item is not eligible for return. It might not belong to you, the order may not have been delivered, or a return is already in process.');
     }
     $item_data = $result->fetch_assoc();
     $order_id = $item_data['order_id'];
     $product_type = $item_data['product_type'];
     $producer_id = $item_data['producer_id'];
+    $tray_size = $item_data['tray_size']; // Get tray size
     $verify_stmt->close();
 
-    $product_stmt = $conn->prepare("SELECT PRICE_ID FROM PRICE WHERE TYPE = ? AND PRODUCER_ID = ?");
-    $product_stmt->bind_param("si", $product_type, $producer_id);
+    // Match product using tray size as well
+    $product_stmt = $conn->prepare("SELECT PRICE_ID FROM PRICE WHERE TYPE = ? AND PRODUCER_ID = ? AND TRAY_SIZE = ?");
+    $product_stmt->bind_param("sii", $product_type, $producer_id, $tray_size);
     $product_stmt->execute();
     $product_result = $product_stmt->get_result();
     if($product_result->num_rows === 0) {
@@ -84,18 +111,15 @@ try {
     }
     $check_stmt->close();
 
-    $insert_stmt = $conn->prepare("INSERT INTO returns (order_id, order_item_id, user_id, product_id, reason, image_path) VALUES (?, ?, ?, ?, ?, ?)");
+    $insert_stmt = $conn->prepare("INSERT INTO returns (order_id, order_item_id, user_id, product_id, reason, image_path, status) VALUES (?, ?, ?, ?, ?, ?, 'pending')");
     $insert_stmt->bind_param("iiiiss", $order_id, $order_item_id, $user_id, $product_id, $reason, $image_path);
     
     if (!$insert_stmt->execute()) {
-        if ($image_path && file_exists('../' . $image_path)) {
-            unlink('../' . $image_path);
-        }
         throw new Exception('Failed to save your return request.');
     }
     $insert_stmt->close();
 
-    log_action($user_id, 'Return Requested', "User requested return for order_item_id: {$order_item_id}");
+    log_action($user_id, 'Return Requested', "User requested return for order item ID: {$order_item_id}");
 
     $conn->commit();
 
@@ -103,6 +127,7 @@ try {
 
 } catch (Exception $e) {
     $conn->rollback();
+    // Cleanup uploaded file on error
     if ($image_path && file_exists('../' . $image_path)) {
         unlink('../' . $image_path);
     }

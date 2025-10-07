@@ -35,8 +35,8 @@ if (!$order) {
 // Fetch order items
 $items_query = "SELECT oi.*, p.TYPE as product_name, pr.NAME as producer_name
                 FROM product_order_items oi
-                JOIN PRICE p ON oi.product_type = p.TYPE AND oi.producer_id = p.PRODUCER_ID
-                JOIN PRODUCER pr ON oi.producer_id = pr.PRODUCER_ID
+                LEFT JOIN PRICE p ON oi.product_type = p.TYPE AND oi.producer_id = p.PRODUCER_ID
+                LEFT JOIN PRODUCER pr ON oi.producer_id = pr.PRODUCER_ID
                 WHERE oi.order_id = ?";
 $items_stmt = $conn->prepare($items_query);
 $items_stmt->bind_param("i", $order_id);
@@ -53,10 +53,10 @@ $conn->close();
     <meta charset="UTF-8">
     <title>Packing Slip #<?php echo htmlspecialchars($order['order_id']); ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Poppins', sans-serif;
-            background-color: #f8f9fa;
         }
         .packing-slip-container {
             max-width: 800px;
@@ -64,8 +64,15 @@ $conn->close();
             padding: 30px;
             background-color: #fff;
             border: 1px solid #dee2e6;
-            border-radius: 0.25rem;
         }
+        .table th, .table td {
+             vertical-align: middle;
+        }
+        .total-eggs-col {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
         @media print {
             body {
                 background-color: #fff;
@@ -85,10 +92,13 @@ $conn->close();
 <body>
     <div class="packing-slip-container">
         <div class="d-flex justify-content-between align-items-center pb-3 mb-4 border-bottom">
-            <h1 class="h3">Packing Slip</h1>
+            <div>
+                <h1 class="h3 mb-0">Packing Slip</h1>
+                <p class="mb-0 text-muted">For Order #<?php echo htmlspecialchars($order['order_id']); ?></p>
+            </div>
             <div class="no-print">
-                <button onclick="window.print()" class="btn btn-primary">Print Packing Slip</button>
-                <a href="order_details.php?order_id=<?php echo $order_id; ?>" class="btn btn-secondary">Back to Details</a>
+                <button onclick="window.print()" class="btn btn-primary"><i class="bi bi-printer"></i> Print</button>
+                <a href="order_details.php?order_id=<?php echo $order_id; ?>" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Back</a>
             </div>
         </div>
 
@@ -96,38 +106,55 @@ $conn->close();
             <div class="col-6">
                 <strong>Shipping To:</strong><br>
                 <?php echo htmlspecialchars($order['customer_name']); ?><br>
+                <?php echo htmlspecialchars($order['address_line1']); ?><br>
+                <?php if($order['address_line2']) echo htmlspecialchars($order['address_line2']) . '<br>'; ?>
+                <?php echo htmlspecialchars($order['city']); ?>, <?php echo htmlspecialchars($order['state']); ?> <?php echo htmlspecialchars($order['zip_code']); ?><br>
             </div>
             <div class="col-6 text-end">
-                <strong>Order #:</strong> <?php echo htmlspecialchars($order['order_id']); ?><br>
-                <strong>Date:</strong> <?php echo date("M d, Y", strtotime($order['order_date'])); ?><br>
+                <strong>Order Date:</strong><br>
+                <?php echo date("M d, Y", strtotime($order['order_date'])); ?><br>
             </div>
         </div>
 
         <table class="table table-bordered">
             <thead class="table-light">
                 <tr>
-                    <th>Item</th>
-                    <th>Producer</th>
-                    <th class="text-center">Quantity</th>
+                    <th scope="col">Product</th>
+                    <th scope="col">Producer</th>
+                    <th scope="col" class="text-center">Qty (Trays)</th>
+                    <th scope="col" class="text-center">Tray Size</th>
+                    <th scope="col" class="text-center">Total Eggs to Pack</th>
                 </tr>
             </thead>
             <tbody>
-                <?php while($item = $order_items->fetch_assoc()): ?>
+                <?php 
+                $grand_total_eggs = 0;
+                while($item = $order_items->fetch_assoc()): 
+                    $total_eggs_item = (int)$item['quantity'] * (int)$item['tray_size'];
+                    $grand_total_eggs += $total_eggs_item;
+                ?>
                 <tr>
-                    <td><?php echo htmlspecialchars($item['product_name']); ?></td>
-                    <td><?php echo htmlspecialchars($item['producer_name']); ?></td>
+                    <td><?php echo htmlspecialchars($item['product_name'] ?? 'N/A'); ?></td>
+                    <td><?php echo htmlspecialchars($item['producer_name'] ?? 'N/A'); ?></td>
                     <td class="text-center"><?php echo htmlspecialchars($item['quantity']); ?></td>
+                    <td class="text-center"><?php echo htmlspecialchars($item['tray_size']); ?></td>
+                    <td class="text-center total-eggs-col"><?php echo $total_eggs_item; ?></td>
                 </tr>
                 <?php endwhile; ?>
             </tbody>
+             <tfoot>
+                <tr class="fw-bold table-group-divider">
+                    <td colspan="4" class="text-end">Grand Total Eggs to Pack:</td>
+                    <td class="text-center fs-4"><?php echo $grand_total_eggs; ?></td>
+                </tr>
+            </tfoot>
         </table>
 
-        <div class="mt-4">
-            <strong>Shipping Address:</strong><br>
-            <?php echo htmlspecialchars($order['address_line1']); ?><br>
-            <?php if($order['address_line2']) echo htmlspecialchars($order['address_line2']) . '<br>'; ?>
-            <?php echo htmlspecialchars($order['city']); ?>, <?php echo htmlspecialchars($order['state']); ?> <?php echo htmlspecialchars($order['zip_code']); ?><br>
-            <?php echo htmlspecialchars($order['country']); ?>
+        <div class="mt-4 border-top pt-3">
+            <strong>Notes from Customer:</strong><br>
+            <p>
+                <?php echo nl2br(htmlspecialchars($order['notes'] ?? 'No notes provided.')); ?>
+            </p>
         </div>
     </div>
 </body>

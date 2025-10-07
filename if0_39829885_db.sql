@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: sql101.infinityfree.com
--- Generation Time: Oct 07, 2025 at 07:15 AM
+-- Generation Time: Oct 07, 2025 at 02:21 PM
 -- Server version: 11.4.7-MariaDB
 -- PHP Version: 7.2.22
 
@@ -188,44 +188,19 @@ INSERT INTO `NOTIFICATION` (`NOTIFICATION_ID`, `USER_ID`, `MESSAGE`, `IS_READ`, 
 (32, 11, 'Your order #41 status has been updated to \'processing\'.', 1, '2025-10-06 18:33:07'),
 (33, 11, 'Your order #42 status has been updated to \'delivered\'.', 1, '2025-10-06 18:33:33'),
 (34, 0, 'Your return request for order #42 has been updated to \'approved\'.', 0, '2025-10-06 18:35:38'),
-(35, 11, 'Your order #43 status has been updated to \'processing\'.', 0, '2025-10-06 19:23:19'),
-(36, 11, 'Your order #43 status has been updated to \'shipped\'.', 0, '2025-10-06 19:23:41'),
-(37, 11, 'Your order #43 status has been updated to \'delivered\'.', 0, '2025-10-06 19:23:46'),
-(38, 15, 'Your order #48 status has been updated to \'delivered\'.', 0, '2025-10-07 08:58:30'),
-(39, 15, 'Your order #48 status has been updated to \'shipped\'.', 0, '2025-10-07 08:59:54'),
+(35, 11, 'Your order #43 status has been updated to \'processing\'.', 1, '2025-10-06 19:23:19'),
+(36, 11, 'Your order #43 status has been updated to \'shipped\'.', 1, '2025-10-06 19:23:41'),
+(37, 11, 'Your order #43 status has been updated to \'delivered\'.', 1, '2025-10-06 19:23:46'),
+(38, 15, 'Your order #48 status has been updated to \'delivered\'.', 1, '2025-10-07 08:58:30'),
+(39, 15, 'Your order #48 status has been updated to \'shipped\'.', 1, '2025-10-07 08:59:54'),
 (40, 0, 'Your return request for order #49 has been updated to \'rejected\'.', 0, '2025-10-07 09:33:21'),
 (41, 4, 'Your account role has been updated to \'Admin\'.', 0, '2025-10-07 09:41:17'),
 (42, 13, 'Your account role has been updated to \'Admin\'.', 0, '2025-10-07 09:41:28'),
 (43, 13, 'Your account role has been updated to \'Customer\'.', 0, '2025-10-07 09:42:05'),
 (44, 4, 'Your account role has been updated to \'Customer\'.', 0, '2025-10-07 09:42:52'),
-(45, 16, 'Your order #54 status has been updated to \'delivered\'.', 0, '2025-10-07 10:46:50');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `orders`
---
-
-CREATE TABLE `orders` (
-  `order_id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
-  `pickup_address_id` int(11) NOT NULL,
-  `delivery_address_id` int(11) NOT NULL,
-  `driver_id` int(11) DEFAULT NULL,
-  `vehicle_id` int(11) DEFAULT NULL,
-  `order_date` datetime DEFAULT current_timestamp(),
-  `pickup_date` datetime DEFAULT NULL,
-  `delivery_date` datetime DEFAULT NULL,
-  `tray_quantity` int(11) NOT NULL DEFAULT 1,
-  `tray_size` decimal(10,2) NOT NULL COMMENT 'Size in dimensions or volume',
-  `distance_km` decimal(8,2) NOT NULL,
-  `quoted_amount` decimal(10,2) NOT NULL,
-  `final_amount` decimal(10,2) DEFAULT NULL,
-  `status` enum('pending','confirmed','assigned','picked_up','in_transit','delivered','cancelled') DEFAULT 'pending',
-  `special_instructions` text DEFAULT NULL,
-  `priority` enum('standard','express','urgent') DEFAULT 'standard',
-  `estimated_delivery_time` datetime DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+(45, 16, 'Your order #54 status has been updated to \'delivered\'.', 0, '2025-10-07 10:46:50'),
+(46, 15, 'Your order #58 status has been updated to \'delivered\'.', 1, '2025-10-07 12:35:43'),
+(47, 11, 'Your order #59 status has been updated to \'delivered\'.', 1, '2025-10-07 17:21:00');
 
 -- --------------------------------------------------------
 
@@ -284,7 +259,12 @@ INSERT INTO `Payment` (`payment_id`, `booking_id`, `order_id`, `amount`, `curren
 (32, NULL, 54, '186.00', 'PHP', 'paypal', 'completed', NULL, '0V828765XU578580U'),
 (33, NULL, 55, '162.00', 'PHP', 'paypal', 'completed', NULL, '5TM94795LF565500T'),
 (34, NULL, 56, '360.00', 'PHP', 'paypal', 'completed', NULL, '01C911417E5304329'),
-(35, NULL, 57, '360.00', 'PHP', 'paypal', 'completed', NULL, '55873954F7932110N');
+(35, NULL, 57, '360.00', 'PHP', 'paypal', 'completed', NULL, '55873954F7932110N'),
+(36, NULL, 58, '284.00', 'PHP', 'cod', 'pending', NULL, NULL),
+(37, NULL, 59, '560.00', 'PHP', 'cod', 'pending', NULL, NULL),
+(38, NULL, 60, '470.00', 'PHP', 'cod', 'pending', NULL, NULL),
+(39, NULL, 61, '470.00', 'PHP', 'cod', 'pending', NULL, NULL),
+(40, NULL, 62, '790.00', 'PHP', 'cod', 'pending', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -309,21 +289,21 @@ CREATE TABLE `PRICE` (
 --
 
 INSERT INTO `PRICE` (`PRICE_ID`, `PRODUCER_ID`, `TYPE`, `PRICE`, `PER`, `STATUS`, `STOCK`, `TRAY_SIZE`, `DATE_CREATED`) VALUES
-(1, 1, 'Standard Eggs', '210.00', 'per tray', 'active', 757, 30, '2025-10-06 11:22:18'),
-(2, 1, 'Jumbo Eggs', '240.00', 'per tray', 'active', 737, 30, '2025-10-06 11:22:18'),
-(3, 2, 'Native Eggs', '280.00', 'per tray', 'active', 36, 30, '2025-10-06 11:22:18'),
-(4, 2, 'Free-Range Eggs', '300.00', 'per tray', 'active', 85, 30, '2025-10-06 11:22:18'),
-(5, 3, 'Golden Yolks', '220.00', 'per tray', 'active', 68, 30, '2025-10-06 11:22:18'),
-(6, 4, 'Fresh Brown Eggs', '215.00', 'per tray', 'active', 68, 30, '2025-10-06 11:22:18'),
-(7, 4, 'Pidan/Century Eggs', '350.00', 'per tray', 'active', 313, 30, '2025-10-06 11:22:18'),
-(8, 5, 'Pasture-Raised Eggs', '320.00', 'per tray', 'active', 63, 30, '2025-10-06 11:22:18'),
-(9, 6, 'White Eggs (Medium)', '190.00', 'per tray', 'active', 115, 30, '2025-10-06 11:22:18'),
-(10, 6, 'White Eggs (Large)', '205', 'per tray', 'active', 103, 30, '2025-10-06 11:22:18'),
-(11, 7, 'Salted Eggs', '250', 'per tray', 'active', 11, 30, '2025-10-06 11:22:18'),
-(12, 8, 'Itik/Ducks Eggs', '290', 'per tray', 'active', 110, 30, '2025-10-06 11:22:18'),
-(13, 5, 'Test Egg', '210', 'per tray', 'active', 95, 30, '2025-10-06 11:22:18'),
-(14, 1, 'Test Egg2211', '6', 'per egg', 'active', 100, 30, '2025-10-06 11:22:18'),
-(15, 6, 'Test Egg3', '120', 'per tray', 'active', 80, 30, '2025-10-07 09:08:12');
+(1, 1, 'Standard Eggs', '210.00', 'per tray', 'active', 22710, 30, '2025-10-06 11:22:18'),
+(2, 1, 'Jumbo Eggs', '240.00', 'per tray', 'active', 22110, 30, '2025-10-06 11:22:18'),
+(3, 2, 'Native Eggs', '280.00', 'per tray', 'active', 1080, 30, '2025-10-06 11:22:18'),
+(4, 2, 'Free-Range Eggs', '300.00', 'per tray', 'active', 2550, 30, '2025-10-06 11:22:18'),
+(5, 3, 'Golden Yolks', '220.00', 'per tray', 'active', 2040, 30, '2025-10-06 11:22:18'),
+(6, 4, 'Fresh Brown Eggs', '215.00', 'per tray', 'active', 2040, 30, '2025-10-06 11:22:18'),
+(7, 4, 'Pidan/Century Eggs', '350.00', 'per tray', 'active', 9390, 30, '2025-10-06 11:22:18'),
+(8, 5, 'Pasture-Raised Eggs', '320.00', 'per tray', 'active', 1770, 30, '2025-10-06 11:22:18'),
+(9, 6, 'White Eggs (Medium)', '190.00', 'per tray', 'active', 3450, 30, '2025-10-06 11:22:18'),
+(10, 6, 'White Eggs (Large)', '205', 'per tray', 'active', 3030, 30, '2025-10-06 11:22:18'),
+(11, 7, 'Salted Eggs', '250', 'per tray', 'active', 330, 30, '2025-10-06 11:22:18'),
+(12, 8, 'Itik/Ducks Eggs', '290', 'per tray', 'active', 3300, 30, '2025-10-06 11:22:18'),
+(13, 5, 'Test Egg', '210', 'per tray', 'active', 2850, 30, '2025-10-06 11:22:18'),
+(14, 1, 'Test Egg2211', '6', 'per egg', 'active', 3000, 30, '2025-10-06 11:22:18'),
+(16, 8, 'testegg4', '134', 'tray', 'active', 108, 12, '2025-10-07 12:04:34');
 
 -- --------------------------------------------------------
 
@@ -438,7 +418,12 @@ INSERT INTO `product_orders` (`order_id`, `user_id`, `order_date`, `total_amount
 (54, 16, '2025-10-07 03:43:57', '186.00', '150.00', 'delivered', 11, 'card', 32, '2025-10-07 10:43:57', '2025-10-07 10:46:50', '09070277VL093634R', NULL, 'Car', 6),
 (55, 16, '2025-10-07 03:49:19', '162.00', '150.00', 'refunded', 11, 'card', 33, '2025-10-07 10:49:19', '2025-10-07 10:55:17', '8U211686AT916030W', NULL, 'Car', 6),
 (56, 16, '2025-10-07 03:56:40', '360.00', '150.00', 'paid', 11, 'card', 34, '2025-10-07 10:56:40', '2025-10-07 10:56:40', '4XE87685J6316111X', NULL, 'Car', NULL),
-(57, 16, '2025-10-07 03:57:53', '360.00', '150.00', 'paid', 11, 'card', 35, '2025-10-07 10:57:53', '2025-10-07 10:57:53', '31E75124EV231600R', NULL, 'Car', NULL);
+(57, 16, '2025-10-07 03:57:53', '360.00', '150.00', 'paid', 11, 'card', 35, '2025-10-07 10:57:53', '2025-10-07 10:57:53', '31E75124EV231600R', NULL, 'Car', NULL),
+(58, 15, '2025-10-07 05:21:19', '284.00', '150.00', 'delivered', 10, 'card', 36, '2025-10-07 12:21:19', '2025-10-07 12:35:43', NULL, NULL, 'Car', NULL),
+(59, 11, '2025-10-07 10:20:49', '560.00', '150.00', 'delivered', 5, 'card', 37, '2025-10-07 17:20:49', '2025-10-07 17:21:00', NULL, NULL, 'Car', NULL),
+(60, 15, '2025-10-07 11:00:36', '470.00', '150.00', 'pending', 10, 'card', 38, '2025-10-07 18:00:36', '2025-10-07 18:00:36', NULL, NULL, 'Car', NULL),
+(61, 15, '2025-10-07 11:01:33', '470.00', '150.00', 'pending', 10, 'card', 39, '2025-10-07 18:01:33', '2025-10-07 18:01:33', NULL, NULL, 'Car', NULL),
+(62, 19, '2025-10-07 11:10:39', '790.00', '150.00', 'pending', 14, 'card', 40, '2025-10-07 18:10:39', '2025-10-07 18:10:39', NULL, NULL, 'Car', NULL);
 
 -- --------------------------------------------------------
 
@@ -453,70 +438,76 @@ CREATE TABLE `product_order_items` (
   `product_type` varchar(255) NOT NULL,
   `quantity` int(11) NOT NULL,
   `price_per_item` decimal(10,2) NOT NULL,
-  `is_reviewed` tinyint(1) NOT NULL DEFAULT 0
+  `is_reviewed` tinyint(1) NOT NULL DEFAULT 0,
+  `tray_size` int(11) NOT NULL DEFAULT 30
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 --
 -- Dumping data for table `product_order_items`
 --
 
-INSERT INTO `product_order_items` (`order_item_id`, `order_id`, `producer_id`, `product_type`, `quantity`, `price_per_item`, `is_reviewed`) VALUES
-(1, 1, 6, 'White Eggs (Large)', 1, '205.00', 0),
-(2, 2, 6, 'White Eggs (Large)', 1, '205.00', 0),
-(3, 3, 6, 'White Eggs (Large)', 1, '205.00', 0),
-(4, 4, 6, 'White Eggs (Large)', 1, '205.00', 0),
-(5, 5, 6, 'White Eggs (Large)', 1, '205.00', 0),
-(6, 6, 6, 'White Eggs (Large)', 13, '205.00', 0),
-(7, 7, 6, 'White Eggs (Large)', 1, '205.00', 0),
-(8, 8, 6, 'White Eggs (Large)', 1, '205.00', 0),
-(9, 9, 6, 'White Eggs (Large)', 3, '205.00', 0),
-(10, 10, 5, 'Test Egg', 11, '210.00', 0),
-(11, 11, 6, 'White Eggs (Large)', 1, '205.00', 0),
-(12, 12, 6, 'White Eggs (Large)', 1, '205.00', 0),
-(13, 13, 6, 'White Eggs (Large)', 1, '205.00', 0),
-(14, 14, 6, 'White Eggs (Large)', 1, '205.00', 0),
-(15, 15, 6, 'White Eggs (Large)', 1, '205.00', 0),
-(16, 16, 6, 'White Eggs (Large)', 1, '205.00', 0),
-(17, 17, 6, 'White Eggs (Large)', 1, '205.00', 0),
-(18, 18, 6, 'White Eggs (Large)', 1, '205.00', 0),
-(19, 19, 6, 'White Eggs (Large)', 1, '205.00', 0),
-(20, 20, 6, 'White Eggs (Large)', 1, '205.00', 0),
-(21, 21, 6, 'White Eggs (Large)', 1, '205.00', 0),
-(22, 22, 5, 'Test Egg', 1, '210.00', 0),
-(23, 23, 5, 'Test Egg', 1, '210.00', 0),
-(24, 24, 5, 'Test Egg', 1, '210.00', 0),
-(25, 25, 5, 'Test Egg', 1, '210.00', 0),
-(26, 26, 5, 'Test Egg', 1, '210.00', 0),
-(27, 27, 5, 'Test Egg', 2, '210.00', 0),
-(28, 28, 5, 'Test Egg', 1, '210.00', 0),
-(29, 29, 6, 'White Eggs (Large)', 12, '205.00', 0),
-(30, 30, 1, 'Test Egg2', 1, '6.00', 0),
-(31, 31, 1, 'Test Egg2', 1, '6.00', 0),
-(32, 32, 5, 'Pasture-Raised Eggs', 1, '320.00', 0),
-(33, 33, 5, 'Pasture-Raised Eggs', 1, '320.00', 0),
-(34, 34, 5, 'Pasture-Raised Eggs', 1, '320.00', 0),
-(35, 35, 6, 'White Eggs (Medium)', 1, '190.00', 0),
-(36, 36, 1, 'Jumbo Eggs', 11, '240.00', 0),
-(37, 37, 5, 'Pasture-Raised Eggs', 1, '320.00', 1),
-(38, 38, 5, 'Pasture-Raised Eggs', 1, '320.00', 0),
-(39, 39, 5, 'Pasture-Raised Eggs', 21, '320.00', 1),
-(40, 40, 5, 'Pasture-Raised Eggs', 1, '320.00', 0),
-(41, 42, 5, 'Test Egg', 1, '210.00', 0),
-(42, 43, 5, 'Pasture-Raised Eggs', 1, '320.00', 1),
-(43, 44, 5, 'Pasture-Raised Eggs', 1, '320.00', 0),
-(44, 45, 5, 'Pasture-Raised Eggs', 10, '320.00', 1),
-(45, 46, 5, 'Pasture-Raised Eggs', 1, '320.00', 0),
-(46, 47, 6, 'White Eggs (Medium)', 1, '190.00', 1),
-(47, 48, 5, 'Test Egg', 1, '210.00', 0),
-(48, 49, 5, 'Pasture-Raised Eggs', 10, '320.00', 0),
-(49, 50, 1, 'Standard Eggs', 300, '210.00', 0),
-(50, 51, 5, 'Pasture-Raised Eggs', 10, '320.00', 0),
-(51, 52, 6, 'White Eggs (Large)', 5, '205.00', 0),
-(52, 53, 5, 'Pasture-Raised Eggs', 1, '320.00', 0),
-(53, 54, 1, 'Test Egg2211', 6, '6.00', 0),
-(54, 55, 1, 'Test Egg2211', 2, '6.00', 0),
-(55, 56, 5, 'Test Egg', 1, '210.00', 0),
-(56, 57, 5, 'Test Egg', 1, '210.00', 0);
+INSERT INTO `product_order_items` (`order_item_id`, `order_id`, `producer_id`, `product_type`, `quantity`, `price_per_item`, `is_reviewed`, `tray_size`) VALUES
+(1, 1, 6, 'White Eggs (Large)', 1, '205.00', 0, 30),
+(2, 2, 6, 'White Eggs (Large)', 1, '205.00', 0, 30),
+(3, 3, 6, 'White Eggs (Large)', 1, '205.00', 0, 30),
+(4, 4, 6, 'White Eggs (Large)', 1, '205.00', 0, 30),
+(5, 5, 6, 'White Eggs (Large)', 1, '205.00', 0, 30),
+(6, 6, 6, 'White Eggs (Large)', 13, '205.00', 0, 30),
+(7, 7, 6, 'White Eggs (Large)', 1, '205.00', 0, 30),
+(8, 8, 6, 'White Eggs (Large)', 1, '205.00', 0, 30),
+(9, 9, 6, 'White Eggs (Large)', 3, '205.00', 0, 30),
+(10, 10, 5, 'Test Egg', 11, '210.00', 0, 30),
+(11, 11, 6, 'White Eggs (Large)', 1, '205.00', 0, 30),
+(12, 12, 6, 'White Eggs (Large)', 1, '205.00', 0, 30),
+(13, 13, 6, 'White Eggs (Large)', 1, '205.00', 0, 30),
+(14, 14, 6, 'White Eggs (Large)', 1, '205.00', 0, 30),
+(15, 15, 6, 'White Eggs (Large)', 1, '205.00', 0, 30),
+(16, 16, 6, 'White Eggs (Large)', 1, '205.00', 0, 30),
+(17, 17, 6, 'White Eggs (Large)', 1, '205.00', 0, 30),
+(18, 18, 6, 'White Eggs (Large)', 1, '205.00', 0, 30),
+(19, 19, 6, 'White Eggs (Large)', 1, '205.00', 0, 30),
+(20, 20, 6, 'White Eggs (Large)', 1, '205.00', 0, 30),
+(21, 21, 6, 'White Eggs (Large)', 1, '205.00', 0, 30),
+(22, 22, 5, 'Test Egg', 1, '210.00', 0, 30),
+(23, 23, 5, 'Test Egg', 1, '210.00', 0, 30),
+(24, 24, 5, 'Test Egg', 1, '210.00', 0, 30),
+(25, 25, 5, 'Test Egg', 1, '210.00', 0, 30),
+(26, 26, 5, 'Test Egg', 1, '210.00', 0, 30),
+(27, 27, 5, 'Test Egg', 2, '210.00', 0, 30),
+(28, 28, 5, 'Test Egg', 1, '210.00', 0, 30),
+(29, 29, 6, 'White Eggs (Large)', 12, '205.00', 0, 30),
+(30, 30, 1, 'Test Egg2', 1, '6.00', 0, 30),
+(31, 31, 1, 'Test Egg2', 1, '6.00', 0, 30),
+(32, 32, 5, 'Pasture-Raised Eggs', 1, '320.00', 0, 30),
+(33, 33, 5, 'Pasture-Raised Eggs', 1, '320.00', 0, 30),
+(34, 34, 5, 'Pasture-Raised Eggs', 1, '320.00', 0, 30),
+(35, 35, 6, 'White Eggs (Medium)', 1, '190.00', 0, 30),
+(36, 36, 1, 'Jumbo Eggs', 11, '240.00', 0, 30),
+(37, 37, 5, 'Pasture-Raised Eggs', 1, '320.00', 1, 30),
+(38, 38, 5, 'Pasture-Raised Eggs', 1, '320.00', 0, 30),
+(39, 39, 5, 'Pasture-Raised Eggs', 21, '320.00', 1, 30),
+(40, 40, 5, 'Pasture-Raised Eggs', 1, '320.00', 0, 30),
+(41, 42, 5, 'Test Egg', 1, '210.00', 0, 30),
+(42, 43, 5, 'Pasture-Raised Eggs', 1, '320.00', 1, 30),
+(43, 44, 5, 'Pasture-Raised Eggs', 1, '320.00', 0, 30),
+(44, 45, 5, 'Pasture-Raised Eggs', 10, '320.00', 1, 30),
+(45, 46, 5, 'Pasture-Raised Eggs', 1, '320.00', 0, 30),
+(46, 47, 6, 'White Eggs (Medium)', 1, '190.00', 1, 30),
+(47, 48, 5, 'Test Egg', 1, '210.00', 0, 30),
+(48, 49, 5, 'Pasture-Raised Eggs', 10, '320.00', 0, 30),
+(49, 50, 1, 'Standard Eggs', 300, '210.00', 0, 30),
+(50, 51, 5, 'Pasture-Raised Eggs', 10, '320.00', 0, 30),
+(51, 52, 6, 'White Eggs (Large)', 5, '205.00', 0, 30),
+(52, 53, 5, 'Pasture-Raised Eggs', 1, '320.00', 0, 30),
+(53, 54, 1, 'Test Egg2211', 6, '6.00', 0, 30),
+(54, 55, 1, 'Test Egg2211', 2, '6.00', 0, 30),
+(55, 56, 5, 'Test Egg', 1, '210.00', 0, 30),
+(56, 57, 5, 'Test Egg', 1, '210.00', 0, 30),
+(57, 58, 8, 'testegg4', 2, '67.00', 0, 12),
+(58, 59, 6, 'White Eggs (Large)', 2, '205.00', 0, 30),
+(59, 60, 5, 'Pasture-Raised Eggs', 2, '160.00', 0, 12),
+(60, 61, 5, 'Pasture-Raised Eggs', 2, '160.00', 0, 12),
+(61, 62, 5, 'Pasture-Raised Eggs', 2, '320.00', 0, 30);
 
 -- --------------------------------------------------------
 
@@ -594,39 +585,27 @@ CREATE TABLE `returns` (
   `reason` text NOT NULL,
   `status` varchar(50) NOT NULL DEFAULT 'pending',
   `requested_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `image_path` varchar(255) DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `returns`
 --
 
-INSERT INTO `returns` (`return_id`, `order_id`, `order_item_id`, `user_id`, `product_id`, `reason`, `status`, `requested_at`, `updated_at`) VALUES
-(1, 22, 22, 0, 0, 'dwadaw', 'approved', '2025-10-06 07:14:17', '2025-10-06 18:18:06'),
-(2, 30, 30, 0, 0, 'test', 'approved', '2025-10-06 08:06:31', '2025-10-06 18:18:03'),
-(3, 31, 31, 0, 0, 'test notif', 'approved', '2025-10-06 08:49:10', '2025-10-06 18:17:52'),
-(4, 38, 38, 0, 0, 'broekn egguh', 'approved', '2025-10-06 13:02:31', '2025-10-06 18:17:40'),
-(5, 42, 41, 0, 0, 'Bobo packaging', 'approved', '2025-10-06 18:33:53', '2025-10-06 18:35:38'),
-(6, 49, 48, 0, 0, 'bulok na yung tatlo awit never again', 'rejected', '2025-10-07 09:20:18', '2025-10-07 09:33:21'),
-(7, 51, 50, 0, 0, 'crack yung egg', 'approved', '2025-10-07 10:15:42', '2025-10-07 10:34:23'),
-(8, 52, 51, 0, 0, 'meh', 'approved', '2025-10-07 10:37:01', '2025-10-07 10:37:09'),
-(9, 53, 52, 0, 0, 'test nio redfund', 'rejected', '2025-10-07 10:42:23', '2025-10-07 10:46:38'),
-(10, 55, 54, 0, 0, 'crack po yung dalawa', 'approved', '2025-10-07 10:50:58', '2025-10-07 10:55:17');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `Tracking_Event`
---
-
-CREATE TABLE `Tracking_Event` (
-  `event_id` int(11) NOT NULL,
-  `booking_id` int(11) DEFAULT NULL,
-  `user_id` int(11) DEFAULT NULL,
-  `status` varchar(20) DEFAULT NULL,
-  `message` varchar(255) DEFAULT NULL,
-  `created_at` date DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+INSERT INTO `returns` (`return_id`, `order_id`, `order_item_id`, `user_id`, `product_id`, `reason`, `status`, `requested_at`, `updated_at`, `image_path`) VALUES
+(1, 22, 22, 0, 0, 'dwadaw', 'approved', '2025-10-06 07:14:17', '2025-10-06 18:18:06', NULL),
+(2, 30, 30, 0, 0, 'test', 'approved', '2025-10-06 08:06:31', '2025-10-06 18:18:03', NULL),
+(3, 31, 31, 0, 0, 'test notif', 'approved', '2025-10-06 08:49:10', '2025-10-06 18:17:52', NULL),
+(4, 38, 38, 0, 0, 'broekn egguh', 'approved', '2025-10-06 13:02:31', '2025-10-06 18:17:40', NULL),
+(5, 42, 41, 0, 0, 'Bobo packaging', 'approved', '2025-10-06 18:33:53', '2025-10-06 18:35:38', NULL),
+(6, 49, 48, 0, 0, 'bulok na yung tatlo awit never again', 'rejected', '2025-10-07 09:20:18', '2025-10-07 09:33:21', NULL),
+(7, 51, 50, 0, 0, 'crack yung egg', 'approved', '2025-10-07 10:15:42', '2025-10-07 10:34:23', NULL),
+(8, 52, 51, 0, 0, 'meh', 'approved', '2025-10-07 10:37:01', '2025-10-07 10:37:09', NULL),
+(9, 53, 52, 0, 0, 'test nio redfund', 'rejected', '2025-10-07 10:42:23', '2025-10-07 10:46:38', NULL),
+(10, 55, 54, 0, 0, 'crack po yung dalawa', 'approved', '2025-10-07 10:50:58', '2025-10-07 10:55:17', NULL),
+(11, 58, 57, 15, 16, 'Damaged in transit', 'rejected', '2025-10-07 17:07:09', '2025-10-07 17:09:02', 'uploads/return_68e548bd103968.01356019_mambo.jpg'),
+(12, 59, 58, 11, 10, 'Damaged in transit', 'rejected', '2025-10-07 17:21:46', '2025-10-07 17:22:17', 'uploads/return_68e54c2a86f375.22197803_Screenshot 2024-11-06 222649.png');
 
 -- --------------------------------------------------------
 
@@ -657,9 +636,10 @@ CREATE TABLE `USER` (
 
 INSERT INTO `USER` (`USER_ID`, `FIRST_NAME`, `MIDDLE_NAME`, `LAST_NAME`, `EMAIL`, `PHONE`, `PROFILE_PICTURE`, `PASSWORD`, `ROLE`, `ACCOUNT_STATUS`, `LOCK_EXPIRES_AT`, `CREATED_AT`, `UPDATED_AT`, `last_login_at`) VALUES
 (4, 'Rasheed Malachi', 'Ramirez', 'Salamat', 'rasheedmalachi@gmail.com', '', 'default_avatar.png', '$2y$10$befzVXETI53dfpYMhMBvUeXykYXzrIK96lTix/3QtQFUoLCEZ4zpW', 'customer', 'ACTIVE', NULL, '2025-09-22 12:09:06', '2025-10-07 09:42:52', NULL),
-(11, 'Eduard Simon', 'Nemiada', 'Miana', 'simonmiana@gmail.com', '09956336238', 'uploads/profile_pictures/user_11_68e2844c3376f2.15203154.jpg', '$2y$10$QDBf.AQkpUKMQgTu6r4D6OvmdkqzvIkzl0RKeOG092Ff7ILa/uNIu', 'customer', 'ACTIVE', NULL, '2025-10-04 15:18:40', '2025-10-07 09:33:45', '2025-10-06 19:33:25'),
+(11, 'Eduard Simon', 'Nemiada', 'Miana', 'simonmiana@gmail.com', '09956336238', 'uploads/profile_pictures/user_11_68e2844c3376f2.15203154.jpg', '$2y$10$QDBf.AQkpUKMQgTu6r4D6OvmdkqzvIkzl0RKeOG092Ff7ILa/uNIu', 'customer', 'ACTIVE', NULL, '2025-10-04 15:18:40', '2025-10-07 17:09:54', '2025-10-07 17:09:54'),
 (9, 'Admin', NULL, 'User', 'admin@crackcart.com', '123-456-7890', 'uploads/profile_pictures/user_9_68e38e5c29f866.87247820.jpg', '21232f297a57a5a743894a0e4a801fc3', 'admin', 'ACTIVE', NULL, '2025-10-04 14:27:06', '2025-10-07 08:12:37', NULL),
-(15, 'Eduard Simon', 'Nemiada', 'Miana', 'qesnmiana@tip.edu.ph', '09956336238', 'default_avatar.png', '$2y$10$McsvdTCFkZxxE3r5bc.KIumyhHGwJV6eKWAVCtWMs2aFAFpnyY/Qa', 'customer', 'ACTIVE', NULL, '2025-10-06 19:31:59', '2025-10-07 10:40:26', '2025-10-07 10:40:26'),
+(19, 'Rasheed Malachi', 'Ramirez', 'Salamat', 'rasheedmalachi.salamat@gmail.com', '09284943131', 'default_avatar.png', '$2y$10$uVORnrTrxCyRn3Feu1IT5eTQYvo638mT.5dlErduZPaC2VWTB6TYi', 'customer', 'ACTIVE', NULL, '2025-10-07 17:50:57', '2025-10-07 17:51:50', '2025-10-07 17:51:50'),
+(15, 'Eduard Simon', 'Nemiada', 'Miana', 'qesnmiana@tip.edu.ph', '09956336238', 'default_avatar.png', '$2y$10$McsvdTCFkZxxE3r5bc.KIumyhHGwJV6eKWAVCtWMs2aFAFpnyY/Qa', 'customer', 'ACTIVE', NULL, '2025-10-06 19:31:59', '2025-10-07 17:09:47', '2025-10-07 17:09:47'),
 (16, 'Kenneth Angelo', '', 'Sarmiento', 'sken4165@gmail.com', '09273848395', 'default_avatar.png', '$2y$10$KCNrCJStJ4XPynwSOfDo.OWtzxF7QVyfrDTxEC4ak1V8pfgC.1Ypy', 'customer', 'ACTIVE', NULL, '2025-10-07 07:15:16', '2025-10-07 10:10:25', '2025-10-07 10:10:25'),
 (10, 'Eduard Simon', 'Nemiada', 'Miana', 'simonmiana@gmail.co', '09956336238', 'default_avatar.png', '$2y$10$Zzi2FrqhC90ptvMdxXzPVuHriuSOqReJ/6wAZNt3L0b56eCsnZKga', 'customer', 'ACTIVE', NULL, '2025-10-04 15:18:01', '2025-10-07 09:41:37', NULL);
 
@@ -698,7 +678,8 @@ INSERT INTO `user_addresses` (`address_id`, `user_id`, `address_line1`, `address
 (10, 15, '9 Mapalad', 'Mariblo', 'Quezon City', 'Quezon City', '', 'Philippines', 'shipping', 1),
 (11, 16, '245 Purok Silangan', 'Dela Paz', 'Antipolo', 'Antipolo', '', 'Philippines', 'shipping', 1),
 (12, 17, '12 Andres', 'Santolan', 'Pasig City', 'Pasig City', '', 'Philippines', 'shipping', 1),
-(13, 18, '12 Santolan', 'Santolan', 'Pasig City', 'Pasig City', '', 'Philippines', 'shipping', 1);
+(13, 18, '12 Santolan', 'Santolan', 'Pasig City', 'Pasig City', '', 'Philippines', 'shipping', 1),
+(14, 19, '138 A Malumanay', 'UP Village', 'Quezon City', 'Quezon City', '', 'Philippines', 'shipping', 1);
 
 -- --------------------------------------------------------
 
@@ -815,19 +796,6 @@ ALTER TABLE `NOTIFICATION`
   ADD KEY `USER_ID` (`USER_ID`);
 
 --
--- Indexes for table `orders`
---
-ALTER TABLE `orders`
-  ADD PRIMARY KEY (`order_id`),
-  ADD KEY `pickup_address_id` (`pickup_address_id`),
-  ADD KEY `delivery_address_id` (`delivery_address_id`),
-  ADD KEY `vehicle_id` (`vehicle_id`),
-  ADD KEY `idx_user_id` (`user_id`),
-  ADD KEY `idx_status` (`status`),
-  ADD KEY `idx_driver_id` (`driver_id`),
-  ADD KEY `idx_order_date` (`order_date`);
-
---
 -- Indexes for table `Payment`
 --
 ALTER TABLE `Payment`
@@ -896,14 +864,6 @@ ALTER TABLE `returns`
   ADD KEY `user_id` (`user_id`),
   ADD KEY `product_id` (`product_id`),
   ADD KEY `fk_returns_order_item` (`order_item_id`);
-
---
--- Indexes for table `Tracking_Event`
---
-ALTER TABLE `Tracking_Event`
-  ADD PRIMARY KEY (`event_id`),
-  ADD KEY `booking_id` (`booking_id`),
-  ADD KEY `user_id` (`user_id`);
 
 --
 -- Indexes for table `USER`
@@ -976,25 +936,19 @@ ALTER TABLE `Locations`
 -- AUTO_INCREMENT for table `NOTIFICATION`
 --
 ALTER TABLE `NOTIFICATION`
-  MODIFY `NOTIFICATION_ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=46;
-
---
--- AUTO_INCREMENT for table `orders`
---
-ALTER TABLE `orders`
-  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `NOTIFICATION_ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=48;
 
 --
 -- AUTO_INCREMENT for table `Payment`
 --
 ALTER TABLE `Payment`
-  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=36;
+  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=41;
 
 --
 -- AUTO_INCREMENT for table `PRICE`
 --
 ALTER TABLE `PRICE`
-  MODIFY `PRICE_ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `PRICE_ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- AUTO_INCREMENT for table `PRODUCER`
@@ -1006,13 +960,13 @@ ALTER TABLE `PRODUCER`
 -- AUTO_INCREMENT for table `product_orders`
 --
 ALTER TABLE `product_orders`
-  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=58;
+  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=63;
 
 --
 -- AUTO_INCREMENT for table `product_order_items`
 --
 ALTER TABLE `product_order_items`
-  MODIFY `order_item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=57;
+  MODIFY `order_item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=62;
 
 --
 -- AUTO_INCREMENT for table `product_returns`
@@ -1036,25 +990,19 @@ ALTER TABLE `Rate_Card`
 -- AUTO_INCREMENT for table `returns`
 --
 ALTER TABLE `returns`
-  MODIFY `return_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
-
---
--- AUTO_INCREMENT for table `Tracking_Event`
---
-ALTER TABLE `Tracking_Event`
-  MODIFY `event_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `return_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT for table `USER`
 --
 ALTER TABLE `USER`
-  MODIFY `USER_ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `USER_ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
 
 --
 -- AUTO_INCREMENT for table `user_addresses`
 --
 ALTER TABLE `user_addresses`
-  MODIFY `address_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `address_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT for table `Vehicle`

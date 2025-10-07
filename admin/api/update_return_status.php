@@ -1,93 +1,95 @@
 <?php
-session_start();
 header('Content-Type: application/json');
+include '../../db_connect.php';
+include '../../log_function.php'; 
+include '../../notification_function.php';
 
-function send_error($code, $message) {
-    http_response_code($code);
-    echo json_encode(['success' => false, 'message' => $message]);
-    exit();
+session_start();
+// Security check: ensure the user is an admin
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+    http_response_code(403);
+    echo json_encode(['status' => 'error', 'message' => 'Access denied.']);
+    exit;
 }
-
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-    send_error(403, 'Authentication required.');
-}
-
-$host = "sql101.infinityfree.com";
-$user = "if0_39829885";
-$pass = "alingremy108";
-$db   = "if0_39829885_db";
-
-$conn = @mysqli_connect($host, $user, $pass, $db);
-
-if (!$conn) {
-    error_log("API DB Connection Failed (update_return_status.php): " . mysqli_connect_error());
-    send_error(500, "Internal server error: Could not connect to the database.");
-}
-
-$conn->set_charset("utf8mb4");
 
 $data = json_decode(file_get_contents('php://input'), true);
+$return_id = $data['return_id'] ?? 0;
+$new_status = $data['status'] ?? '';
+$admin_id = $_SESSION['user_id'];
 
-if (!$data || !isset($data['return_id']) || !isset($data['status'])) {
-    send_error(400, 'Invalid input: return_id and status are required.');
-}
+if ($return_id > 0 && !empty($new_status)) {
+    $conn->begin_transaction();
+    $coupon_generated_message = ''; // For admin response
 
-$return_id = (int)$data['return_id'];
-$new_status = $data['status'];
-$allowed_statuses = ['approved', 'rejected'];
+    try {
+        // Fetch user_id, order_id, AND reason for the return
+        $stmt_info = $conn->prepare("SELECT po.user_id, r.order_id, r.reason FROM returns r JOIN product_orders po ON r.order_id = po.order_id WHERE r.return_id = ?");
+        $stmt_info->bind_param("i", $return_id);
+        $stmt_info->execute();
+        $result_info = $stmt_info->get_result();
+        if (!($info = $result_info->fetch_assoc())) {
+            throw new Exception("Return info not found.");
+        }
+        $user_id = $info['user_id'];
+        $order_id = $info['order_id'];
+        $reason = $info['reason'];
+        $stmt_info->close();
 
-if (!in_array($new_status, $allowed_statuses)) {
-    send_error(400, 'Invalid status value.');
-}
+        $notification_message = "";// For user notification
 
-$conn->begin_transaction();
+        // Update return status
+        $update_sql = "UPDATE returns SET status = ?";
+        if ($new_status === 'approved') {
+            $update_sql .= ", approved_at = NOW()";
+        }
+        $update_sql .= " WHERE return_id = ?";
+        $stmt = $conn->prepare($update_sql);
+        $stmt->bind_param('si', $new_status, $return_id);
 
-try {
-    $stmt1 = $conn->prepare("UPDATE returns SET status = ? WHERE return_id = ?");
-    if (!$stmt1) throw new Exception("Prepare statement failed (stmt1): " . $conn->error);
-    $stmt1->bind_param('si', $new_status, $return_id);
-    if (!$stmt1->execute()) throw new Exception("Execute failed (stmt1): " . $stmt1->error);
-    if ($stmt1->affected_rows === 0) throw new Exception("Return ID not found or status already set.");
-    $stmt1->close();
+        if (!$stmt->execute()) {
+            throw new Exception('Failed to update return status.');
+        }
 
-    $stmt_info = $conn->prepare("SELECT order_id, user_id FROM returns WHERE return_id = ?");
-    if (!$stmt_info) throw new Exception("Prepare statement failed (stmt_info): " . $conn->error);
-    $stmt_info->bind_param('i', $return_id);
-    if (!$stmt_info->execute()) throw new Exception("Execute failed (stmt_info): " . $stmt_info->error);
-    
-    $result = $stmt_info->get_result();
-    if ($result->num_rows === 0) throw new Exception("Return ID not found when fetching details.");
-    $return_data = $result->fetch_assoc();
-    $order_id = $return_data['order_id'];
-    $user_id = $return_data['user_id'];
-    $stmt_info->close();
+        if ($new_status === 'approved') {
+            // --- NEW: COUPON GENERATION LOGIC ---
+            if ($reason === 'Cracked Eggs') {
+                $coupon_code = 'CRACKED-' . strtoupper(uniqid());
+                $discount_value = 50.00; // Fixed ₱50 discount
 
-    $message = "Your return request for order #{$order_id} has been {$new_status}.";
-    $link = "view_order.php?order_id={$order_id}";
-    $stmt_notify = $conn->prepare("INSERT INTO NOTIFICATION (USER_ID, MESSAGE, link) VALUES (?, ?, ?)");
-    if (!$stmt_notify) throw new Exception("Prepare statement failed (stmt_notify): " . $conn->error);
-    $stmt_notify->bind_param('iss', $user_id, $message, $link);
-    if (!$stmt_notify->execute()) throw new Exception("Execute failed (stmt_notify): " . $stmt_notify->error);
-    $stmt_notify->close();
+                $stmt_coupon = $conn->prepare("INSERT INTO coupons (coupon_code, user_id, discount_value) VALUES (?, ?, ?)");
+                $stmt_coupon->bind_param("sid", $coupon_code, $user_id, $discount_value);
+                if (!$stmt_coupon->execute()) {
+                    throw new Exception("Failed to generate coupon.");
+                }
+                $stmt_coupon->close();
 
-    if ($new_status === 'approved') {
-        $stmt3 = $conn->prepare("UPDATE product_orders SET status = 'Refunded' WHERE order_id = ?");
-        if (!$stmt3) throw new Exception("Prepare statement failed (stmt3): " . $conn->error);
-        $stmt3->bind_param('i', $order_id);
-        if (!$stmt3->execute()) throw new Exception("Execute failed (stmt3): " . $stmt3->error);
-        $stmt3->close();
+                log_action('Coupon Generation', "Admin ID {$admin_id} issued coupon {$coupon_code} to user #{$user_id} for return #{$return_id}.");
+                $coupon_generated_message = " A ₱50.00 coupon has been issued to the user.";
+                $notification_message = "Your return for order #{$order_id} was approved. We have issued a ₱50.00 coupon to your account for the inconvenience.";
+
+            } else {
+                $notification_message = "Your return request for order #{$order_id} has been updated to 'approved'.";
+            }
+        } else {
+            $notification_message = "Your return request for order #{$order_id} has been updated to '{$new_status}'.";
+        }
+        
+        // Create a notification for the customer
+        create_notification($conn, $user_id, $notification_message, "profilePage.php#orders");
+
+        $conn->commit();
+        echo json_encode(['status' => 'success', 'message' => 'Return status updated successfully.' . $coupon_generated_message]);
+
+    } catch (Exception $e) {
+        $conn->rollback();
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
     }
 
-    $conn->commit();
-    echo json_encode(['success' => true, 'message' => 'Return status updated and user notified successfully.']);
-
-} catch (Exception $e) {
-    $conn->rollback();
-    error_log("Update Return Status Error: " . $e->getMessage());
-    send_error(500, 'An internal server error occurred. Please check the logs.');
-} finally {
-    if (isset($conn)) {
-        $conn->close();
-    }
+    if (isset($stmt)) $stmt->close();
+    $conn->close();
+} else {
+    http_response_code(400);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid data provided.']);
 }
 ?>

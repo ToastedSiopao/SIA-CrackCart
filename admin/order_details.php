@@ -44,16 +44,20 @@ if ($order_id <= 0) {
     if (!$order) {
         $error_message = "Order not found.";
     } else {
-        // Fetch order items
-        $items_query = "SELECT oi.*, p.TYPE as product_name, pr.NAME as producer_name
+        // Fetch order items with all necessary details
+        $items_query = "SELECT oi.*, p.TYPE as product_name, p.STOCK as current_stock, pr.NAME as producer_name 
                         FROM product_order_items oi
-                        JOIN PRICE p ON oi.product_type = p.TYPE AND oi.producer_id = p.PRODUCER_ID
-                        JOIN PRODUCER pr ON oi.producer_id = pr.PRODUCER_ID
+                        LEFT JOIN PRICE p ON oi.product_type = p.TYPE AND oi.producer_id = p.PRODUCER_ID AND oi.tray_size = p.TRAY_SIZE
+                        LEFT JOIN PRODUCER pr ON oi.producer_id = pr.PRODUCER_ID
                         WHERE oi.order_id = ?";
         $items_stmt = $conn->prepare($items_query);
         $items_stmt->bind_param("i", $order_id);
         $items_stmt->execute();
-        $order_items = $items_stmt->get_result();
+        $order_items_result = $items_stmt->get_result();
+        $order_items = [];
+        while ($item = $order_items_result->fetch_assoc()) {
+            $order_items[] = $item;
+        }
         $items_stmt->close();
     }
 }
@@ -71,7 +75,13 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
-    <link href="admin-styles.css?v=1.0" rel="stylesheet">
+    <link href="admin-styles.css?v=1.1" rel="stylesheet">
+    <style>
+        .table th { 
+            font-weight: 500;
+            background-color: #f8f9fa;
+        }
+    </style>
 </head>
 <body>
     <?php include('admin_header.php'); ?>
@@ -82,76 +92,115 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
             <?php include('admin_offcanvas_sidebar.php'); ?>
 
             <main class="col p-4 main-content">
-                <div class="card shadow-sm border-0 p-4">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
                         <h4 class="mb-0">Order Details</h4>
                         <div>
-                            <a href="print_invoice.php?order_id=<?php echo $order_id; ?>" class="btn btn-outline-secondary">Print Invoice</a>
-                            <a href="print_packing_slip.php?order_id=<?php echo $order_id; ?>" class="btn btn-outline-primary">Print Packing Slip</a>
-                            <a href="orders.php" class="btn btn-outline-secondary">Back to Orders</a>
+                            <a href="print_invoice.php?order_id=<?php echo $order_id; ?>" class="btn btn-sm btn-outline-secondary"><i class="bi bi-printer"></i> Invoice</a>
+                            <a href="print_packing_slip.php?order_id=<?php echo $order_id; ?>" class="btn btn-sm btn-outline-primary"><i class="bi bi-box-seam"></i> Packing Slip</a>
+                            <a href="manage_orders.php" class="btn btn-sm btn-outline-dark"><i class="bi bi-arrow-left"></i> Back</a>
                         </div>
                     </div>
 
-                    <?php if (isset($error_message)): ?>
-                        <div class="alert alert-danger"><?php echo $error_message; ?></div>
-                    <?php elseif ($order): ?>
-                        <div class="row">
-                            <div class="col-lg-7">
-                                <div class="card mb-4">
-                                    <div class="card-header">Order #<?php echo htmlspecialchars($order['order_id']); ?></div>
-                                    <div class="card-body">
-                                        <h5 class="card-title">Items</h5>
-                                        <div class="table-responsive">
-                                            <table class="table">
-                                                <tbody>
-                                                    <?php while($item = $order_items->fetch_assoc()): ?>
+                    <div class="card-body p-4">
+                        <?php if (isset($error_message)): ?>
+                            <div class="alert alert-danger"><?php echo $error_message; ?></div>
+                        <?php elseif ($order): ?>
+                            <div class="row g-4">
+                                <div class="col-lg-8">
+                                    <div class="card mb-4">
+                                        <div class="card-header">Order #<?php echo htmlspecialchars($order['order_id']); ?> - Items</div>
+                                        <div class="card-body">
+                                            <div class="table-responsive">
+                                                <table class="table table-striped">
+                                                    <thead>
                                                         <tr>
-                                                            <td><?php echo htmlspecialchars($item['product_name']); ?></td>
-                                                            <td><?php echo htmlspecialchars($item['producer_name']); ?></td>
-                                                            <td>x <?php echo htmlspecialchars($item['quantity']); ?></td>
-                                                            <td>₱<?php echo number_format($item['price_per_item'], 2); ?></td>
+                                                            <th>Product</th>
+                                                            <th>Producer</th>
+                                                            <th class="text-center">Qty (Trays)</th>
+                                                            <th class="text-center">Tray Size</th>
+                                                            <th class="text-center">Stock (Trays)</th>
+                                                            <th class="text-end">Price/Tray</th>
+                                                            <th class="text-end">Subtotal</th>
                                                         </tr>
-                                                    <?php endwhile; ?>
-                                                </tbody>
-                                            </table>
+                                                    </thead>
+                                                    <tbody>
+                                                        <?php 
+                                                        foreach ($order_items as $item): 
+                                                            $stock_in_trays = ($item['tray_size'] > 0) ? floor($item['current_stock'] / $item['tray_size']) : 0;
+                                                            $is_stock_sufficient = $stock_in_trays >= $item['quantity'];
+                                                            $item_subtotal = (float)$item['price_per_item'] * (int)$item['quantity'];
+                                                        ?>
+                                                            <tr class="<?php echo !$is_stock_sufficient ? 'table-danger' : '' ?>">
+                                                                <td><?php echo htmlspecialchars($item['product_name'] ?? 'N/A'); ?></td>
+                                                                <td><?php echo htmlspecialchars($item['producer_name'] ?? 'N/A'); ?></td>
+                                                                <td class="text-center"><?php echo htmlspecialchars($item['quantity']); ?></td>
+                                                                <td class="text-center"><?php echo htmlspecialchars($item['tray_size']); ?></td>
+                                                                <td class="text-center fw-bold">
+                                                                    <?php echo $stock_in_trays; ?>
+                                                                    <?php if (!$is_stock_sufficient): ?>
+                                                                        <i class="bi bi-exclamation-triangle-fill text-danger" title="Insufficient stock to fulfill this item!"></i>
+                                                                    <?php endif; ?>
+                                                                </td>
+                                                                <td class="text-end">₱<?php echo number_format($item['price_per_item'], 2); ?></td>
+                                                                <td class="text-end">₱<?php echo number_format($item_subtotal, 2); ?></td>
+                                                            </tr>
+                                                        <?php endforeach; ?>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-4">
+                                    <div class="card mb-4">
+                                        <div class="card-header">Order Summary</div>
+                                        <div class="card-body">
+                                            <form method="POST" class="mb-3">
+                                                <div class="input-group">
+                                                    <select class="form-select" name="order_status">
+                                                        <?php foreach ($order_statuses as $status): ?>
+                                                            <option value="<?php echo $status; ?>" <?php echo ($order['status'] == $status) ? 'selected' : ''; ?>><?php echo ucfirst($status); ?></option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                    <button class="btn btn-primary" type="submit" name="update_status">Update</button>
+                                                </div>
+                                            </form>
+                                            <ul class="list-group list-group-flush">
+                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                    Subtotal
+                                                    <span>₱<?php echo number_format($order['total_amount'] - $order['delivery_fee'], 2); ?></span>
+                                                </li>
+                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                    Delivery Fee
+                                                    <span>₱<?php echo number_format($order['delivery_fee'], 2); ?></span>
+                                                </li>
+                                                <li class="list-group-item d-flex justify-content-between align-items-center fs-5 fw-bold">
+                                                    Grand Total
+                                                    <span>₱<?php echo number_format($order['total_amount'], 2); ?></span>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="card">
+                                         <div class="card-header">Customer & Shipping</div>
+                                         <div class="card-body">
+                                            <p class="mb-1"><strong><?php echo htmlspecialchars($order['customer_name']); ?></strong></p>
+                                            <p class="mb-2 text-muted"><?php echo htmlspecialchars($order['EMAIL']); ?></p>
+                                            <hr>
+                                            <p class="mb-1"><strong>Shipping Address:</strong></p>
+                                            <address class="mb-0">
+                                                <?php echo htmlspecialchars($order['address_line1']); ?><br>
+                                                <?php if($order['address_line2']) echo htmlspecialchars($order['address_line2']) . '<br>'; ?>
+                                                <?php echo htmlspecialchars($order['city']); ?>, <?php echo htmlspecialchars($order['state']); ?> <?php echo htmlspecialchars($order['zip_code']); ?><br>
+                                                <?php echo htmlspecialchars($order['country']); ?>
+                                            </address>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-lg-5">
-                                <div class="card mb-4">
-                                    <div class="card-header">Order Summary</div>
-                                    <div class="card-body">
-                                        <p><strong>Status:</strong> <span class="badge bg-success"><?php echo ucfirst(htmlspecialchars($order['status'])); ?></span></p>
-                                        <p><strong>Total Amount:</strong> ₱<?php echo number_format($order['total_amount'], 2); ?></p>
-                                        <p><strong>Payment Method:</strong> <?php echo htmlspecialchars($order['payment_method']); ?></p>
-                                        <hr>
-                                        <h5 class="card-title">Update Status</h5>
-                                        <form method="POST">
-                                            <div class="input-group mb-3">
-                                                <select class="form-select" name="order_status">
-                                                    <?php foreach ($order_statuses as $status): ?>
-                                                        <option value="<?php echo $status; ?>" <?php echo ($order['status'] == $status) ? 'selected' : ''; ?>><?php echo ucfirst($status); ?></option>
-                                                    <?php endforeach; ?>
-                                                </select>
-                                                <button class="btn btn-primary" type="submit" name="update_status">Update</button>
-                                            </div>
-                                        </form>
-                                        <hr>
-                                        <h5 class="card-title">Customer & Shipping</h5>
-                                        <p><strong>Name:</strong> <?php echo htmlspecialchars($order['customer_name']); ?></p>
-                                        <p><strong>Email:</strong> <?php echo htmlspecialchars($order['EMAIL']); ?></p>
-                                        <p><strong>Shipping Address:</strong><br>
-                                            <?php echo htmlspecialchars($order['address_line1']); ?><br>
-                                            <?php if($order['address_line2']) echo htmlspecialchars($order['address_line2']) . '<br>'; ?>
-                                            <?php echo htmlspecialchars($order['city']); ?>, <?php echo htmlspecialchars($order['state']); ?> <?php echo htmlspecialchars($order['zip_code']); ?><br>
-                                            <?php echo htmlspecialchars($order['country']); ?>
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    <?php endif; ?>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </main>
         </div>

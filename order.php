@@ -16,7 +16,7 @@ $producer_id = $_GET['producer_id'];
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
-  <link href="dashboard-styles.css?v=3.5" rel="stylesheet">
+  <link href="dashboard-styles.css?v=3.6" rel="stylesheet">
   <style>
     .producer-logo-large { width: 80px; height: 80px; object-fit: cover; border: 2px solid #ffc107; }
     .form-label.fw-bold { font-weight: 500 !important; margin-bottom: 0.5rem; }
@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const fullStars = Math.floor(rating);
         const halfStar = rating % 1 >= 0.5 ? 1 : 0;
         const emptyStars = 5 - fullStars - halfStar;
-        return '<i class="bi bi-star-fill"></i>'.repeat(fullStars) + 
+        return '<i class="bi bi-star-fill"></i>'.repeat(fullStars) +
                '<i class="bi bi-star-half"></i>'.repeat(halfStar) +
                '<i class="bi bi-star"></i>'.repeat(emptyStars);
     };
@@ -170,15 +170,18 @@ document.addEventListener('DOMContentLoaded', function() {
             
             <div class="mb-4">
                 <label class="form-label fw-bold">1. Select Egg Type</label>
-                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">${producer.products.map((p, index) => `
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">${producer.products.map((p, index) => {
+                    const availableTrays = p.tray_size > 0 ? Math.floor(p.stock / p.tray_size) : 0;
+                    return `
                     <div class="col form-check egg-option-card">
-                        <input class="form-check-input" type="radio" name="product_details" id="product_${index}" value='${JSON.stringify({ type: p.type, price: p.price, stock: p.stock })}' ${p.stock <= 0 ? 'disabled' : ''} required>
+                        <input class="form-check-input" type="radio" name="product_details" id="product_${index}" value='${JSON.stringify({ type: p.type, price: p.price, stock: availableTrays, tray_size: p.tray_size })}' ${availableTrays <= 0 ? 'disabled' : ''} required>
                         <label class="form-check-label" for="product_${index}">
-                            <span class="fw-bold">${p.type}</span><br>
-                            <span class="text-success">₱${p.price.toFixed(2)}</span> / ${p.per}<br>
-                            ${p.stock > 0 ? `<span class="text-muted small">Stock: ${p.stock} trays</span>` : '<span class="text-danger small">Out of Stock</span>'}
+                            <span class="fw-bold">${p.type} (Tray of ${p.tray_size})</span><br>
+                            <span class="text-success">₱${p.price.toFixed(2)}</span> / tray<br>
+                            ${availableTrays > 0 ? `<span class="text-muted small">Stock: ${availableTrays} trays</span>` : '<span class="text-danger small">Out of Stock</span>'}
                         </label>
-                    </div>`).join('') || '<div class="col-12"><div class="alert alert-info">This producer has no products available.</div></div>'}</div>
+                    </div>`;
+                }).join('') || '<div class="col-12"><div class="alert alert-info">This producer has no products available.</div></div>'}</div>
             </div>
 
             <div class="row mb-4">
@@ -186,17 +189,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     <label for="quantityInput" class="form-label fw-bold">2. Quantity of Trays</label>
                     <input type="number" class="form-control" id="quantityInput" name="quantity" min="1" value="1" required disabled>
                 </div>
-                 <div class="col-md-6">
-                    <label for="tray-size" class="form-label fw-bold">3. Tray Size (eggs per tray)</label>
-                    <select class="form-select" id="tray-size" name="tray_size">
-                        <option value="30" selected>30 (Standard)</option>
-                        <option value="12">12</option>
-                    </select>
-                </div>
             </div>
 
             <div class="mb-4">
-                <label class="form-label fw-bold">4. Select Vehicle for Delivery</label>
+                <label class="form-label fw-bold">3. Select Vehicle for Delivery</label>
                 <div class="vehicle-grid">${vehicleTypes.map(vt => `
                     <div class="form-check vehicle-type-card">
                         <input class="form-check-input" type="radio" name="vehicle_details" id="vehicle_type_${vt.type.replace(/[^a-zA-Z0-9]/g, '_')}" value='${JSON.stringify({ type: vt.type, fee: vt.delivery_fee })}' required>
@@ -212,7 +208,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
 
             <div class="mb-4">
-                <label for="notesInput" class="form-label fw-bold">5. Notes (Optional)</label>
+                <label for="notesInput" class="form-label fw-bold">4. Notes (Optional)</label>
                 <textarea class="form-control" id="notesInput" name="notes" rows="3" placeholder="Any special instructions for the producer or driver?"></textarea>
             </div>
 
@@ -252,7 +248,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 product_type: productDetails.type,
                 price: productDetails.price,
                 quantity: quantity,
-                tray_size: parseInt(formData.get('tray_size')),
+                tray_size: productDetails.tray_size, // Correctly get tray_size from the selected product
                 vehicle_type: vehicleDetails.type,
                 delivery_fee: vehicleDetails.fee,
                 notes: formData.get('notes')

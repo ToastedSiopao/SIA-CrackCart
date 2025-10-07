@@ -171,6 +171,7 @@ include("api/paypal_config.php");
                   <div>
                       ${item.product_type} (x${item.tray_size})
                       <p class="mb-0 text-muted" style="font-size: 0.9em;">₱${parseFloat(item.price).toFixed(2)} per tray</p>
+                      <p class="mb-0 text-muted" style="font-size: 0.9em;">Total: ${item.quantity * item.tray_size} eggs</p>
                   </div>
                   <div class="d-flex align-items-center">
                       <div class="input-group input-group-sm" style="width: 120px;">
@@ -283,7 +284,7 @@ include("api/paypal_config.php");
           try {
               const response = await fetch('api/cart.php', {
                   method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
                       action: action,
                       cart_item_key: cartItemKey,

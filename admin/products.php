@@ -48,7 +48,7 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
                                     <th>Price</th>
                                     <th>Unit</th>
                                     <th>Status</th>
-                                    <th>Stock</th>
+                                    <th>Stock (Trays)</th>
                                     <th>Tray Size</th>
                                     <th>Actions</th>
                                 </tr>
@@ -97,7 +97,9 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
                     return;
                 }
 
-                productsTableBody.innerHTML = products.map(product => `
+                productsTableBody.innerHTML = products.map(product => {
+                    const stockInTrays = product.TRAY_SIZE > 0 ? Math.floor(product.STOCK / product.TRAY_SIZE) : 0;
+                    return `
                     <tr>
                         <td>${product.PRICE_ID}</td>
                         <td>${product.TYPE}</td>
@@ -105,14 +107,14 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
                         <td>₱${parseFloat(product.PRICE).toFixed(2)}</td>
                         <td>${product.PER}</td>
                         <td>${product.STATUS}</td>
-                        <td>${product.STOCK}</td>
+                        <td>${stockInTrays}</td>
                         <td>${product.TRAY_SIZE || 'N/A'}</td>
                         <td>
                             <a href="product_form.php?id=${product.PRICE_ID}" class="btn btn-sm btn-primary">Edit</a>
                             <button class="btn btn-sm btn-danger delete-btn" data-id="${product.PRICE_ID}">Delete</button>
                         </td>
                     </tr>
-                `).join('');
+                `}).join('');
             };
 
             // Event delegation for delete buttons

@@ -72,7 +72,7 @@ $access_token = get_paypal_access_token(PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET);
       const renderOrderDetails = (order) => {
         const itemsHtml = order.items.map(item => `
           <tr>
-            <td>${item.product_type}</td>
+            <td>${item.product_type} (x${item.tray_size})</td>
             <td class="text-center">${item.quantity}</td>
             <td class="text-end">₱${parseFloat(item.price_per_item).toFixed(2)}</td>
             <td class="text-end">₱${(item.quantity * item.price_per_item).toFixed(2)}</td>

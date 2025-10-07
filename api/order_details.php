@@ -39,6 +39,7 @@ $stmt_items = $conn->prepare("
         poi.product_type, 
         poi.price_per_item, 
         poi.quantity, 
+        poi.tray_size, 
         poi.is_reviewed, 
         r.status AS return_status 
     FROM 

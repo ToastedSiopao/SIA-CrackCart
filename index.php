@@ -1,4 +1,48 @@
 <?php
+// --- POOR MAN'S CRON JOB ---
+// This logic triggers the delayed restock script based on user traffic.
+
+$cron_last_run_file = __DIR__ . '/admin/api/cron_last_run.txt';
+$cron_script_path = __DIR__ . '/admin/api/process_delayed_restocks.php';
+$cron_interval = 3600; // 1 hour in seconds
+
+// We only run this on the main page, not on other requests.
+if (basename($_SERVER['PHP_SELF']) == 'index.php') {
+    $run_cron = false;
+    $current_time = time();
+
+    // Check if the timestamp file exists and when the job was last run.
+    if (file_exists($cron_last_run_file)) {
+        $last_run_time = (int)@file_get_contents($cron_last_run_file);
+        if ($current_time - $last_run_time > $cron_interval) {
+            $run_cron = true;
+        }
+    } else {
+        // If the file doesn't exist, this is the first run.
+        $run_cron = true;
+    }
+
+    if ($run_cron) {
+        // Update the timestamp immediately to prevent race conditions.
+        @file_put_contents($cron_last_run_file, $current_time);
+
+        // To include the script securely, we set the secret key it expects.
+        // We save and restore the original $_GET state to avoid side effects.
+        $original_get = $_GET;
+        $_GET['secret'] = 'CrackCartSecretRestockKey987';
+
+        // Use output buffering to hide any output from the included script.
+        ob_start();
+        include $cron_script_path;
+        ob_end_clean(); // Discard the output.
+
+        // Restore the original $_GET array.
+        $_GET = $original_get;
+    }
+}
+// --- END CRON JOB LOGIC ---
+
+
 // Start session to check login status
 session_start();
 $isLoggedIn = isset($_SESSION['user_id']);

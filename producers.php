@@ -172,6 +172,9 @@ $conn->close();
         const starRatingHtml = getStarRating(product.avg_rating);
         const correctedImagePath = product.image_url.replace('assets/images', 'assets');
 
+        // Calculate available trays from total eggs
+        const availableTrays = product.tray_size > 0 ? Math.floor(product.stock / product.tray_size) : 0;
+
         return `
             <div class="col-12 col-md-6 col-lg-4 col-xl-3">
                 <div class="card h-100 shadow-sm border-0 product-card">
@@ -186,8 +189,8 @@ $conn->close();
                                     ${starRatingHtml} <span class="text-muted">(${product.total_reviews})</span>
                                 </div>
                             </div>
-                            ${product.stock > 0 ? `<span class="badge bg-success-light text-success">In Stock: ${product.stock}</span>` : '<span class="badge bg-danger-light text-danger">Out of Stock</span>'}
-                            <a href="order.php?producer_id=${product.producer.id}&product_type=${encodeURIComponent(product.product_type)}" class="btn btn-warning w-100 fw-bold mt-2 ${product.stock <= 0 ? 'disabled' : ''}">Order Now</a>
+                            ${availableTrays > 0 ? `<span class="badge bg-success-light text-success">In Stock: ${availableTrays} trays</span>` : '<span class="badge bg-danger-light text-danger">Out of Stock</span>'}
+                            <a href="order.php?producer_id=${product.producer.id}&product_type=${encodeURIComponent(product.product_type)}" class="btn btn-warning w-100 fw-bold mt-2 ${availableTrays <= 0 ? 'disabled' : ''}">Order Now</a>
                         </div>
                     </div>
                 </div>

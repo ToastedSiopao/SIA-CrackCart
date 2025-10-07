@@ -57,19 +57,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $type = trim($_POST['type']);
     $price = floatval($_POST['price']);
     $per = trim($_POST['per']);
-    $stock = intval($_POST['stock']);
+    $stock_in_trays = intval($_POST['stock_in_trays']);
     $tray_size = intval($_POST['tray_size']);
     $price_id = isset($_POST['price_id']) ? intval($_POST['price_id']) : null;
+    
+    $total_stock_in_eggs = $stock_in_trays * $tray_size;
 
     if ($price_id) { // This is an update
         $sql = "UPDATE PRICE SET PRODUCER_ID = ?, TYPE = ?, PRICE = ?, PER = ?, STOCK = ?, TRAY_SIZE = ? WHERE PRICE_ID = ?";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("isdsiii", $producer_id, $type, $price, $per, $stock, $tray_size, $price_id);
+        $stmt->bind_param("isdsiii", $producer_id, $type, $price, $per, $total_stock_in_eggs, $tray_size, $price_id);
         $action = "updated";
     } else { // This is an insert
         $sql = "INSERT INTO PRICE (PRODUCER_ID, TYPE, PRICE, PER, STOCK, TRAY_SIZE) VALUES (?, ?, ?, ?, ?, ?)";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("isdsii", $producer_id, $type, $price, $per, $stock, $tray_size);
+        $stmt->bind_param("isdsii", $producer_id, $type, $price, $per, $total_stock_in_eggs, $tray_size);
         $action = "added";
     }
 
@@ -166,17 +168,19 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
 
                         <div class="row">
                              <div class="col-md-6 mb-3">
-                                <label for="stock" class="form-label">Stock</label>
-                                <input type="number" class="form-control" id="stock" name="stock"
-                                       value="<?php echo $is_edit ? htmlspecialchars($product['STOCK']) : '0'; ?>" min="0" required>
+                                <label for="stock_in_trays" class="form-label">Stock (in Trays)</label>
+                                <input type="number" class="form-control" id="stock_in_trays" name="stock_in_trays"
+                                       value="<?php echo ($is_edit && $product['TRAY_SIZE'] > 0) ? htmlspecialchars(floor($product['STOCK'] / $product['TRAY_SIZE'])) : '0'; ?>" min="0" required>
+                                <small class="form-text text-muted">Enter the total number of trays in stock.</small>
                                 <div class="invalid-feedback">Please enter a valid stock quantity.</div>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label for="tray_size" class="form-label">Tray Size</label>
+                                <label for="tray_size" class="form-label">Tray Size (for pricing)</label>
                                 <select class="form-select" id="tray_size" name="tray_size">
                                     <option value="30" <?php echo ($is_edit && $product['TRAY_SIZE'] == 30) ? 'selected' : (!$is_edit ? 'selected' : ''); ?>>30 (Standard)</option>
                                     <option value="12" <?php echo ($is_edit && $product['TRAY_SIZE'] == 12) ? 'selected' : ''; ?>>12</option>
                                 </select>
+                                <small class="form-text text-muted">The number of eggs in the tray that corresponds to the Price above.</small>
                             </div>
                         </div>
 

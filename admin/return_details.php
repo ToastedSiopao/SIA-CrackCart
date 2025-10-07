@@ -7,8 +7,6 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role
 }
 
 include '../db_connect.php';
-include '../log_function.php';
-include '../notification_function.php'; // Added notification function
 
 $return_id = isset($_GET['return_id']) ? intval($_GET['return_id']) : 0;
 $return_statuses = ['pending', 'approved', 'rejected', 'processing', 'completed'];
@@ -18,95 +16,33 @@ $return_details = null;
 if ($return_id <= 0) {
     $error_message = "Invalid Return ID specified.";
 } else {
-    // Updated POST handling to include notifications and transactions
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
-        $admin_id = $_SESSION['user_id'];
-        $new_status = $_POST['return_status'];
-
-        if (in_array($new_status, $return_statuses)) {
-            $conn->begin_transaction();
-            try {
-                // Get user_id and order_id for notification
-                $stmt_info = $conn->prepare(
-                    "SELECT po.user_id, r.order_id 
-                     FROM returns r 
-                     JOIN product_orders po ON r.order_id = po.order_id 
-                     WHERE r.return_id = ?"
-                );
-                $stmt_info->bind_param("i", $return_id);
-                $stmt_info->execute();
-                $result_info = $stmt_info->get_result();
-                if (!($info = $result_info->fetch_assoc())) {
-                    throw new Exception("Return information not found.");
-                }
-                $user_id_for_notification = $info['user_id'];
-                $order_id_for_notification = $info['order_id'];
-                $stmt_info->close();
-
-                // Update return status
-                $stmt_update = $conn->prepare("UPDATE returns SET status = ? WHERE return_id = ?");
-                $stmt_update->bind_param("si", $new_status, $return_id);
-                $stmt_update->execute();
-                $stmt_update->close();
-
-                // Log the action
-                log_action('Return Status Update', "Admin ID: {$admin_id} changed return #{$return_id} to {$new_status}");
-
-                // Create a notification for the user
-                $message = "Your return request for order #{$order_id_for_notification} has been updated to '{$new_status}'.";
-                create_notification($conn, $user_id_for_notification, $message);
-                
-                $conn->commit();
-                header("Location: return_details.php?return_id=" . $return_id);
-                exit;
-            } catch (Exception $e) {
-                $conn->rollback();
-                $error_message = "Error updating status: " . $e->getMessage();
-            }
-        }
-    }
-
-    // User-provided query to fetch return details
-    $query = "
-        SELECT
-            r.return_id,
-            r.order_id,
-            r.reason,
-            r.status,
-            r.requested_at,
-            poi.product_type,
-            poi.quantity,
-            po.user_id AS customer_id,
-            CONCAT(u.FIRST_NAME, ' ', u.LAST_NAME) AS customer_name,
-            u.EMAIL AS customer_email
-        FROM
-            returns AS r
-        LEFT JOIN
-            product_orders AS po ON r.order_id = po.order_id
-        LEFT JOIN
-            USER AS u ON po.user_id = u.USER_ID
-        LEFT JOIN
-            product_order_items AS poi ON r.order_item_id = poi.order_item_id
-        WHERE
-            r.return_id = ?
-    ";
-    
+    // Fetch data for displaying the page
+    $query = "SELECT 
+                r.return_id, r.order_id, r.reason, r.status, r.image_path, 
+                r.approved_at, r.restock_processed, r.requested_at, 
+                poi.product_type, poi.quantity, poi.price_per_item, poi.tray_size, 
+                po.user_id AS customer_id, 
+                CONCAT(u.FIRST_NAME, ' ', u.LAST_NAME) AS customer_name, u.EMAIL AS customer_email
+              FROM returns AS r 
+              LEFT JOIN product_order_items AS poi ON r.order_item_id = poi.order_item_id
+              LEFT JOIN product_orders AS po ON r.order_id = po.order_id 
+              LEFT JOIN USER AS u ON po.user_id = u.USER_ID 
+              WHERE r.return_id = ?";
     $stmt = $conn->prepare($query);
-    
-    if ($stmt === false) {
-        $error_message = "Database query preparation failed: " . htmlspecialchars($conn->error);
-    } else {
+    if ($stmt) {
         $stmt->bind_param("i", $return_id);
         if ($stmt->execute()) {
             $result = $stmt->get_result();
             $return_details = $result->fetch_assoc();
             if (!$return_details) {
-                $error_message = "Return request not found. This may be an old, broken record.";
+                $error_message = "Return request not found.";
             }
         } else {
-            $error_message = "Database query execution failed: " . htmlspecialchars($stmt->error);
+            $error_message = "Query execution failed: " . htmlspecialchars($stmt->error);
         }
         $stmt->close();
+    } else {
+        $error_message = "Query preparation failed: " . htmlspecialchars($conn->error);
     }
 }
 
@@ -119,7 +55,8 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Return Details - CrackCart Admin</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="admin-styles.css?v=2.2" rel="stylesheet"> 
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="admin-styles.css?v=2.5" rel="stylesheet">
 </head>
 <body>
     <?php include('admin_header.php'); ?>
@@ -132,47 +69,50 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
                 <div class="card shadow-sm border-0 p-4">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h4 class="mb-0">Return Request Details</h4>
-                        <a href="returns.php" class="btn btn-outline-secondary">&larr; All Returns</a>
+                        <a href="manage_returns.php" class="btn btn-outline-secondary">&larr; All Returns</a>
                     </div>
 
+                    <?php if (isset($_GET['status']) && $_GET['status'] == 'updated'): ?>
+                        <div class="alert alert-success alert-dismissible fade show">Status updated successfully. <button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+                    <?php endif; ?>
                     <?php if ($error_message): ?>
                         <div class="alert alert-danger"><?php echo $error_message; ?></div>
                     <?php elseif ($return_details): ?>
+                        <?php 
+                            $return_value = (float)$return_details['price_per_item'] * (int)$return_details['quantity'];
+                        ?>
                         <div class="row">
                             <div class="col-lg-8">
                                 <div class="card mb-4">
-                                    <div class="card-header">Return #<?php echo htmlspecialchars($return_details['return_id']); ?></div>
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <span>Return #<?php echo htmlspecialchars($return_details['return_id']); ?></span>
+                                        <span class="badge bg-<?php echo strtolower($return_details['status']) == 'approved' ? 'success' : (strtolower($return_details['status']) == 'rejected' ? 'danger' : 'warning text-dark'); ?>"><?php echo htmlspecialchars(ucfirst($return_details['status'])); ?></span>
+                                    </div>
                                     <div class="card-body">
-                                        <h5>Customer Information</h5>
-                                        <p><strong>Customer ID:</strong> <?php echo htmlspecialchars($return_details['customer_id'] ?? 'N/A'); ?></p>
-                                        <p><strong>Customer Name:</strong> <?php echo htmlspecialchars($return_details['customer_name'] ?? 'Unknown User'); ?> (<?php echo htmlspecialchars($return_details['customer_email'] ?? 'N/A'); ?>)</p>
-                                        <p><strong>Order ID:</strong> <a href="order_details.php?order_id=<?php echo $return_details['order_id']; ?>"><?php echo htmlspecialchars($return_details['order_id']); ?></a></p>
+                                        <h5 class="card-title">Item Details</h5>
+                                        <p><strong>Product:</strong> <?php echo htmlspecialchars($return_details['product_type']); ?></p>
+                                        <p><strong>Quantity Returned:</strong> <?php echo htmlspecialchars($return_details['quantity']); ?> tray(s) of <?php echo htmlspecialchars($return_details['tray_size']); ?></p>
+                                        <p><strong>Calculated Return Value:</strong> ₱<?php echo number_format($return_value, 2); ?></p>
                                         <hr>
-                                        <h5>Return Details</h5>
-                                        <p><strong>Product:</strong> <?php echo htmlspecialchars($return_details['product_type'] ?? 'N/A'); ?></p>
-                                        <p><strong>Quantity:</strong> <?php echo htmlspecialchars($return_details['quantity'] ?? 'N/A'); ?></p>
-                                        <p><strong>Reason:</strong> <?php echo htmlspecialchars(ucfirst($return_details['reason'])); ?></p>
+                                        <h5 class="card-title mt-3">Return Information</h5>
+                                        <p><strong>Reason for Return:</strong> <?php echo nl2br(htmlspecialchars($return_details['reason'])); ?></p>
                                         <p><strong>Date Requested:</strong> <?php echo date("M d, Y, h:i A", strtotime($return_details['requested_at'])); ?></p>
+                                        <?php if (!empty($return_details['image_path'])): ?>
+                                            <p><strong>Attachment:</strong></p>
+                                            <a href="#" data-bs-toggle="modal" data-bs-target="#imageModal" data-bs-image="../<?php echo htmlspecialchars($return_details['image_path']); ?>">
+                                                <img src="../<?php echo htmlspecialchars($return_details['image_path']); ?>" alt="Return Attachment" class="img-thumbnail" style="max-width: 200px; max-height: 200px;">
+                                            </a>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-lg-4">
                                 <div class="card position-sticky" style="top: 20px;">
-                                    <div class="card-header">Return Actions</div>
+                                    <div class="card-header">Customer Information</div>
                                     <div class="card-body">
-                                        <p>Current Status: <span class="badge bg-primary fs-6"><?php echo htmlspecialchars($return_details['status']); ?></span></p>
-                                        <hr>
-                                        <form method="POST">
-                                            <label for="return_status" class="form-label"><strong>Update Status</strong></label>
-                                            <div class="input-group">
-                                                <select class="form-select" id="return_status" name="return_status">
-                                                    <?php foreach ($return_statuses as $status): ?>
-                                                        <option value="<?php echo $status; ?>" <?php echo ($return_details['status'] == $status) ? 'selected' : ''; ?>><?php echo ucfirst($status); ?></option>
-                                                    <?php endforeach; ?>
-                                                </select>
-                                                <button class="btn btn-primary" type="submit" name="update_status">Update</button>
-                                            </div>
-                                        </form>
+                                        <p><strong>Name:</strong> <a href="manage_users.php?user_id=<?php echo $return_details['customer_id']; ?>"><?php echo htmlspecialchars($return_details['customer_name']); ?></a></p>
+                                        <p><strong>Email:</strong> <?php echo htmlspecialchars($return_details['customer_email']); ?></p>
+                                        <p><strong>Order:</strong> <a href="order_details.php?order_id=<?php echo $return_details['order_id']; ?>">View Order #<?php echo htmlspecialchars($return_details['order_id']); ?></a></p>
                                     </div>
                                 </div>
                             </div>
@@ -182,6 +122,32 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
             </main>
         </div>
     </div>
+
+    <!-- Image Modal -->
+    <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Return Image</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img src="" id="modalImage" class="img-fluid" alt="Return Image">
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    const imageModal = document.getElementById('imageModal');
+    if (imageModal) {
+        imageModal.addEventListener('show.bs.modal', event => {
+            const triggerElement = event.relatedTarget;
+            const imageSrc = triggerElement.getAttribute('data-bs-image');
+            document.getElementById('modalImage').src = imageSrc;
+        });
+    }
+    </script>
 </body>
 </html>
