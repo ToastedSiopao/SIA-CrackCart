@@ -127,8 +127,12 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
 
             const deleteProduct = async (productId) => {
                  try {
-                    const response = await fetch(`api/delete_product.php?id=${productId}`, {
-                        method: 'DELETE'
+                    const formData = new FormData();
+                    formData.append('id', productId);
+
+                    const response = await fetch('api/delete_product.php', {
+                        method: 'POST',
+                        body: formData
                     });
                     const result = await response.json();
 

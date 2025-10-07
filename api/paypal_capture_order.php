@@ -87,11 +87,13 @@ try {
         $result = $stmt_check_stock->get_result();
         $product_stock = $result->fetch_assoc();
 
-        if (!$product_stock || $product_stock['STOCK'] < $item['quantity']) {
+        $stock_to_reduce = ($item['tray_size'] == 12) ? $item['quantity'] * 0.5 : $item['quantity'];
+
+        if (!$product_stock || $product_stock['STOCK'] < $stock_to_reduce) {
             throw new Exception("Insufficient stock for product type: " . $item['product_type']);
         }
 
-        $stmt_update_stock->bind_param("iis", $item['quantity'], $item['producer_id'], $item['product_type']);
+        $stmt_update_stock->bind_param("dis", $stock_to_reduce, $item['producer_id'], $item['product_type']);
         $stmt_update_stock->execute();
     }
 
@@ -111,9 +113,9 @@ try {
     $stmt_update_payment->bind_param("ii", $local_order_id, $payment_id);
     $stmt_update_payment->execute();
 
-    $stmt_items = $conn->prepare("INSERT INTO product_order_items (order_id, producer_id, product_type, quantity, price_per_item) VALUES (?, ?, ?, ?, ?)");
+    $stmt_items = $conn->prepare("INSERT INTO product_order_items (order_id, producer_id, product_type, quantity, price_per_item, tray_size) VALUES (?, ?, ?, ?, ?, ?)");
     foreach ($validated_cart as $item) {
-        $stmt_items->bind_param("iisid", $local_order_id, $item['producer_id'], $item['product_type'], $item['quantity'], $item['price']);
+        $stmt_items->bind_param("iisidi", $local_order_id, $item['producer_id'], $item['product_type'], $item['quantity'], $item['price'], $item['tray_size']);
         $stmt_items->execute();
     }
 

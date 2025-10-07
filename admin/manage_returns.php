@@ -1,6 +1,5 @@
 <?php
 session_start();
-// Security check
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
     header("Location: ../index.php?error=Please log in to access the admin panel.");
     exit();
@@ -8,7 +7,6 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role
 
 include '../db_connect.php';
 
-// Fetch return requests along with the order total
 $query = "SELECT 
             r.return_id, 
             r.order_id, 
@@ -16,6 +14,7 @@ $query = "SELECT
             r.reason, 
             r.status, 
             r.requested_at, 
+            r.image_path, -- Fetch the image path
             CONCAT(u.FIRST_NAME, ' ', u.LAST_NAME) as customer_name, 
             poi.product_type
           FROM returns r
@@ -44,7 +43,7 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
     <title>Manage Returns - CrackCart</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="admin-styles.css?v=1.6" rel="stylesheet"> 
+    <link href="admin-styles.css?v=1.6" rel="stylesheet">
 </head>
 <body>
     <?php include('admin_header.php'); ?>
@@ -115,13 +114,23 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
                                             <strong>Requested:</strong> <?php echo date("M j, Y, g:i a", strtotime($return['requested_at'])); ?>
                                         </p>
                                         <hr>
-                                        <p class="card-text mb-auto">
-                                            <strong>Reason:</strong><br>
-                                            <?php echo nl2br(htmlspecialchars($return['reason'])); ?>
-                                        </p>
+                                        <div class="mb-auto">
+                                            <p class="card-text">
+                                                <strong>Reason:</strong><br>
+                                                <?php echo nl2br(htmlspecialchars($return['reason'])); ?>
+                                            </p>
+                                            <?php if (!empty($return['image_path'])): ?>
+                                                <div class="mt-2">
+                                                    <strong>Attachment:</strong><br>
+                                                    <a href="#" data-bs-toggle="modal" data-bs-target="#imageModal" data-bs-image="../<?php echo htmlspecialchars($return['image_path']); ?>">
+                                                        <img src="../<?php echo htmlspecialchars($return['image_path']); ?>" alt="Damaged Item" class="img-fluid rounded" style="max-height: 100px; cursor: pointer;">
+                                                    </a>
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
                                     </div>
                                     <?php if ($status === 'pending' || $status === 'requested'): ?>
-                                    <div class="card-footer bg-white text-center border-top-0 pt-0">
+                                    <div class="card-footer bg-white text-center">
                                         <button class="btn btn-success btn-sm me-2" onclick="updateReturnStatus(<?php echo $return['return_id']; ?>, 'approved')">
                                             <i class="bi bi-check-circle"></i> Approve
                                         </button>
@@ -139,6 +148,21 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
         </div>
     </div>
 
+    <!-- Image Modal -->
+    <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="imageModalLabel">Return Image</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body text-center">
+            <img src="" id="modalImage" class="img-fluid" alt="Return Image">
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
     function updateReturnStatus(returnId, newStatus) {
@@ -146,7 +170,7 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
             return;
         }
 
-        fetch('api/update_return_status.php', { // Corrected Path
+        fetch('api/update_return_status.php', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ return_id: returnId, status: newStatus })
@@ -169,6 +193,16 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
         .catch(error => {
             console.error('Error:', error);
             alert('An error occurred: ' + error.message);
+        });
+    }
+
+    const imageModal = document.getElementById('imageModal');
+    if (imageModal) {
+        imageModal.addEventListener('show.bs.modal', event => {
+            const triggerElement = event.relatedTarget;
+            const imageSrc = triggerElement.getAttribute('data-bs-image');
+            const modalImage = imageModal.querySelector('#modalImage');
+            modalImage.src = imageSrc;
         });
     }
     </script>

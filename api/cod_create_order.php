@@ -62,7 +62,14 @@ try {
         if ($real_price === null) {
             throw new Exception("Product '{$item['product_type']}' is no longer available.");
         }
-        $item['price'] = $real_price;
+        
+        // Adjust price for 12-piece tray
+        if ($item['tray_size'] == 12) {
+            $item['price'] = $real_price / 2;
+        } else {
+            $item['price'] = $real_price;
+        }
+        
         $subtotal += $item['price'] * $item['quantity'];
     }
     unset($item); 
@@ -86,14 +93,16 @@ try {
     $stmt_update_payment->bind_param("ii", $order_id, $payment_id);
     $stmt_update_payment->execute();
 
-    $stmt_items = $conn->prepare("INSERT INTO product_order_items (order_id, producer_id, product_type, quantity, price_per_item) VALUES (?, ?, ?, ?, ?)");
+    $stmt_items = $conn->prepare("INSERT INTO product_order_items (order_id, producer_id, product_type, quantity, price_per_item, tray_size) VALUES (?, ?, ?, ?, ?, ?)");
     $stmt_stock = $conn->prepare("UPDATE PRICE SET STOCK = STOCK - ? WHERE PRODUCER_ID = ? AND TYPE = ?");
 
     foreach ($cart as $item) {
-        $stmt_items->bind_param("iisid", $order_id, $item['producer_id'], $item['product_type'], $item['quantity'], $item['price']);
+        $stmt_items->bind_param("iisidi", $order_id, $item['producer_id'], $item['product_type'], $item['quantity'], $item['price'], $item['tray_size']);
         $stmt_items->execute();
 
-        $stmt_stock->bind_param("iis", $item['quantity'], $item['producer_id'], $item['product_type']);
+        // Adjust stock reduction for 12-piece tray
+        $stock_to_reduce = ($item['tray_size'] == 12) ? $item['quantity'] * 0.5 : $item['quantity'];
+        $stmt_stock->bind_param("dis", $stock_to_reduce, $item['producer_id'], $item['product_type']);
         $stmt_stock->execute();
     }
 

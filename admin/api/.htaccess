@@ -1,0 +1,10 @@
+<Limit GET POST PUT DELETE OPTIONS>
+    Require all granted
+</Limit>
+<LimitExcept GET POST PUT DELETE OPTIONS>
+    Require all denied
+</LimitExcept>
+
+Header set Access-Control-Allow-Origin "*"
+Header set Access-Control-Allow-Methods "GET, POST, DELETE, OPTIONS"
+Header set Access-Control-Allow-Headers "Content-Type, Authorization"
