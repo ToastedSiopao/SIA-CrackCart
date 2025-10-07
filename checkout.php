@@ -91,12 +91,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_order'])) {
               <?php foreach ($shipment as $service_tier => $details): ?>
                 <li class="list-group-item d-flex justify-content-between align-items-center">
                   <?php echo htmlspecialchars($service_tier); ?> (x<?php echo $details['quantity']; ?>)
-                  <span>$<?php echo number_format($details['quantity'] * $details['price'], 2); ?></span>
+                  <span>₱<?php echo number_format($details['quantity'] * $details['price'], 2); ?></span>
                 </li>
               <?php endforeach; ?>
             </ul>
             <div class="card-footer text-end">
-              <strong>Subtotal: $<?php echo number_format($subtotal, 2); ?></strong>
+              <strong>Subtotal: ₱<?php echo number_format($subtotal, 2); ?></strong>
             </div>
           </div>
         </div>

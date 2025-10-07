@@ -158,7 +158,7 @@ include("api/paypal_config.php");
                         <i class="bi bi-cart3" style="font-size: 4rem; color: #dee2e6;"></i>
                         <h3 class="card-title mt-4">Your Cart is Empty</h3>
                         <p class="card-text text-muted">It looks like you haven\'t added anything to your cart. Let\'s change that!</p>
-                        <a href="products.php" class="btn btn-primary mt-3">
+                        <a href="producers.php" class="btn btn-primary mt-3">
                             <i class="bi bi-bag-check-fill me-2"></i>Start Shopping
                         </a>
                     </div>

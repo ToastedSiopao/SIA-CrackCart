@@ -109,7 +109,7 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
                                                             <td><?php echo htmlspecialchars($item['product_name']); ?></td>
                                                             <td><?php echo htmlspecialchars($item['producer_name']); ?></td>
                                                             <td>x <?php echo htmlspecialchars($item['quantity']); ?></td>
-                                                            <td>$<?php echo number_format($item['price_per_item'], 2); ?></td>
+                                                            <td>₱<?php echo number_format($item['price_per_item'], 2); ?></td>
                                                         </tr>
                                                     <?php endwhile; ?>
                                                 </tbody>
@@ -123,7 +123,7 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
                                     <div class="card-header">Order Summary</div>
                                     <div class="card-body">
                                         <p><strong>Status:</strong> <span class="badge bg-success"><?php echo ucfirst(htmlspecialchars($order['status'])); ?></span></p>
-                                        <p><strong>Total Amount:</strong> $<?php echo number_format($order['total_amount'], 2); ?></p>
+                                        <p><strong>Total Amount:</strong> ₱<?php echo number_format($order['total_amount'], 2); ?></p>
                                         <p><strong>Payment Method:</strong> <?php echo htmlspecialchars($order['payment_method']); ?></p>
                                         <hr>
                                         <h5 class="card-title">Update Status</h5>
