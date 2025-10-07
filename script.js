@@ -1,4 +1,4 @@
- // Password visibility toggle
+// Password visibility toggle
 function initPasswordToggle() {
   const toggleButtons = document.querySelectorAll('[id^="toggle"]');
   
@@ -81,13 +81,13 @@ function initLoginForm() {
     const submitBtn = this.querySelector('button[type="submit"]');
     const formData = new FormData(this);
 
-    // Show loading state
     submitBtn.classList.add('loading');
     submitBtn.disabled = true;
 
     fetch('login_process.php', {
       method: 'POST',
-      body: formData
+      body: formData,
+      credentials: 'include' // ensure session persistence
     })
     .then(async response => {
         const data = await response.json();
@@ -101,16 +101,16 @@ function initLoginForm() {
         }
 
         if (data.success && data.two_factor) {
-            window.location.href = '2fa_page.html';
-        } else if (data.success) {
-            window.location.href = 'dashboard.php'; 
-        }
+    window.location.href = '2fa_page.php';
+} else if (data.success) {
+    window.location.href = 'dashboard.php';
+}
+
     })
-    .catch(error => {
+    .catch(() => {
       showFormFeedback('danger', 'An unexpected error occurred. Please try again.');
     })
     .finally(() => {
-      // Hide loading state
       submitBtn.classList.remove('loading');
       submitBtn.disabled = false;
     });
@@ -118,76 +118,79 @@ function initLoginForm() {
 }
 
 function handleLockout(message, form) {
-    const submitBtn = form.querySelector('button[type="submit"]');
-    const emailField = form.querySelector('[name="email"]');
-    const passwordField = form.querySelector('[name="password"]');
+  const submitBtn = form.querySelector('button[type="submit"]');
+  const emailField = form.querySelector('[name="email"]');
+  const passwordField = form.querySelector('[name="password"]');
 
-    // Extract remaining seconds from the message
-    const remaining = parseInt(message.match(/\d+/)[0]);
-    if (isNaN(remaining)) return;
+  const remaining = parseInt(message.match(/\d+/)?.[0]);
+  if (isNaN(remaining)) return;
 
-    // Disable form fields
-    submitBtn.disabled = true;
-    emailField.disabled = true;
-    passwordField.disabled = true;
+  submitBtn.disabled = true;
+  emailField.disabled = true;
+  passwordField.disabled = true;
 
-    // Start countdown
-    let countdown = remaining;
-    const intervalId = setInterval(() => {
-        const minutes = Math.floor(countdown / 60);
-        const seconds = countdown % 60;
-        const timeLeft = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        
-        showFormFeedback('warning', `Too many failed attempts. Please try again in ${timeLeft}.`);
-        
-        if (countdown <= 0) {
-            clearInterval(intervalId);
-            // Re-enable form fields
-            submitBtn.disabled = false;
-            emailField.disabled = false;
-            passwordField.disabled = false;
-            showFormFeedback('success', 'You can now try to log in again.');
-        }
-        countdown--;
-    }, 1000);
+  let countdown = remaining;
+  const intervalId = setInterval(() => {
+    const minutes = Math.floor(countdown / 60);
+    const seconds = countdown % 60;
+    const timeLeft = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    
+    showFormFeedback('warning', `Too many failed attempts. Please try again in ${timeLeft}.`);
+    
+    if (countdown <= 0) {
+      clearInterval(intervalId);
+      submitBtn.disabled = false;
+      emailField.disabled = false;
+      passwordField.disabled = false;
+      showFormFeedback('success', 'You can now try to log in again.');
+    }
+    countdown--;
+  }, 1000);
 }
 
 // 2FA form handler
-function initTwoFactorForm() {
-  const twoFactorForm = document.getElementById('twoFactorForm');
-  if (!twoFactorForm) return;
+/**function initTwoFactorForm() {
+  const form = document.getElementById('twoFactorForm');
+  if (!form) {
+    console.error("❌ #twoFactorForm not found.");
+    return;
+  }
 
-  twoFactorForm.addEventListener('submit', function(e) {
+  form.addEventListener('submit', async e => {
     e.preventDefault();
-    const submitBtn = this.querySelector('button[type="submit"]');
-    const formData = new FormData(this);
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const formData = new FormData(form);
 
-    // Show loading state
-    submitBtn.classList.add('loading');
     submitBtn.disabled = true;
 
-    fetch('verify_2fa.php', {
-      method: 'POST',
-      body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.error) {
-        handleFormErrors(data.error, this);
-      } else if (data.success) {
-        window.location.href = 'dashboard.php';
+    try {
+      const response = await fetch('verify_2fa.php', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      });
+      const data = await response.json();
+      console.log("2FA Response:", data);
+
+      if (data.status && data.status.toLowerCase() === 'success') {
+        console.log("✅ SUCCESS BLOCK REACHED");
+        alert("✅ Verification successful! Redirecting now...");
+        setTimeout(() => {
+          window.location.replace('dashboard.php');
+        }, 1500);
+      } else {
+        console.warn("⚠️ Not success:", data);
+        showFormFeedback('danger', data.message || 'Verification failed.');
       }
-    })
-    .catch(error => {
-      showFormFeedback('danger', 'An unexpected error occurred. Please try again.');
-    })
-    .finally(() => {
-      // Hide loading state
-      submitBtn.classList.remove('loading');
+    } catch (err) {
+      console.error("2FA Fetch Error:", err);
+      showFormFeedback('danger', 'An unexpected error occurred.');
+    } finally {
       submitBtn.disabled = false;
-    });
+    }
   });
-}
+}**/
+
 
 
 // Signup form handler
@@ -205,7 +208,8 @@ function initSignupForm() {
 
     fetch('signup_process.php', {
       method: 'POST',
-      body: formData
+      body: formData,
+      credentials: 'same-origin'
     })
     .then(response => response.json())
     .then(data => {
@@ -213,12 +217,10 @@ function initSignupForm() {
         handleFormErrors(data.error, this);
       } else if (data.success) {
         showFormFeedback('success', 'Account created successfully! Redirecting to login...');
-        setTimeout(() => {
-          window.location.href = 'login.php';
-        }, 3000);
+        setTimeout(() => window.location.href = 'login.php', 3000);
       }
     })
-    .catch(error => {
+    .catch(() => {
       showFormFeedback('danger', 'An unexpected error occurred. Please try again.');
     })
     .finally(() => {
@@ -230,31 +232,28 @@ function initSignupForm() {
 
 // Handle form errors from server
 function handleFormErrors(errors, form) {
-  // Clear previous errors
   form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
   form.querySelectorAll('.invalid-feedback').forEach(el => el.remove());
 
   if (Array.isArray(errors)) {
-      errors.forEach(error => {
-        if (error.field) {
-          const inputField = form.querySelector(`[name="${error.field}"]`);
-          if (inputField) {
-            inputField.classList.add('is-invalid');
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'invalid-feedback';
-            errorDiv.textContent = error.message;
-            inputField.parentNode.appendChild(errorDiv);
-          }
-        } else {
-          // Display general error messages
-          showFormFeedback('danger', error.message);
+    errors.forEach(error => {
+      if (error.field) {
+        const inputField = form.querySelector(`[name="${error.field}"]`);
+        if (inputField) {
+          inputField.classList.add('is-invalid');
+          const errorDiv = document.createElement('div');
+          errorDiv.className = 'invalid-feedback';
+          errorDiv.textContent = error.message;
+          inputField.parentNode.appendChild(errorDiv);
         }
+      } else {
+        showFormFeedback('danger', error.message);
+      }
     });
   } else if (errors.message) {
-      showFormFeedback('danger', errors.message);
+    showFormFeedback('danger', errors.message);
   }
 }
-
 
 // Real-time password confirmation validation
 function initPasswordConfirmation() {
@@ -282,23 +281,23 @@ function initPasswordConfirmation() {
   }
 }
 
+// Notification system
 function initNotificationSystem() {
   const notificationDropdown = document.getElementById('notificationDropdown');
   const notificationList = document.getElementById('notification-list');
   const notificationCount = document.getElementById('notification-count');
-
-  if (!notificationDropdown) return; // Exit if notification elements aren't on the page
+  if (!notificationDropdown) return;
 
   function fetchNotifications() {
-    fetch('notifications.php')
+    fetch('notifications.php', { credentials: 'same-origin' })
       .then(response => response.json())
       .then(data => {
+        notificationList.innerHTML = '';
         if (data.error) {
-          console.error('Error fetching notifications:', data.error);
+          console.error('Notification error:', data.error);
           return;
         }
 
-        notificationList.innerHTML = ''; // Clear existing notifications
         if (data.length > 0) {
           notificationCount.textContent = data.length;
           notificationCount.style.display = 'block';
@@ -314,7 +313,7 @@ function initNotificationSystem() {
                 <small class="text-muted">${new Date(notification.CREATED_AT).toLocaleTimeString()}</small>
               </div>
             `;
-            link.addEventListener('click', (e) => {
+            link.addEventListener('click', e => {
               e.preventDefault();
               markAsRead(notification.NOTIFICATION_ID);
             });
@@ -330,88 +329,60 @@ function initNotificationSystem() {
       })
       .catch(error => {
         console.error('Fetch error:', error);
-        const listItem = document.createElement('li');
-        listItem.innerHTML = '<a class="dropdown-item text-danger" href="#">Error loading notifications</a>';
-        notificationList.appendChild(listItem);
       });
   }
 
   function markAsRead(notificationId) {
-    fetch(`notifications.php?mark_as_read=${notificationId}`)
-      .then(response => response.json())
-      .then(data => {
-        // After marking as read, re-fetch notifications to update the list
-        fetchNotifications();
-      })
-      .catch(error => {
-        console.error('Error marking notification as read:', error);
-      });
+    fetch(`notifications.php?mark_as_read=${notificationId}`, { credentials: 'same-origin' })
+      .then(() => fetchNotifications())
+      .catch(error => console.error('Error marking notification as read:', error));
   }
 
-  // Fetch notifications when the page loads
   fetchNotifications();
-
-  // Poll for new notifications every 10 minutes
   setInterval(fetchNotifications, 600000);
 }
 
-
-// Initialize all functionality when DOM is loaded
+// Initialize all functionality
 document.addEventListener('DOMContentLoaded', function() {
   initPasswordToggle();
   initPasswordStrength();
   initLoginForm();
   initSignupForm();
-  initTwoFactorForm();
+  //initTwoFactorForm();
   initPasswordConfirmation();
   initNotificationSystem();
   
-  // Add smooth scrolling for anchor links
   document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function(e) {
       e.preventDefault();
       const target = document.querySelector(this.getAttribute('href'));
       if (target) {
-        target.scrollIntoView({
-          behavior: 'smooth'
-        });
+        target.scrollIntoView({ behavior: 'smooth' });
       }
     });
   });
 });
 
-// Handle form submission feedback
+// Display alerts
 function showFormFeedback(type, message) {
-    const feedbackContainer = document.getElementById('formFeedback');
-    if (!feedbackContainer) {
-        console.error('No #formFeedback container found on the page.');
-        return;
-    }
+  const feedbackContainer = document.getElementById('formFeedback');
+  if (!feedbackContainer) return console.error('No #formFeedback found.');
 
-    const alert = document.createElement('div');
-    alert.className = `alert alert-${type} alert-dismissible fade show`;
-    alert.role = 'alert';
-    alert.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    `;
+  const alert = document.createElement('div');
+  alert.className = `alert alert-${type} alert-dismissible fade show`;
+  alert.role = 'alert';
+  alert.innerHTML = `
+    ${message}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  `;
 
-    // Clear previous feedback and append the new one
-    feedbackContainer.innerHTML = '';
-    feedbackContainer.appendChild(alert);
+  feedbackContainer.innerHTML = '';
+  feedbackContainer.appendChild(alert);
 
-    // Auto-remove after 5 seconds if it's not a countdown
-    if (!message.includes('Please try again in')) {
-        setTimeout(() => {
-            if (alert.parentNode) {
-                alert.remove();
-            }
-        }, 5000);
-    }
+  if (!message.includes('Please try again in')) {
+    setTimeout(() => alert.remove(), 5000);
+  }
 }
 
-
-// Export functions for potential use in other scripts
-window.CrackCartAuth = {
-  showFormFeedback
-};
+// Export functions
+window.CrackCartAuth = { showFormFeedback };

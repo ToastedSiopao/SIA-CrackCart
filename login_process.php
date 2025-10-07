@@ -6,9 +6,8 @@ require_once 'config.php';
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-header('Content-Type: application/json');
-
 session_start();
+header('Content-Type: application/json');
 include("db_connect.php");
 
 // --- Rate Limiting ---
@@ -62,13 +61,17 @@ try {
 
             // --- 2FA Code Generation and Mailing ---
             $two_fa_code = rand(100000, 999999);
+
+            // Store session values for verification
+            $_SESSION['2fa_user'] = $user['USER_ID'];
             $_SESSION['2fa_code'] = (string)$two_fa_code;
-            $_SESSION['2fa_user_id'] = $user['USER_ID'];
+            $_SESSION['2fa_expires'] = time() + 300; // 5 minutes
+            error_log('Login session set: ' . print_r($_SESSION, true));
 
             $mail = new PHPMailer(true);
 
             try {
-                //Server settings
+                // Server settings
                 $mail->isSMTP();
                 $mail->Host       = 'smtp-relay.brevo.com';
                 $mail->SMTPAuth   = true;
@@ -77,17 +80,20 @@ try {
                 $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
                 $mail->Port       = 587;
 
-                //Recipients
+                // Recipients
                 $mail->setFrom('crackcart.auth@gmail.com', 'CrackCart Security');
                 $mail->addAddress($email);
 
-                //Content
+                // Content
                 $mail->isHTML(true);
                 $mail->Subject = 'Your Two-Factor Authentication Code';
                 $mail->Body    = "Your 2FA code is: <b>{$two_fa_code}</b>. It will expire in 5 minutes.";
                 $mail->AltBody = "Your 2FA code is: {$two_fa_code}. It will expire in 5 minutes.";
 
+                // Send the 2FA email
                 $mail->send();
+
+                // Respond to frontend
                 echo json_encode(['success' => true, 'two_factor' => true]);
                 exit();
 
@@ -96,6 +102,7 @@ try {
                 echo json_encode(['error' => ['message' => "Could not send 2FA code. Mailer Error: {$mail->ErrorInfo}"]]);
                 exit();
             }
+
         } else {
             // Increment failed attempts
             $_SESSION['login_attempts'] = ($_SESSION['login_attempts'] ?? 0) + 1;
@@ -110,7 +117,6 @@ try {
                 $insert_notification_stmt = $conn->prepare("INSERT INTO NOTIFICATION (USER_ID, MESSAGE, TYPE) VALUES (?, ?, ?)");
                 $insert_notification_stmt->bind_param("iss", $user['USER_ID'], $notification_message, $notification_type);
                 $insert_notification_stmt->execute();
-
 
                 http_response_code(429);
                 echo json_encode(['error' => ['message' => "Too many failed attempts. You are locked out for 5 minutes."]]);
