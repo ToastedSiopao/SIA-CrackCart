@@ -35,6 +35,15 @@ $spent_data = $result_spent->fetch_assoc();
 $total_spent = $spent_data['total_spent'] ?? 0;
 $stmt_spent->close();
 
+// Fetch available coupons count
+$stmt_coupons = $conn->prepare("SELECT COUNT(*) as available_coupons FROM coupons WHERE user_id = ? AND is_used = 0 AND expiry_date >= CURDATE()");
+$stmt_coupons->bind_param("i", $user_id);
+$stmt_coupons->execute();
+$result_coupons = $stmt_coupons->get_result();
+$coupons_data = $result_coupons->fetch_assoc();
+$available_coupons = $coupons_data['available_coupons'];
+$stmt_coupons->close();
+
 $conn->close();
 ?>
 <!DOCTYPE html>
@@ -46,7 +55,7 @@ $conn->close();
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
-  <link href="dashboard-styles.css?v=2.5" rel="stylesheet"> 
+  <link href="dashboard-styles.css?v=2.6" rel="stylesheet"> 
 </head>
 <body>
   <?php include 'navbar.php'; ?>
@@ -63,18 +72,18 @@ $conn->close();
           <h4 class="mb-4">Welcome back, <?php echo htmlspecialchars($user_name); ?> 👋</h4>
           <div class="row g-3">
             <div class="col-6 col-md-3">
-              <div class="category-card">
-                <i class="bi bi-cart3"></i>
-                <p class="mb-0">Total Orders</p>
-                <h5><?php echo $total_orders; ?></h5>
-              </div>
+                <a href="my_orders.php" class="category-card text-decoration-none">
+                    <i class="bi bi-cart3"></i>
+                    <p class="mb-0">Total Orders</p>
+                    <h5><?php echo $total_orders; ?></h5>
+                </a>
             </div>
             <div class="col-6 col-md-3">
-              <div class="category-card">
-                <i class="bi bi-box-seam"></i>
-                <p class="mb-0">Pending Orders</p>
-                <h5><?php echo $pending_orders; ?></h5>
-              </div>
+                <a href="my_orders.php?status=pending" class="category-card text-decoration-none">
+                    <i class="bi bi-box-seam"></i>
+                    <p class="mb-0">Pending Orders</p>
+                    <h5><?php echo $pending_orders; ?></h5>
+                </a>
             </div>
             <div class="col-6 col-md-3">
               <div class="category-card">
@@ -84,11 +93,11 @@ $conn->close();
               </div>
             </div>
             <div class="col-6 col-md-3">
-              <div class="category-card active">
-                <i class="bi bi-receipt"></i>
-                <p class="mb-0">Bills</p>
-                <h5>0</h5>
-              </div>
+              <a href="my_coupons.php" class="category-card text-decoration-none">
+                <i class="bi bi-ticket-percent"></i>
+                <p class="mb-0">My Coupons</p>
+                <h5><?php echo $available_coupons; ?></h5>
+              </a>
             </div>
           </div>
         </div>
