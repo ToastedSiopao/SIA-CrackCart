@@ -22,7 +22,7 @@ if (isset($_GET['producer_id']) && !empty($_GET['producer_id'])) {
             throw new Exception('Producer not found.');
         }
 
-        $stmt = $conn->prepare("SELECT PRICE_ID, TYPE, PRICE, PER, STOCK FROM PRICE WHERE PRODUCER_ID = ? AND STATUS = 'active' ORDER BY TYPE ASC");
+        $stmt = $conn->prepare("SELECT PRICE_ID, TYPE, PRICE, PER, STOCK, tray_size FROM PRICE WHERE PRODUCER_ID = ? AND STATUS = 'active' ORDER BY TYPE ASC");
         $stmt->bind_param('i', $producer_id);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -33,7 +33,8 @@ if (isset($_GET['producer_id']) && !empty($_GET['producer_id'])) {
                 'type' => $row['TYPE'],
                 'price' => floatval($row['PRICE']),
                 'per' => $row['PER'],
-                'stock' => intval($row['STOCK'])
+                'stock' => intval($row['STOCK']),
+                'tray_size' => intval($row['tray_size'])
             ];
         }
         $stmt->close();
@@ -64,7 +65,7 @@ if (isset($_GET['producer_id']) && !empty($_GET['producer_id'])) {
                     pr.PRICE, 
                     pr.PER, 
                     pr.STOCK, 
-                    pr.TRAY_SIZE,
+                    pr.tray_size,
                     pr.DATE_CREATED,
                     (SELECT AVG(rating) FROM product_reviews WHERE product_type = pr.TYPE) as avg_rating,
                     (SELECT COUNT(review_id) FROM product_reviews WHERE product_type = pr.TYPE) as total_reviews
@@ -95,7 +96,7 @@ if (isset($_GET['producer_id']) && !empty($_GET['producer_id'])) {
             $sizes = explode(',', $_GET['sizes']);
             if (!empty($sizes)) {
                 $size_placeholders = implode(',', array_fill(0, count($sizes), '?'));
-                $sql .= " AND pr.TRAY_SIZE IN ($size_placeholders)";
+                $sql .= " AND pr.tray_size IN ($size_placeholders)";
                 foreach ($sizes as $size) {
                     $params[] = intval($size);
                     $types .= 'i';
@@ -135,7 +136,7 @@ if (isset($_GET['producer_id']) && !empty($_GET['producer_id'])) {
                     'price' => floatval($row['PRICE']),
                     'per' => $row['PER'],
                     'stock' => intval($row['STOCK']),
-                    'tray_size' => intval($row['TRAY_SIZE']),
+                    'tray_size' => intval($row['tray_size']),
                     'date_created' => $row['DATE_CREATED'],
                     'avg_rating' => floatval($row['avg_rating']),
                     'total_reviews' => intval($row['total_reviews']),

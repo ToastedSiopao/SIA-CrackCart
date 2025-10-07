@@ -2,7 +2,7 @@
 session_start();
 // Security check
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-    header("Location: index.php?error=Please log in to access the admin panel.");
+    header("Location: ../index.php?error=Please log in to access the admin panel.");
     exit();
 }
 
@@ -44,7 +44,7 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
     <title>Manage Returns - CrackCart</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="admin-styles.css?v=1.4" rel="stylesheet"> 
+    <link href="admin-styles.css?v=1.6" rel="stylesheet"> 
 </head>
 <body>
     <?php include('admin_header.php'); ?>
@@ -146,8 +146,7 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
             return;
         }
 
-        // Corrected API Path: Removed the redundant 'admin/'
-        fetch('api/update_return_status.php', {
+        fetch('api/update_return_status.php', { // Corrected Path
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ return_id: returnId, status: newStatus })

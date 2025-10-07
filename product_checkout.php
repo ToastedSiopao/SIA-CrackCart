@@ -10,7 +10,7 @@ include("api/paypal_config.php");
   <title>Checkout - CrackCart</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-  <link href="dashboard-styles.css?v=3.0" rel="stylesheet">
+  <link href="dashboard-styles.css?v=3.2" rel="stylesheet">
   <script src="https://www.paypal.com/sdk/js?client-id=<?php echo PAYPAL_CLIENT_ID; ?>&currency=PHP"></script>
 </head>
 <body>
@@ -159,8 +159,8 @@ include("api/paypal_config.php");
           const itemsHtml = data.items.map(item => `
               <li class="list-group-item d-flex justify-content-between align-items-center">
                   <div>
-                      ${item.product_type}
-                      <p class="mb-0 text-muted" style="font-size: 0.9em;">₱${parseFloat(item.price).toFixed(2)} each</p>
+                      ${item.product_type} (x${item.tray_size})
+                      <p class="mb-0 text-muted" style="font-size: 0.9em;">₱${parseFloat(item.price).toFixed(2)} per tray</p>
                   </div>
                   <div class="d-flex align-items-center">
                       <div class="input-group input-group-sm" style="width: 120px;">
@@ -189,6 +189,12 @@ include("api/paypal_config.php");
                       Grand Total <span>₱${parseFloat(data.grand_total).toFixed(2)}</span>
                   </li>
               </ul>
+              <div class="mt-3 p-3 bg-light border rounded">
+                  <h6 class="fw-bold">Return & Refund Policy</h6>
+                  <p class="small mb-0">
+                      Please inspect your order upon reception. To be eligible for a return, your request must be made on the <strong>same day of delivery</strong>. All items, particularly eggs, must be <strong>intact and in their original packaging</strong>. For more details, please see our full <a href="return-policy.php">return policy</a>.
+                  </p>
+              </div>
               <h5 class="mt-4">Payment Method</h5>
               <div class="form-check">
                 <input class="form-check-input" type="radio" name="paymentMethod" id="paypalRadio" value="paypal" checked>
@@ -223,9 +229,9 @@ include("api/paypal_config.php");
           const cartItemKey = button.dataset.cartItemKey;
           try {
             const response = await fetch(`api/cart.php`, {
-                method: 'DELETE',
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ cart_item_key: cartItemKey })
+                body: JSON.stringify({ action: 'delete', cart_item_key: cartItemKey })
             });
             const result = await response.json();
             if (result.status === 'success') {
@@ -255,25 +261,13 @@ include("api/paypal_config.php");
       };
 
       const updateCartQuantity = async (cartItemKey, quantity) => {
+          let action = 'update';
           if (quantity <= 0) {
              if (confirm('Do you want to remove this item from the cart?')) {
-                try {
-                    const response = await fetch(`api/cart.php`, {
-                        method: 'DELETE',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ cart_item_key: cartItemKey })
-                    });
-                    const result = await response.json();
-                    if (result.status === 'success') {
-                        fetchCartAndAddresses();
-                    } else {
-                        showAlert('danger', result.message || 'Could not remove item from cart.');
-                    }
-                } catch (error) {
-                    showAlert('danger', 'Could not connect to the server to update cart.');
-                }
-             } 
-             return;
+                action = 'delete';
+             } else {
+                 return; // Do nothing if user cancels removal
+             }
           }
 
           try {
@@ -281,9 +275,9 @@ include("api/paypal_config.php");
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
-                      action: 'PUT',
+                      action: action,
                       cart_item_key: cartItemKey,
-                      quantity: quantity
+                      quantity: quantity // Quantity is ignored by server on 'delete' but good to send
                   })
               });
               const result = await response.json();

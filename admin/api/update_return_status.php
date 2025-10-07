@@ -2,86 +2,74 @@
 session_start();
 header('Content-Type: application/json');
 
-// Corrected path to db_connect.php
-require_once __DIR__ . '/../../db_connect.php';
-
-// --- Security Check ---
+// Security check: Ensure the user is an admin
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
     http_response_code(403);
-    echo json_encode(['success' => false, 'message' => 'Unauthorized access.']);
+    echo json_encode(['success' => false, 'message' => 'Authentication required.']);
     exit();
 }
 
-// --- Get Input ---
+// Adjust path for the new location
+include '../../db_connect.php';
+
 $data = json_decode(file_get_contents('php://input'), true);
-$return_id = $data['return_id'] ?? null;
-$new_status = $data['status'] ?? null;
 
-if (!$return_id || !in_array($new_status, ['approved', 'rejected'])) {
+if (!$data || !isset($data['return_id']) || !isset($data['status'])) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Invalid input. Please provide a valid return ID and status.']);
+    echo json_encode(['success' => false, 'message' => 'Invalid input.']);
     exit();
 }
 
-// --- Database Transaction ---
+$return_id = (int)$data['return_id'];
+$new_status = $data['status'];
+$allowed_statuses = ['approved', 'rejected'];
+
+if (!in_array($new_status, $allowed_statuses)) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'message' => 'Invalid status value.']);
+    exit();
+}
+
 $conn->begin_transaction();
 
 try {
-    // Step 1: Update the status in the 'returns' table
-    $stmt_update_return = $conn->prepare("UPDATE returns SET status = ? WHERE return_id = ?");
-    if (!$stmt_update_return) {
-        throw new Exception("Failed to prepare return update statement: " . $conn->error);
-    }
-    $stmt_update_return->bind_param("si", $new_status, $return_id);
-    $stmt_update_return->execute();
-    $stmt_update_return->close();
+    // Step 1: Update the status of the return request
+    $stmt1 = $conn->prepare("UPDATE returns SET status = ? WHERE return_id = ?");
+    if (!$stmt1) throw new Exception("Prepare statement failed: " . $conn->error);
+    $stmt1->bind_param('si', $new_status, $return_id);
+    if (!$stmt1->execute()) throw new Exception("Execute failed: " . $stmt1->error);
+    $stmt1->close();
 
-    // Step 2: Get the order details from the return request
-    $stmt_get_order = $conn->prepare("SELECT order_id, user_id FROM returns WHERE return_id = ?");
-    if (!$stmt_get_order) {
-        throw new Exception("Failed to prepare order fetch statement: " . $conn->error);
-    }
-    $stmt_get_order->bind_param("i", $return_id);
-    $stmt_get_order->execute();
-    $result = $stmt_get_order->get_result();
-    $return_info = $result->fetch_assoc();
-    $stmt_get_order->close();
-
-    if (!$return_info) {
-        throw new Exception("Return ID not found.");
-    }
-    $order_id = $return_info['order_id'];
-    $user_id = $return_info['user_id'];
-
-    // Step 3: If approved, update order status and create a notification
+    // Step 2: If approved, update the related order's status to 'Refunded'
     if ($new_status === 'approved') {
-        $update_order_stmt = $conn->prepare("UPDATE product_orders SET status = 'refunded' WHERE order_id = ?");
-        if (!$update_order_stmt) {
-            throw new Exception("Failed to prepare order update statement: " . $conn->error);
-        }
-        $update_order_stmt->bind_param("i", $order_id);
-        $update_order_stmt->execute();
-        $update_order_stmt->close();
-    }
+        // First, get the order_id from the return_id
+        $stmt2 = $conn->prepare("SELECT order_id FROM returns WHERE return_id = ?");
+        if (!$stmt2) throw new Exception("Prepare statement failed: " . $conn->error);
+        $stmt2->bind_param('i', $return_id);
+        if (!$stmt2->execute()) throw new Exception("Execute failed: " . $stmt2->error);
+        
+        $result = $stmt2->get_result();
+        if ($result->num_rows === 0) throw new Exception("Return ID not found.");
+        $order_id = $result->fetch_assoc()['order_id'];
+        $stmt2->close();
 
-    // Step 4: Create a notification for the user
-    $notification_message = "Your return request for order #${order_id} has been updated to '${new_status}'.";
-    $stmt_notify = $conn->prepare("INSERT INTO NOTIFICATION (USER_ID, MESSAGE) VALUES (?, ?)");
-    if (!$stmt_notify) {
-        throw new Exception("Failed to prepare notification statement: " . $conn->error);
+        // Now, update the product_orders table
+        $stmt3 = $conn->prepare("UPDATE product_orders SET status = 'Refunded' WHERE order_id = ?");
+        if (!$stmt3) throw new Exception("Prepare statement failed: " . $conn->error);
+        $stmt3->bind_param('i', $order_id);
+        if (!$stmt3->execute()) throw new Exception("Execute failed: " . $stmt3->error);
+        $stmt3->close();
     }
-    $stmt_notify->bind_param("is", $user_id, $notification_message);
-    $stmt_notify->execute();
-    $stmt_notify->close();
 
     $conn->commit();
-    echo json_encode(['success' => true, 'message' => "Return status successfully updated to {$new_status}."]);
+    echo json_encode(['success' => true, 'message' => 'Return status updated successfully.']);
 
 } catch (Exception $e) {
     $conn->rollback();
     http_response_code(500);
-    // Provide a more detailed error message for debugging
-    echo json_encode(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()]);
+    // Return a generic error to the user, but log the specific error for debugging
+    error_log($e->getMessage());
+    echo json_encode(['success' => false, 'message' => 'An internal server error occurred. Please try again later.']);
 }
 
 $conn->close();

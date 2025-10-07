@@ -12,6 +12,15 @@ function get_product_price($conn, $producer_id, $product_type) {
     return $result->num_rows > 0 ? $result->fetch_assoc()['PRICE'] : null;
 }
 
+function get_delivery_fee($conn, $vehicle_type) {
+    if (!$vehicle_type) return 0;
+    $stmt = $conn->prepare("SELECT delivery_fee FROM vehicle_types WHERE type_name = ?");
+    $stmt->bind_param("s", $vehicle_type);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    return $result->num_rows > 0 ? (float)$result->fetch_assoc()['delivery_fee'] : 0;
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['status' => 'error', 'message' => 'Method not allowed']);
@@ -45,6 +54,7 @@ $conn->begin_transaction();
 try {
     $cart = $_SESSION['product_cart'];
     $cart_meta = $_SESSION['product_cart_meta'] ?? ['delivery_fee' => 0, 'vehicle_type' => null];
+    $vehicle_type = $cart_meta['vehicle_type'] ?? null;
     
     $subtotal = 0;
     foreach ($cart as $key => &$item) {
@@ -57,7 +67,7 @@ try {
     }
     unset($item); 
 
-    $delivery_fee = (float)($cart_meta['delivery_fee'] ?? 0);
+    $delivery_fee = get_delivery_fee($conn, $vehicle_type);
     $total_amount = $subtotal + $delivery_fee;
 
     $stmt_payment = $conn->prepare("INSERT INTO Payment (amount, currency, method, status) VALUES (?, 'PHP', 'cod', 'pending')");
@@ -68,7 +78,6 @@ try {
     $stmt_order = $conn->prepare(
         "INSERT INTO product_orders (user_id, total_amount, status, shipping_address_id, payment_id, vehicle_type, delivery_fee) VALUES (?, ?, 'pending', ?, ?, ?, ?)"
     );
-    $vehicle_type = $cart_meta['vehicle_type'] ?? null;
     $stmt_order->bind_param("idiisd", $user_id, $total_amount, $address_id, $payment_id, $vehicle_type, $delivery_fee);
     $stmt_order->execute();
     $order_id = $stmt_order->insert_id;

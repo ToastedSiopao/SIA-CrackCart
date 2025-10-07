@@ -126,23 +126,23 @@ $conn->close();
                     <td><?php echo htmlspecialchars($item['product_name']); ?></td>
                     <td><?php echo htmlspecialchars($item['producer_name']); ?></td>
                     <td class="text-center"><?php echo htmlspecialchars($item['quantity']); ?></td>
-                    <td class="text-end">$<?php echo number_format($item['price_per_item'], 2); ?></td>
-                    <td class="text-end">$<?php echo number_format($item_total, 2); ?></td>
+                    <td class="text-end">₱<?php echo number_format($item['price_per_item'], 2); ?></td>
+                    <td class="text-end">₱<?php echo number_format($item_total, 2); ?></td>
                 </tr>
                 <?php endwhile; ?>
             </tbody>
             <tfoot>
                 <tr>
                     <td colspan="4" class="text-end"><strong>Subtotal:</strong></td>
-                    <td class="text-end">$<?php echo number_format($subtotal, 2); ?></td>
+                    <td class="text-end">₱<?php echo number_format($subtotal, 2); ?></td>
                 </tr>
                 <tr>
                     <td colspan="4" class="text-end"><strong>Shipping:</strong></td>
-                    <td class="text-end">$0.00</td>
+                    <td class="text-end">₱<?php echo number_format($order['delivery_fee'], 2); ?></td>
                 </tr>
                 <tr class="table-light fw-bold">
                     <td colspan="4" class="text-end"><strong>Total:</strong></td>
-                    <td class="text-end">$<?php echo number_format($order['total_amount'], 2); ?></td>
+                    <td class="text-end">₱<?php echo number_format($order['total_amount'], 2); ?></td>
                 </tr>
             </tfoot>
         </table>

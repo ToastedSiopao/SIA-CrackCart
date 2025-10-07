@@ -3,7 +3,7 @@ session_start();
 header("Content-Type: application/json");
 include("../db_connect.php");
 
-// Ensure cart and its meta data are initialized
+// --- Initialization and Helper Functions ---
 if (!isset($_SESSION['product_cart'])) {
     $_SESSION['product_cart'] = [];
 }
@@ -16,6 +16,7 @@ if (!isset($_SESSION['product_cart_meta'])) {
 }
 
 function get_product_price($conn, $producer_id, $product_type) {
+    if (!$conn) return null;
     $stmt = $conn->prepare("SELECT PRICE FROM PRICE WHERE PRODUCER_ID = ? AND TYPE = ?");
     if (!$stmt) return null;
     $stmt->bind_param("is", $producer_id, $product_type);
@@ -25,7 +26,7 @@ function get_product_price($conn, $producer_id, $product_type) {
 }
 
 function validate_cart($conn) {
-    if (!isset($_SESSION['product_cart']) || !is_array($_SESSION['product_cart'])) return;
+    if (!$conn || !isset($_SESSION['product_cart']) || !is_array($_SESSION['product_cart'])) return;
     foreach ($_SESSION['product_cart'] as $key => &$item) {
         if (!isset($item['producer_id'], $item['product_type'], $item['price'])) {
              unset($_SESSION['product_cart'][$key]);
@@ -41,12 +42,12 @@ function validate_cart($conn) {
     unset($item);
 }
 
+// --- Request Handling ---
+
 $method = $_SERVER['REQUEST_METHOD'];
 $data = json_decode(file_get_contents('php://input'), true);
 
-if ($conn) {
-    validate_cart($conn);
-}
+validate_cart($conn);
 
 switch ($method) {
     case 'GET':
@@ -74,74 +75,62 @@ switch ($method) {
         break;
 
     case 'POST':
-        $action = $data['action'] ?? ($data['_method'] ?? 'add');
+        $action = $data['action'] ?? 'add'; // Default action
 
         switch ($action) {
             case 'add':
                 $item_data = $data['item'] ?? $data;
-
-                if (isset($item_data['producer_id'], $item_data['product_type'], $item_data['quantity'])) {
-                    $real_price = get_product_price($conn, $item_data['producer_id'], $item_data['product_type']);
-                    if ($real_price === null) {
-                        http_response_code(404);
-                        echo json_encode(['status' => 'error', 'message' => 'Product could not be found.']);
-                        exit();
-                    }
-
-                    $cart_item_key = md5($item_data['producer_id'] . $item_data['product_type'] . ($item_data['tray_size'] ?? 30));
-                    $quantity = filter_var($item_data['quantity'], FILTER_VALIDATE_INT);
-
-                    if ($quantity > 0) {
-                        if (isset($_SESSION['product_cart'][$cart_item_key])) {
-                            $_SESSION['product_cart'][$cart_item_key]['quantity'] += $quantity;
-                        } else {
-                             $_SESSION['product_cart'][$cart_item_key] = [
-                                'cart_item_key' => $cart_item_key,
-                                'producer_id'   => $item_data['producer_id'],
-                                'product_type'  => $item_data['product_type'],
-                                'price'         => $real_price,
-                                'quantity'      => $quantity,
-                                'tray_size'     => $item_data['tray_size'] ?? 30
-                            ];
-                        }
-                        
-                        if (isset($item_data['vehicle_type'])) {
-                            $_SESSION['product_cart_meta']['vehicle_type'] = $item_data['vehicle_type'];
-                        }
-                         if (isset($item_data['delivery_fee'])) {
-                            $_SESSION['product_cart_meta']['delivery_fee'] = (float)$item_data['delivery_fee'];
-                        }
-                        if (isset($item_data['notes'])) {
-                            $_SESSION['product_cart_meta']['notes'] = $item_data['notes'];
-                        }
-
-                        echo json_encode(['status' => 'success', 'message' => 'Item added to cart.']);
-                    } else {
-                        http_response_code(400);
-                        echo json_encode(['status' => 'error', 'message' => 'Invalid quantity.']);
-                    }
-                } else {
+                if (!isset($item_data['producer_id'], $item_data['product_type'], $item_data['quantity'])) {
                     http_response_code(400);
                     echo json_encode(['status' => 'error', 'message' => 'Invalid data for adding item.']);
+                    break;
+                }
+                $real_price = get_product_price($conn, $item_data['producer_id'], $item_data['product_type']);
+                if ($real_price === null) {
+                    http_response_code(404);
+                    echo json_encode(['status' => 'error', 'message' => 'Product could not be found.']);
+                    break;
+                }
+                $cart_item_key = md5($item_data['producer_id'] . $item_data['product_type'] . ($item_data['tray_size'] ?? 30));
+                $quantity = filter_var($item_data['quantity'], FILTER_VALIDATE_INT);
+                if ($quantity > 0) {
+                    if (isset($_SESSION['product_cart'][$cart_item_key])) {
+                        $_SESSION['product_cart'][$cart_item_key]['quantity'] += $quantity;
+                    } else {
+                         $_SESSION['product_cart'][$cart_item_key] = [
+                            'cart_item_key' => $cart_item_key,
+                            'producer_id'   => $item_data['producer_id'],
+                            'product_type'  => $item_data['product_type'],
+                            'price'         => $real_price,
+                            'quantity'      => $quantity,
+                            'tray_size'     => $item_data['tray_size'] ?? 30
+                        ];
+                    }
+                    if (isset($item_data['vehicle_type'])) $_SESSION['product_cart_meta']['vehicle_type'] = $item_data['vehicle_type'];
+                    if (isset($item_data['delivery_fee'])) $_SESSION['product_cart_meta']['delivery_fee'] = (float)$item_data['delivery_fee'];
+                    if (isset($item_data['notes'])) $_SESSION['product_cart_meta']['notes'] = $item_data['notes'];
+                    echo json_encode(['status' => 'success', 'message' => 'Item added to cart.']);
+                } else {
+                    http_response_code(400);
+                    echo json_encode(['status' => 'error', 'message' => 'Invalid quantity.']);
                 }
                 break;
-            
-            case 'PUT': // Update item quantity
+
+            case 'update':
                 if (isset($data['cart_item_key'], $data['quantity'])) {
                     $cart_item_key = $data['cart_item_key'];
                     $quantity = filter_var($data['quantity'], FILTER_VALIDATE_INT);
-
                     if (isset($_SESSION['product_cart'][$cart_item_key])) {
                         if ($quantity !== false && $quantity > 0) {
                             $_SESSION['product_cart'][$cart_item_key]['quantity'] = $quantity;
                             echo json_encode(['status' => 'success', 'message' => 'Cart updated.']);
                         } else {
                             unset($_SESSION['product_cart'][$cart_item_key]);
-                            echo json_encode(['status' => 'success', 'message' => 'Item removed from cart.']);
+                            echo json_encode(['status' => 'success', 'message' => 'Item removed from cart due to zero quantity.']);
                         }
                     } else {
                         http_response_code(404);
-                        echo json_encode(['status' => 'error', 'message' => 'Item not found in cart.']);
+                        echo json_encode(['status' => 'error', 'message' => 'Item not found in cart to update.']);
                     }
                 } else {
                     http_response_code(400);
@@ -149,45 +138,38 @@ switch ($method) {
                 }
                 break;
 
+            case 'delete':
+                if (isset($data['cart_item_key'])) {
+                    $cart_item_key = $data['cart_item_key'];
+                    if (isset($_SESSION['product_cart'][$cart_item_key])) {
+                        unset($_SESSION['product_cart'][$cart_item_key]);
+                        echo json_encode(['status' => 'success', 'message' => 'Item removed successfully.']);
+                    } else {
+                        http_response_code(404);
+                        echo json_encode(['status' => 'error', 'message' => 'Item not found in cart to delete.']);
+                    }
+                } else {
+                    http_response_code(400);
+                    echo json_encode(['status' => 'error', 'message' => 'No item specified for deletion.']);
+                }
+                break;
+
             case 'clear':
                 $_SESSION['product_cart'] = [];
                 $_SESSION['product_cart_meta'] = ['vehicle_type' => null, 'delivery_fee' => 0, 'notes' => ''];
-                 echo json_encode(['status' => 'success', 'message' => 'Cart cleared.']);
+                echo json_encode(['status' => 'success', 'message' => 'Cart has been cleared.']);
                 break;
 
             default:
                 http_response_code(400);
-                echo json_encode(['status' => 'error', 'message' => "Invalid action: $action"]);
+                echo json_encode(['status' => 'error', 'message' => "Invalid action: {$action}"]);
                 break;
-        }
-        break;
-
-    case 'DELETE':
-        // This is kept for direct delete requests, e.g., from the cart view page
-        $request_data = $data;
-        if(empty($request_data)) {
-            parse_str(file_get_contents("php://input"), $request_data);
-            $request_data = json_decode(array_keys($request_data)[0], true);
-        }
-
-        if (isset($request_data['cart_item_key'])) {
-            $cart_item_key = $request_data['cart_item_key'];
-            if (isset($_SESSION['product_cart'][$cart_item_key])) {
-                unset($_SESSION['product_cart'][$cart_item_key]);
-                echo json_encode(['status' => 'success', 'message' => 'Item removed.']);
-            } else {
-                http_response_code(404);
-                echo json_encode(['status' => 'error', 'message' => 'Item not found.']);
-            }
-        } else {
-            http_response_code(400);
-            echo json_encode(['status' => 'error', 'message' => 'Invalid data for deletion.']);
         }
         break;
 
     default:
         http_response_code(405);
-        echo json_encode(['status' => 'error', 'message' => 'Method Not Allowed']);
+        echo json_encode(['status' => 'error', 'message' => "Method {$method} Not Allowed"]);
         break;
 }
 

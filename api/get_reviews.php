@@ -1,53 +1,54 @@
 <?php
-header('Content-Type: application/json');
-include('../db_connect.php');
-include('../error_handler.php');
+include "../db_connect.php";
+header("Content-Type: application/json");
 
-if (!isset($_GET['product_type'])) {
+if (!isset($_GET['producer_id']) || !isset($_GET['product_type'])) {
     http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'Product type is required.']);
-    exit();
+    echo json_encode(['status' => 'error', 'message' => 'Producer ID and Product Type are required.']);
+    exit;
 }
 
-$product_type = trim($_GET['product_type']);
+$producer_id = intval($_GET['producer_id']);
+$product_type = $_GET['product_type'];
 
 try {
-    // Get reviews and user info
-    $stmt_reviews = $conn->prepare(
-        "SELECT r.rating, r.review_text, r.created_at, u.username
-         FROM product_reviews r
-         JOIN users u ON r.user_id = u.user_id
-         WHERE r.product_type = ?
-         ORDER BY r.created_at DESC"
+    // Fetch reviews and user names
+    $stmt = $conn->prepare(
+        "SELECT pr.rating, pr.review_text, pr.created_at, u.FIRST_NAME, u.LAST_NAME 
+         FROM product_reviews pr
+         JOIN USER u ON pr.user_id = u.USER_ID
+         WHERE pr.order_id IN (
+             SELECT DISTINCT order_id FROM product_order_items 
+             WHERE producer_id = ? AND product_type = ?
+         )
+         ORDER BY pr.created_at DESC"
     );
-    $stmt_reviews->bind_param("s", $product_type);
-    $stmt_reviews->execute();
-    $result_reviews = $stmt_reviews->get_result();
-    $reviews = $result_reviews->fetch_all(MYSQLI_ASSOC);
+    $stmt->bind_param("is", $producer_id, $product_type);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $reviews = $result->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
 
-    // Get aggregate data (average rating, total reviews)
-    $stmt_agg = $conn->prepare(
-        "SELECT AVG(rating) as avg_rating, COUNT(review_id) as total_reviews
-         FROM product_reviews
-         WHERE product_type = ?"
-    );
-    $stmt_agg->bind_param("s", $product_type);
-    $stmt_agg->execute();
-    $result_agg = $stmt_agg->get_result();
-    $aggregation = $result_agg->fetch_assoc();
+    // Calculate average rating
+    $total_rating = 0;
+    foreach ($reviews as $review) {
+        $total_rating += $review['rating'];
+    }
+    $average_rating = count($reviews) > 0 ? $total_rating / count($reviews) : 0;
 
     echo json_encode([
         'status' => 'success',
         'data' => [
             'reviews' => $reviews,
-            'average_rating' => $aggregation['avg_rating'] ? floatval($aggregation['avg_rating']) : 0,
-            'total_reviews' => intval($aggregation['total_reviews'])
+            'average_rating' => $average_rating,
+            'review_count' => count($reviews)
         ]
     ]);
 
 } catch (Exception $e) {
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+    echo json_encode(['status' => 'error', 'message' => 'Failed to fetch reviews: ' . $e->getMessage()]);
 }
 
+$conn->close();
 ?>

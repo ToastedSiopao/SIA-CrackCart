@@ -13,6 +13,15 @@ function get_product_price($conn, $producer_id, $product_type) {
     return $result->num_rows > 0 ? $result->fetch_assoc()['PRICE'] : null;
 }
 
+function get_delivery_fee($conn, $vehicle_type) {
+    if (!$vehicle_type) return 0;
+    $stmt = $conn->prepare("SELECT delivery_fee FROM vehicle_types WHERE type_name = ?");
+    $stmt->bind_param("s", $vehicle_type);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    return $result->num_rows > 0 ? (float)$result->fetch_assoc()['delivery_fee'] : 0;
+}
+
 function get_paypal_access_token() {
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, PAYPAL_API_BASE_URL . '/v1/oauth2/token');
@@ -75,8 +84,9 @@ foreach ($_SESSION['product_cart'] as $item) {
     ];
 }
 
-$cart_meta = $_SESSION['product_cart_meta'] ?? ['delivery_fee' => 0];
-$delivery_fee = (float)($cart_meta['delivery_fee'] ?? 0);
+$cart_meta = $_SESSION['product_cart_meta'] ?? ['delivery_fee' => 0, 'vehicle_type' => null];
+$vehicle_type = $cart_meta['vehicle_type'] ?? null;
+$delivery_fee = get_delivery_fee($conn, $vehicle_type);
 $total_amount = round($subtotal + $delivery_fee, 2);
 
 $_SESSION['validated_paypal_order'] = [
@@ -84,7 +94,7 @@ $_SESSION['validated_paypal_order'] = [
     'total' => $total_amount,
     'delivery_fee' => $delivery_fee,
     'notes' => $cart_meta['notes'] ?? '',
-    'vehicle_type' => $cart_meta['vehicle_type'] ?? null
+    'vehicle_type' => $vehicle_type
 ];
 
 $token_response = get_paypal_access_token();

@@ -8,6 +8,7 @@ $sidebar_links = [
     'manage_returns.php' => '<i class="bi bi-arrow-return-left"></i> Manage Returns',
     'manage_users.php' => '<i class="bi bi-people"></i> Manage Users',
     'user_activity.php' => '<i class="bi bi-person-check"></i> User Activity',
+    'archived_users.php' => '<i class="bi bi-archive"></i> Archived Users',
     'fleet_management.php' => '<i class="bi bi-truck"></i> Fleet Management',
     'logout.php' => '<i class="bi bi-box-arrow-left"></i> Logout'
 ];

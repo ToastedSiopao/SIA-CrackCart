@@ -16,69 +16,26 @@ $producer_id = $_GET['producer_id'];
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
-  <link href="dashboard-styles.css?v=3.2" rel="stylesheet">
+  <link href="dashboard-styles.css?v=3.5" rel="stylesheet">
   <style>
-    .producer-logo-large {
-        width: 80px;
-        height: 80px;
-        object-fit: cover;
-        border: 2px solid #ffc107;
-    }
-    .form-label.fw-bold {
-        font-weight: 500 !important;
-        margin-bottom: 0.5rem;
-    }
-    .egg-option-card .form-check-label {
-        display: block;
-        padding: 1rem;
-        border: 1px solid #dee2e6;
-        border-radius: 0.375rem;
-        cursor: pointer;
-        transition: border-color .15s ease-in-out, background-color .15s ease-in-out;
-    }
-    .egg-option-card .form-check-input:checked + .form-check-label {
-        background-color: #fff9e0;
-        border-color: #ffc107;
-    }
-    .egg-option-card .form-check-label:hover {
-        background-color: #f8f9fa;
-    }
-    .vehicle-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-        gap: 1rem;
-    }
-    .vehicle-type-card {
-        padding: 0;
-        border: 1px solid #dee2e6;
-        border-radius: 0.375rem;
-        transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
-    }
+    .producer-logo-large { width: 80px; height: 80px; object-fit: cover; border: 2px solid #ffc107; }
+    .form-label.fw-bold { font-weight: 500 !important; margin-bottom: 0.5rem; }
+    .egg-option-card .form-check-label { display: block; padding: 1rem; border: 1px solid #dee2e6; border-radius: 0.375rem; cursor: pointer; transition: border-color .15s ease-in-out, background-color .15s ease-in-out; }
+    .egg-option-card .form-check-input:checked + .form-check-label { background-color: #fff9e0; border-color: #ffc107; }
+    .egg-option-card .form-check-label:hover { background-color: #f8f9fa; }
+    .vehicle-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
+    .vehicle-type-card { padding: 0; border: 1px solid #dee2e6; border-radius: 0.375rem; transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out; }
     .vehicle-type-card .form-check-input { display: none; }
-    .vehicle-type-card .form-check-label {
-        display: flex;
-        align-items: center;
-        padding: 1rem;
-        width: 100%;
-        cursor: pointer;
-        border-radius: 0.375rem;
-    }
-    .vehicle-icon {
-        font-size: 2.5rem;
-        color: #495057;
-        margin-right: 1rem;
-        width: 40px;
-        text-align: center;
-    }
+    .vehicle-type-card .form-check-label { display: flex; align-items: center; padding: 1rem; width: 100%; cursor: pointer; border-radius: 0.375rem; }
+    .vehicle-icon { font-size: 2.5rem; color: #495057; margin-right: 1rem; width: 40px; text-align: center; }
     .vehicle-details { display: flex; flex-direction: column; line-height: 1.3; }
     .vehicle-type-name { font-weight: bold; color: #212529; }
     .vehicle-fee { font-weight: 500; color: #198754; }
     .vehicle-capacity-range { font-size: 0.85rem; color: #6c757d; }
-    .vehicle-type-card .form-check-input:checked + .form-check-label {
-        background-color: #fff3cd;
-        border-color: #ffc107;
-    }
+    .vehicle-type-card .form-check-input:checked + .form-check-label { background-color: #fff3cd; border-color: #ffc107; }
     .vehicle-type-card:hover { border-color: #ffc107; }
+    .star-rating { color: #ffc107; }
+    .review-card { border-left: 3px solid #ffc107; }
   </style>
 </head>
 <body>
@@ -94,6 +51,7 @@ $producer_id = $_GET['producer_id'];
             <div id="content-container">
                 <div id="producer-info-placeholder"></div>
                 <div id="order-form-container"></div>
+                <div id="reviews-section" class="mt-5 d-none"></div>
             </div>
         </div>
       </main>
@@ -113,6 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const producerId = new URLSearchParams(window.location.search).get('producer_id');
     const producerInfoContainer = document.getElementById('producer-info-placeholder');
     const orderFormContainer = document.getElementById('order-form-container');
+    const reviewsSection = document.getElementById('reviews-section');
     const cartToastEl = document.getElementById('cartToast');
     const cartToast = new bootstrap.Toast(cartToastEl);
 
@@ -128,6 +87,58 @@ document.addEventListener('DOMContentLoaded', function() {
         if (normalizedType.includes('car')) return 'bi-car-front-fill';
         if (normalizedType.includes('truck')) return 'bi-truck';
         return 'bi-question-circle';
+    };
+
+    const renderStars = (rating) => {
+        const fullStars = Math.floor(rating);
+        const halfStar = rating % 1 >= 0.5 ? 1 : 0;
+        const emptyStars = 5 - fullStars - halfStar;
+        return '<i class="bi bi-star-fill"></i>'.repeat(fullStars) + 
+               '<i class="bi bi-star-half"></i>'.repeat(halfStar) +
+               '<i class="bi bi-star"></i>'.repeat(emptyStars);
+    };
+
+    const fetchAndDisplayReviews = (productType) => {
+        reviewsSection.innerHTML = '<div class="text-center"><div class="spinner-border text-warning" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+        reviewsSection.classList.remove('d-none');
+
+        fetch(`api/get_reviews.php?producer_id=${producerId}&product_type=${encodeURIComponent(productType)}`)
+            .then(res => res.json())
+            .then(reviewData => {
+                if (reviewData.status !== 'success') throw new Error(reviewData.message);
+                const { reviews, average_rating, review_count } = reviewData.data;
+
+                let reviewsHtml = `<h4>Customer Reviews for ${productType}</h4>`;
+                if (review_count > 0) {
+                    reviewsHtml += `
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="star-rating me-2">${renderStars(average_rating)}</div>
+                            <div class="fw-bold">${average_rating.toFixed(1)} out of 5</div>
+                            <div class="text-muted ms-2">(${review_count} reviews)</div>
+                        </div>`;
+                    
+                    reviews.forEach(review => {
+                        reviewsHtml += `
+                            <div class="card mb-3 review-card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <h6 class="card-title fw-bold">${review.FIRST_NAME} ${review.LAST_NAME.charAt(0)}.</h6>
+                                        <div class="star-rating">${renderStars(review.rating)}</div>
+                                    </div>
+                                    <p class="card-text">${review.review_text || '<em>No comment left.</em>'}</p>
+                                    <small class="text-muted">${new Date(review.created_at).toLocaleDateString()}</small>
+                                </div>
+                            </div>`;
+                    });
+                } else {
+                    reviewsHtml += '<div class="alert alert-info">No reviews yet for this product. Be the first to leave one!</div>';
+                }
+                reviewsSection.innerHTML = reviewsHtml;
+            })
+            .catch(err => {
+                console.error("Error loading reviews:", err);
+                reviewsSection.innerHTML = `<div class="alert alert-warning">Could not load reviews at this time.</div>`;
+            });
     };
 
     Promise.all([
@@ -216,6 +227,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     quantityInput.max = selectedProduct.stock;
                     quantityInput.disabled = false;
                     quantityInput.value = 1; 
+                    fetchAndDisplayReviews(selectedProduct.type);
                 }
             });
         });
@@ -242,7 +254,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 quantity: quantity,
                 tray_size: parseInt(formData.get('tray_size')),
                 vehicle_type: vehicleDetails.type,
-                delivery_fee: vehicleDetails.fee, // Pass the fee directly
+                delivery_fee: vehicleDetails.fee,
                 notes: formData.get('notes')
             };
 
