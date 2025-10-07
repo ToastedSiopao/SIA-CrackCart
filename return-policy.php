@@ -67,9 +67,10 @@ $user_name = $_SESSION['user_first_name'] ?? 'Valued Customer';
                         To be eligible for a return, please ensure the following:
                     </p>
                     <ul class="list-group list-group-flush text-start">
-                        <li class="list-group-item">Request is submitted within <strong>14 days</strong> of delivery.</li>
+                        <li class="list-group-item">Request is submitted within <strong>The Same Day</strong> of delivery.</li>
                         <li class="list-group-item">Item is unused and in its original packaging.</li>
-                        <li class="list-group-item">A valid reason is provided (e.g., damaged, wrong item).</li>
+                        <li class="list-group-item">A valid reason is provided (e.g., Wrong Order)</li>
+                        <li class="list-group-item"><strong>Damaged Products are not Eligible for return.</strong></li>
                     </ul>
                 </div>
             </div>
