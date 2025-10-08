@@ -87,7 +87,8 @@ $conn->close();
             </div>
             <div class="col-6 col-md-3">
               <div class="category-card">
-                <i class="bi bi-currency-dollar"></i>
+                <span class="text-warning fs-3 fw-bold">₱</span>
+
                 <p class="mb-0">Total Spent</p>
                 <h5>₱<?php echo number_format($total_spent, 2); ?></h5>
               </div>
