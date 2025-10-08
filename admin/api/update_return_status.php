@@ -23,17 +23,7 @@ if ($return_id > 0 && !empty($new_status)) {
 
     try {
         // Fetch all necessary info in one query, including the value of the returned item
-        $stmt_info = $conn->prepare("
-            SELECT 
-                po.user_id, 
-                r.order_id, 
-                r.reason, 
-                (poi.quantity * poi.price_per_item) AS item_value
-            FROM returns r 
-            JOIN product_orders po ON r.order_id = po.order_id 
-            JOIN product_order_items poi ON r.order_item_id = poi.order_item_id
-            WHERE r.return_id = ?
-        ");
+        $stmt_info = $conn->prepare("\n            SELECT \n                po.user_id, \n                r.order_id, \n                r.reason, \n                (poi.quantity * poi.price_per_item) AS item_value\n            FROM returns r \n            JOIN product_orders po ON r.order_id = po.order_id \n            JOIN product_order_items poi ON r.order_item_id = poi.order_item_id\n            WHERE r.return_id = ?\n        ");
         $stmt_info->bind_param("i", $return_id);
         $stmt_info->execute();
         $result_info = $stmt_info->get_result();
@@ -61,7 +51,8 @@ if ($return_id > 0 && !empty($new_status)) {
         $notification_message = "Your return request for order #{$order_id} has been updated to '{$new_status}'.";
 
         // --- UPDATED: DYNAMIC COUPON GENERATION LOGIC ---
-        if ($new_status === 'approved' && $reason === 'Damaged in transit' && $discount_value > 0) {
+        $eligible_reasons = ['Damaged in transit', 'Item is expired'];
+        if ($new_status === 'approved' && in_array($reason, $eligible_reasons) && $discount_value > 0) {
             $coupon_code = 'RETURN-' . strtoupper(uniqid());
             $expiry_date = date('Y-m-d', strtotime('+30 days'));
 

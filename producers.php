@@ -6,8 +6,9 @@ $user_name = $_SESSION['user_name'];
 
 require_once 'db_connect.php';
 $categories = [];
-$min_price = 0;    // Always start at 0
-$max_price = 5000; // Use a fixed, large number for the maximum
+$producers = [];
+$min_price = 0;
+$max_price = 5000;
 
 try {
     // Fetch product categories (types) for the dropdown
@@ -16,6 +17,15 @@ try {
     if ($category_result) {
         while ($row = $category_result->fetch_assoc()) {
             $categories[] = $row['TYPE'];
+        }
+    }
+
+    // Fetch producers for the dropdown
+    $producer_sql = "SELECT PRODUCER_ID as producer_id, NAME as name FROM PRODUCER ORDER BY NAME ASC";
+    $producer_result = $conn->query($producer_sql);
+    if ($producer_result) {
+        while ($row = $producer_result->fetch_assoc()) {
+            $producers[] = $row;
         }
     }
 
@@ -34,7 +44,7 @@ $conn->close();
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-  <link href="dashboard-styles.css?v=3.9" rel="stylesheet"> 
+  <link href="dashboard-styles.css?v=3.9" rel="stylesheet">
   <style>
     .product-card { transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; }
     .product-card:hover { transform: translateY(-5px); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
@@ -62,12 +72,21 @@ $conn->close();
 
         <div class="card card-body mb-4 p-3 shadow-sm">
             <div class="row g-3 align-items-end">
-                <div class="col-md-3">
-                    <label for="categoryFilter" class="form-label fw-bold">Category</label>
+                <div class="col-md-2">
+                    <label for="categoryFilter" class="form-label fw-bold">Product Type</label>
                     <select id="categoryFilter" class="form-select">
                         <option value="">All</option>
                         <?php foreach ($categories as $category): ?>
                         <option value="<?php echo htmlspecialchars($category); ?>"><?php echo htmlspecialchars($category); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="producerFilter" class="form-label fw-bold">Producer</label>
+                    <select id="producerFilter" class="form-select">
+                        <option value="">All</option>
+                        <?php foreach ($producers as $producer): ?>
+                        <option value="<?php echo htmlspecialchars($producer['producer_id']); ?>"><?php echo htmlspecialchars($producer['name']); ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -89,7 +108,7 @@ $conn->close();
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label for="sortBy" class="form-label fw-bold">Sort By</label>
                     <select id="sortBy" class="form-select">
                         <option value="popularity">Popularity</option>
@@ -114,6 +133,7 @@ $conn->close();
     document.addEventListener('DOMContentLoaded', function() {
       const productsContainer = document.getElementById('productsContainer');
       const categoryFilter = document.getElementById('categoryFilter');
+      const producerFilter = document.getElementById('producerFilter');
       const sizeCheckboxes = document.querySelectorAll('#sizeFilter input[type="checkbox"]');
       const sortBy = document.getElementById('sortBy');
       const priceSlider = document.getElementById('price-slider');
@@ -138,12 +158,14 @@ $conn->close();
 
       const fetchAndRenderProducts = async () => {
         const category = categoryFilter.value;
+        const producerId = producerFilter.value;
         const sortByValue = sortBy.value;
         const [minPriceVal, maxPriceVal] = priceSlider.noUiSlider.get(true);
         const selectedSizes = Array.from(sizeCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
 
         let query = new URLSearchParams();
         if (category) query.append('category', category);
+        if (producerId) query.append('producer_id', producerId);
         if (sortByValue) query.append('sort', sortByValue);
         query.append('min_price', minPriceVal);
         query.append('max_price', maxPriceVal);
@@ -210,6 +232,7 @@ $conn->close();
 
       // Event Listeners for filters
       categoryFilter.addEventListener('change', fetchAndRenderProducts);
+      producerFilter.addEventListener('change', fetchAndRenderProducts);
       sortBy.addEventListener('change', fetchAndRenderProducts);
       sizeCheckboxes.forEach(cb => cb.addEventListener('change', fetchAndRenderProducts));
       priceSlider.noUiSlider.on('end', fetchAndRenderProducts);

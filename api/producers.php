@@ -6,7 +6,7 @@ require_once '../error_handler.php';
 $response = ['status' => 'success', 'message' => 'Data loaded', 'data' => []];
 
 // Check if a specific producer is requested
-if (isset($_GET['producer_id']) && !empty($_GET['producer_id'])) {
+if (isset($_GET['producer_id']) && !empty($_GET['producer_id']) && !isset($_GET['sort'])) { // This condition is now more specific to avoid conflict with the filter
     // --- Logic for fetching a single producer's details for order.php ---
     $producer_id = $_GET['producer_id'];
 
@@ -56,22 +56,7 @@ if (isset($_GET['producer_id']) && !empty($_GET['producer_id'])) {
 } else {
     // --- Logic for fetching all products for producers.php ---
     try {
-        $sql = "SELECT 
-                    p.PRODUCER_ID as producer_id, 
-                    p.NAME as producer_name, 
-                    p.LOCATION as producer_location,
-                    pr.PRICE_ID, 
-                    pr.TYPE as product_type, 
-                    pr.PRICE, 
-                    pr.PER, 
-                    pr.STOCK, 
-                    pr.tray_size,
-                    pr.DATE_CREATED,
-                    (SELECT AVG(rating) FROM product_reviews WHERE product_type = pr.TYPE) as avg_rating,
-                    (SELECT COUNT(review_id) FROM product_reviews WHERE product_type = pr.TYPE) as total_reviews
-                FROM PRICE pr
-                JOIN PRODUCER p ON pr.PRODUCER_ID = p.PRODUCER_ID
-                WHERE pr.STATUS = 'active'";
+        $sql = "SELECT \n                    p.PRODUCER_ID as producer_id, \n                    p.NAME as producer_name, \n                    p.LOCATION as producer_location,\n                    pr.PRICE_ID, \n                    pr.TYPE as product_type, \n                    pr.PRICE, \n                    pr.PER, \n                    pr.STOCK, \n                    pr.tray_size,\n                    pr.DATE_CREATED,\n                    (SELECT AVG(rating) FROM product_reviews WHERE product_type = pr.TYPE) as avg_rating,\n                    (SELECT COUNT(review_id) FROM product_reviews WHERE product_type = pr.TYPE) as total_reviews\n                FROM PRICE pr\n                JOIN PRODUCER p ON pr.PRODUCER_ID = p.PRODUCER_ID\n                WHERE pr.STATUS = 'active'";
 
         $params = [];
         $types = '';
@@ -81,6 +66,11 @@ if (isset($_GET['producer_id']) && !empty($_GET['producer_id'])) {
             $sql .= " AND pr.TYPE = ?";
             $params[] = $_GET['category'];
             $types .= 's';
+        }
+        if (!empty($_GET['producer_id'])) {
+            $sql .= " AND p.PRODUCER_ID = ?";
+            $params[] = $_GET['producer_id'];
+            $types .= 'i';
         }
         if (isset($_GET['min_price']) && is_numeric($_GET['min_price'])) {
             $sql .= " AND pr.PRICE >= ?";
@@ -110,8 +100,8 @@ if (isset($_GET['producer_id']) && !empty($_GET['producer_id'])) {
             switch ($_GET['sort']) {
                 case 'price_asc': $orderBy = " ORDER BY pr.PRICE ASC"; break;
                 case 'price_desc': $orderBy = " ORDER BY pr.PRICE DESC"; break;
-                case 'name_asc': $orderBy = " ORDER BY pr.TYPE ASC"; break;
-                case 'name_desc': $orderBy = " ORDER BY pr.TYPE DESC"; break;
+                case 'name_asc': $orderBy = " ORDER BY p.NAME ASC, pr.TYPE ASC"; break;
+                case 'name_desc': $orderBy = " ORDER BY p.NAME DESC, pr.TYPE ASC"; break;
                 case 'newness': $orderBy = " ORDER BY pr.DATE_CREATED DESC"; break;
             }
         }

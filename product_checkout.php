@@ -238,6 +238,12 @@ include("api/paypal_config.php");
                       Please inspect your order upon reception. To be eligible for a return, your request must be made on the <strong>same day of delivery</strong>. All items, particularly eggs, must be <strong>intact and in their original packaging</strong>. For more details, please see our full <a href="return-policy.php">return policy</a>.
                   </p>
               </div>
+               <div class="form-check mt-3">
+                <input class="form-check-input" type="checkbox" value="" id="agreeToTerms">
+                <label class="form-check-label" for="agreeToTerms">
+                  I have read and agree to the <a href="return-policy.php" target="_blank">Return & Refund Policy</a>.
+                </label>
+              </div>
               <h5 class="mt-4">Payment Method</h5>
               <div class="form-check">
                 <input class="form-check-input" type="radio" name="paymentMethod" id="paypalRadio" value="paypal" checked>
@@ -405,6 +411,10 @@ include("api/paypal_config.php");
       }
 
       async function handleCodOrder() {
+        if (!document.getElementById('agreeToTerms').checked) {
+            showAlert('warning', 'Please agree to the Return & Refund Policy before placing an order.');
+            return;
+        }
         if (!selectedAddressId) {
             showAlert('warning', 'Please select a shipping address first.');
             return;
@@ -444,6 +454,10 @@ include("api/paypal_config.php");
           }
           paypal.Buttons({
               createOrder: (data, a, actions) => {
+                  if (!document.getElementById('agreeToTerms').checked) {
+                      showAlert('warning', 'Please agree to the Return & Refund Policy before placing an order.');
+                      return Promise.reject(new Error("Agreement to terms not checked"));
+                  }
                   if (!selectedAddressId) {
                       showAlert('warning', 'Please select a shipping address first.');
                       return Promise.reject(new Error("No shipping address selected"));
