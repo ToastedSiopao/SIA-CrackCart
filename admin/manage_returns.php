@@ -7,7 +7,6 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role
 
 include '../db_connect.php';
 
-// Correctly fetch product details including the item's price and quantity
 $query = "SELECT 
             r.return_id, 
             r.order_id, 
@@ -153,13 +152,6 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
                 </div>
                 <div class="modal-body">
                     <p id="confirmationMessage"></p>
-                    <div class="form-check" id="restock-option-div">
-                        <input class="form-check-input" type="checkbox" id="restock-checkbox" checked>
-                        <label class="form-check-label" for="restock-checkbox">
-                            Restock item(s) (return to inventory)
-                        </label>
-                         <small class="text-muted d-block">Uncheck this if the item is damaged and should not be re-added to stock.</small>
-                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -209,31 +201,19 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
         currentNewStatus = newStatus;
 
         const msg = document.getElementById('confirmationMessage');
-        const restockDiv = document.getElementById('restock-option-div');
-        
         msg.textContent = `Are you sure you want to ${newStatus} this return request?`;
-
-        if (newStatus === 'approved') {
-            restockDiv.style.display = 'block';
-        } else {
-            restockDiv.style.display = 'none';
-        }
 
         confirmationModal.show();
     }
 
     function handleConfirmation() {
-        const shouldRestock = document.getElementById('restock-checkbox').checked;
-        updateReturnStatus(currentReturnId, currentNewStatus, shouldRestock);
+        updateReturnStatus(currentReturnId, currentNewStatus);
     }
 
-    function updateReturnStatus(returnId, newStatus, restock) {
+    function updateReturnStatus(returnId, newStatus) {
         confirmationModal.hide();
 
         let payload = { return_id: returnId, status: newStatus };
-        if (newStatus === 'approved') {
-            payload.restock = restock;
-        }
 
         fetch('api/update_return_status.php', {
             method: 'POST',
@@ -247,7 +227,7 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
             return response.json();
         })
         .then(data => {
-            if (data.success) {
+            if (data.status === 'success') { // Check the status field from the JSON response
                 showAlert(data.message || 'Status updated successfully!', 'success', () => location.reload());
             } else {
                 showAlert(data.message || 'Failed to update status.', 'danger');

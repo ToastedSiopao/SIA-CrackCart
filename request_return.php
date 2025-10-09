@@ -169,6 +169,7 @@ $conn->close();
                         </div>
                         <hr class="my-4">
                         <form id="returnRequestForm" novalidate enctype="multipart/form-data">
+                            <input type="hidden" name="order_id" value="<?php echo $item['order_id']; ?>">
                             <input type="hidden" name="order_item_id" value="<?php echo $item['order_item_id']; ?>">
                             <div class="mb-3">
                                 <label class="form-label fw-bold mb-3">Reason for Return</label>
@@ -180,12 +181,13 @@ $conn->close();
                                         ];
                                         foreach ($reasons as $index => $reasonText) {
                                             $id = "reason" . ($index + 1);
-                                            echo '<div class="col-md-6">';
-                                            echo '    <div class="form-check">';
-                                            echo "        <input class='form-check-input' type='radio' name='reason' id='".$id."' value='".$reasonText."' required>";
-                                            echo "        <label class='form-check-label' for='".$id."'>".$reasonText."</label>";
-                                            echo '    </div>';
-                                            echo '</div>';
+                                            $escapedReason = htmlspecialchars($reasonText, ENT_QUOTES, 'UTF-8');
+                                            echo "<div class='col-md-6'>";
+                                            echo "    <div class='form-check'>";
+                                            echo "        <input class='form-check-input' type='radio' name='reason' id='{$id}' value='{$escapedReason}' required>";
+                                            echo "        <label class='form-check-label' for='{$id}'>{$escapedReason}</label>";
+                                            echo "    </div>";
+                                            echo "</div>";
                                         }
                                     ?>
                                 </div>
@@ -194,7 +196,7 @@ $conn->close();
 
                             <div class="mb-4" id="damaged_image_container" style="display: none;">
                                 <label for="damaged_image" class="form-label">Upload Image of Damaged Item</label>
-                                <input class="form-control" type="file" id="damaged_image" name="damaged_image" accept="image/*">
+                                <input class="form-control" type="file" id="damaged_image" name="return_image" accept="image/*">
                                 <div class="invalid-feedback">A picture is required for damaged items.</div>
                             </div>
 
@@ -274,7 +276,7 @@ if (returnForm) {
         }
 
         const formData = new FormData(form);
-        const orderId = <?php echo $item['order_id'] ?? 0; ?>;
+        const orderId = <?php echo $item['order_id'] ?? 'null'; ?>; // Use null for safety if item doesn't exist
 
         try {
             const response = await fetch('api/submit_return.php', {
@@ -286,7 +288,9 @@ if (returnForm) {
             if (result.status === 'success') {
                 form.style.display = 'none';
                 formMessage.innerHTML = `<div class="alert alert-success">${result.message} You will be redirected shortly.</div>`;
-                setTimeout(() => window.location.href = 'view_order.php?order_id=' + orderId, 3000);
+                if (orderId) {
+                    setTimeout(() => window.location.href = 'view_order.php?order_id=' + orderId, 3000);
+                }
             } else {
                 formMessage.innerHTML = `<div class="alert alert-danger">${result.message || 'An error occurred.'}</div>`;
             }
