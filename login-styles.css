@@ -1,0 +1,83 @@
+/* login-styles.css */
+
+:root {
+    --primary-color: #007bff;
+    --primary-dark-color: #0056b3;
+    --secondary-color: #6c757d;
+    --light-color: #f8f9fa;
+    --white-color: #ffffff;
+    --danger-color: #dc3545;
+}
+
+.bg-image {
+    background-image: url('https://images.unsplash.com/photo-1579546929518-9e396f3a8034?q=80&w=2070&auto=format&fit=crop');
+    background-size: cover;
+    background-position: center;
+}
+
+.login {
+    min-height: 100vh;
+}
+
+.login-heading {
+    font-weight: 300;
+}
+
+.btn-login {
+    font-size: 0.9rem;
+    letter-spacing: 0.05rem;
+    padding: 0.75rem 1rem;
+}
+
+.form-floating input {
+    height: calc(3.5rem + 2px);
+    padding: 1rem;
+}
+
+.form-floating label {
+    padding: 1rem;
+    font-size: 1rem;
+    color: #6c757d;
+}
+
+.form-floating input:focus ~ label {
+    color: var(--primary-color);
+}
+
+.progress-bar.strength-weak {
+    background-color: #dc3545;
+}
+
+.progress-bar.strength-fair {
+    background-color: #ffc107;
+}
+
+.progress-bar.strength-good {
+    background-color: #28a745;
+}
+
+.progress-bar.strength-strong {
+    background-color: #007bff;
+}
+
+.loading-spinner {
+    display: none;
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spinner-border .75s linear infinite;
+}
+
+.loading .loading-spinner {
+    display: inline-block;
+}
+
+.loading .button-text {
+    display: none;
+}
+
+@keyframes spinner-border {
+    to { transform: rotate(360deg); }
+}

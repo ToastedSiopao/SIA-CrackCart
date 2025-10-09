@@ -153,50 +153,6 @@ function handleLockout(message, form) {
   }, 1000);
 }
 
-// 2FA form handler
-/**function initTwoFactorForm() {
-  const form = document.getElementById('twoFactorForm');
-  if (!form) {
-    console.error("❌ #twoFactorForm not found.");
-    return;
-  }
-
-  form.addEventListener('submit', async e => {
-    e.preventDefault();
-    const submitBtn = form.querySelector('button[type="submit"]');
-    const formData = new FormData(form);
-
-    submitBtn.disabled = true;
-
-    try {
-      const response = await fetch('/verify_2fa.php', {
-        method: 'POST',
-        body: formData,
-        credentials: 'include'
-      });
-      const data = await response.json();
-      console.log("2FA Response:", data);
-
-      if (data.status && data.status.toLowerCase() === 'success') {
-        console.log("✅ SUCCESS BLOCK REACHED");
-        alert("✅ Verification successful! Redirecting now...");
-        setTimeout(() => {
-          window.location.replace('dashboard.php');
-        }, 1500);
-      } else {
-        console.warn("⚠️ Not success:", data);
-        showFormFeedback('danger', data.message || 'Verification failed.');
-      }
-    } catch (err) {
-      console.error("2FA Fetch Error:", err);
-      showFormFeedback('danger', 'An unexpected error occurred.');
-    } finally {
-      submitBtn.disabled = false;
-    }
-  });
-}**/
-
-
 
 // Signup form handler
 function initSignupForm() {
@@ -288,64 +244,94 @@ function initPasswordConfirmation() {
 
 // Notification system
 function initNotificationSystem() {
-  const notificationDropdown = document.getElementById('notificationDropdown');
-  const notificationList = document.getElementById('notification-list');
-  const notificationCount = document.getElementById('notification-count');
-  if (!notificationDropdown) return;
+    const notificationDropdown = document.getElementById('notificationDropdown');
+    const notificationList = document.getElementById('notification-list');
+    const notificationCountBadge = document.getElementById('notification-count');
 
-  function fetchNotifications() {
-    fetch('/notifications.php', { credentials: 'same-origin' })
-      .then(response => response.json())
-      .then(data => {
-        notificationList.innerHTML = '';
-        if (data.error) {
-          console.error('Notification error:', data.error);
-          return;
-        }
+    if (!notificationDropdown || !notificationList || !notificationCountBadge) {
+        return; // Exit if essential elements are not on the page
+    }
 
-        if (data.length > 0) {
-          notificationCount.textContent = data.length;
-          notificationCount.style.display = 'block';
-
-          data.forEach(notification => {
-            const listItem = document.createElement('li');
-            const link = document.createElement('a');
-            link.classList.add('dropdown-item');
-            link.href = '#';
-            link.innerHTML = `
-              <div class="d-flex justify-content-between">
-                <small>${notification.MESSAGE}</small>
-                <small class="text-muted">${new Date(notification.CREATED_AT).toLocaleTimeString()}</small>
-              </div>
-            `;
-            link.addEventListener('click', e => {
-              e.preventDefault();
-              markAsRead(notification.NOTIFICATION_ID);
+    function fetchNotifications() {
+        fetch('/notifications.php', { credentials: 'same-origin' })
+            .then(response => response.json())
+            .then(data => {
+                updateNotificationUI(data.notifications, data.unread_count);
+            })
+            .catch(error => {
+                console.error('Error fetching notifications:', error);
+                notificationList.innerHTML = '<li><a class="dropdown-item text-danger" href="#">Could not load notifications.</a></li>';
             });
-            listItem.appendChild(link);
-            notificationList.appendChild(listItem);
-          });
+    }
+
+    function updateNotificationUI(notifications, unread_count) {
+        notificationList.innerHTML = '';
+
+        if (unread_count > 0) {
+            notificationCountBadge.textContent = unread_count;
+            notificationCountBadge.style.display = 'block';
         } else {
-          notificationCount.style.display = 'none';
-          const listItem = document.createElement('li');
-          listItem.innerHTML = '<a class="dropdown-item text-muted" href="#">No new notifications</a>';
-          notificationList.appendChild(listItem);
+            notificationCountBadge.style.display = 'none';
         }
-      })
-      .catch(error => {
-        console.error('Fetch error:', error);
-      });
-  }
 
-  function markAsRead(notificationId) {
-    fetch(`/notifications.php?mark_as_read=${notificationId}`, { credentials: 'same-origin' })
-      .then(() => fetchNotifications())
-      .catch(error => console.error('Error marking notification as read:', error));
-  }
+        if (notifications && notifications.length > 0) {
+            notifications.forEach(notification => {
+                const listItem = document.createElement('li');
+                const link = document.createElement('a');
+                link.classList.add('dropdown-item');
+                if (notification.IS_READ == 0) {
+                    link.classList.add('fw-bold'); // Style unread notifications
+                }
 
-  fetchNotifications();
-  setInterval(fetchNotifications, 600000);
+                link.href = notification.link || '#'; // Use the link from the backend
+                link.innerHTML = `
+                    <small>${notification.MESSAGE}</small>
+                    <div class="text-muted small mt-1">${new Date(notification.CREATED_AT).toLocaleString()}</div>
+                `;
+
+                // When a notification is clicked, mark it as read and then navigate
+                link.addEventListener('click', function(e) {
+                    e.preventDefault(); // Prevent default anchor behavior
+                    markAsReadAndRedirect(notification.NOTIFICATION_ID, this.href);
+                });
+
+                listItem.appendChild(link);
+                notificationList.appendChild(listItem);
+            });
+        } else {
+            notificationList.innerHTML = '<li><a class="dropdown-item text-muted" href="#">No notifications</a></li>';
+        }
+    }
+
+    function markAsReadAndRedirect(notificationId, redirectUrl) {
+        // If the notification is already read, just redirect
+        const notificationElement = document.querySelector(`[data-notification-id="${notificationId}"]`);
+        if (notificationElement && !notificationElement.classList.contains('fw-bold')) {
+            window.location.href = redirectUrl;
+            return;
+        }
+
+        fetch(`/notifications.php?mark_as_read=${notificationId}`, { credentials: 'same-origin' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = redirectUrl; // Redirect after successful marking
+                } else {
+                    console.error('Failed to mark notification as read.');
+                    window.location.href = redirectUrl; // Redirect anyway
+                }
+            })
+            .catch(error => {
+                console.error('Error marking notification as read:', error);
+                window.location.href = redirectUrl; // Redirect even if the API call fails
+            });
+    }
+
+    // Initial fetch and periodic refresh
+    fetchNotifications();
+    setInterval(fetchNotifications, 60000); // Refresh every 60 seconds
 }
+
 
 // Initialize all functionality
 document.addEventListener('DOMContentLoaded', function() {
@@ -353,19 +339,8 @@ document.addEventListener('DOMContentLoaded', function() {
   initPasswordStrength();
   initLoginForm();
   initSignupForm();
-  //initTwoFactorForm();
   initPasswordConfirmation();
   initNotificationSystem();
-  
-  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function(e) {
-      e.preventDefault();
-      const target = document.querySelector(this.getAttribute('href'));
-      if (target) {
-        target.scrollIntoView({ behavior: 'smooth' });
-      }
-    });
-  });
 });
 
 // Display alerts

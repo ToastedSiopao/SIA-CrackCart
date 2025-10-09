@@ -1,0 +1,151 @@
+
+:root {
+    --primary-color: #007bff;
+    --primary-dark-color: #0056b3;
+    --secondary-color: #6c757d;
+    --light-color: #f8f9fa;
+    --white-color: #ffffff;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
+}
+
+body {
+    background-color: var(--light-color);
+    font-family: 'Poppins', sans-serif;
+}
+
+.sidebar {
+    background-color: var(--white-color);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #dee2e6;
+}
+
+.sidebar .nav-link {
+    color: #333;
+    font-weight: 500;
+    margin-bottom: .5rem;
+    transition: background-color 0.3s;
+}
+
+.sidebar .nav-link:hover {
+    background-color: #f1f3f5;
+    border-radius: 8px;
+}
+
+.sidebar .nav-link.active {
+    background-color: var(--primary-color);
+    color: var(--white-color);
+    border-radius: 8px;
+}
+
+.sidebar .nav-link i {
+    color: #333;
+}
+
+.sidebar .nav-link.active i {
+    color: var(--white-color);
+}
+
+.sidebar .upgrade-box {
+    background-color: #f1f3f5;
+    border-radius: 12px;
+    padding: 20px;
+    color: #000000;
+    text-align: center;
+    margin-top: auto;
+    margin-bottom: 20px;
+}
+
+.sidebar .upgrade-box p {
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+}
+
+.sidebar .upgrade-box .btn {
+    background-color: var(--primary-color);
+    color: var(--white-color);
+    border: none;
+    font-weight: bold;
+}
+
+.navbar {
+    background-color: var(--white-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.navbar-brand {
+    color: var(--primary-color) !important;
+    font-weight: 700;
+}
+
+.navbar .ms-auto .dropdown-toggle {
+    color: #000000;
+}
+
+.navbar .ms-auto .dropdown-toggle:hover {
+    color: #333333;
+}
+
+.category-card {
+    background-color: var(--white-color);
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    padding: 30px;
+    text-align: center;
+    transition: all 0.3s;
+    height: 100%;
+}
+
+.category-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.category-card i {
+    font-size: 2.5rem;
+    margin-bottom: 15px;
+    display: block;
+    color: var(--primary-color);
+}
+
+.category-card p {
+    color: var(--secondary-color);
+    font-weight: 500;
+}
+
+.category-card h5 {
+    color: #333;
+    font-weight: 700;
+}
+
+.category-card.active {
+    background-color: var(--primary-color);
+    color: var(--white-color);
+}
+
+.category-card.active i,
+.category-card.active p,
+.category-card.active h5 {
+    color: var(--white-color);
+}
+
+.offcanvas-start {
+    background-color: var(--white-color);
+}
+
+.offcanvas-body .nav-link {
+    color: #000000;
+}
+
+.offcanvas-body .nav-link.active {
+    background-color: var(--primary-color);
+    color: var(--white-color);
+    border-radius: 8px;
+}
+
+.offcanvas-body .upgrade-box {
+    background-color: #f1f3f5;
+}

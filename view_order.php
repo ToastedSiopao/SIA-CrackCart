@@ -11,6 +11,7 @@ if (!isset($_GET['order_id'])) {
 }
 
 $order_id = $_GET['order_id'];
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -107,6 +108,7 @@ $order_id = $_GET['order_id'];
         const deliveryIssuesContainer = document.getElementById('delivery-issues-container');
         const alertContainer = document.getElementById('order-details-alert-container');
         const orderId = new URLSearchParams(window.location.search).get('order_id');
+        let notificationId = new URLSearchParams(window.location.search).get('notification_id');
         const reviewModal = new bootstrap.Modal(document.getElementById('reviewModal'));
         const reviewForm = document.getElementById('reviewForm');
         const reviewOrderItemIdInput = document.getElementById('reviewOrderItemId');
@@ -125,7 +127,10 @@ $order_id = $_GET['order_id'];
                 const result = await response.json();
                 if (result.status === 'success') { 
                     renderOrderDetails(result.data);
-                    renderDeliveryIssues(result.data.delivery_issues);
+                    renderDeliveryIncidents(result.data.delivery_issues);
+                    if (result.data.notification_id) {
+                        notificationId = result.data.notification_id;
+                    }
                  } 
                 else { orderDetailsContainer.innerHTML = `<div class="alert alert-danger">${result.message || 'Could not load order details.'}</div>`; }
             } catch (error) { showAlert('danger', 'Could not connect to the server to get order details.'); }
@@ -159,24 +164,66 @@ $order_id = $_GET['order_id'];
             });
         };
         
-        const renderDeliveryIssues = (issues) => {
-            if (!issues || issues.length === 0) return;
+        const renderDeliveryIncidents = (incidents) => {
+            if (!incidents || incidents.length === 0) return;
 
-            const issuesHtml = issues.map(issue => {
+            const incidentsHtml = incidents.map(incident => {
+                let actionButtons = '';
+                if (incident.status === 'reported') {
+                    actionButtons = `
+                        <div class="card-footer text-end">
+                            <button class="btn btn-primary me-2" onclick="handleIncidentDecision(${orderId}, 'replace')">Request Replacement</button>
+                            <button class="btn btn-danger" onclick="handleIncidentDecision(${orderId}, 'cancel')">Revoke Order</button>
+                        </div>
+                    `;
+                }
+
                 return `
                     <div class="card mb-3">
                         <div class="card-header d-flex justify-content-between">
-                            <span>Issue Reported: ${new Date(issue.created_at).toLocaleString()}</span>
-                            <span class="badge bg-${issue.status === 'resolved' ? 'success' : 'warning'}">${issue.status}</span>
+                            <span>Incident Reported: ${new Date(incident.created_at).toLocaleString()}</span>
+                            <span class="badge bg-warning">${incident.status}</span>
                         </div>
                         <div class="card-body">
-                            <p class="card-text">${issue.issue_description}</p>
+                            <p class="card-text"><strong>Type:</strong> ${incident.incident_type}</p>
+                            <p class="card-text">${incident.issue_description}</p>
                         </div>
+                        ${actionButtons}
                     </div>
                 `;
             }).join('');
 
-            deliveryIssuesContainer.innerHTML = `<h5>Delivery Issues</h5>${issuesHtml}`;
+            deliveryIssuesContainer.innerHTML = `<h5>Delivery Incidents</h5>${incidentsHtml}`;
+        };
+
+        window.handleIncidentDecision = async (orderId, decision) => {
+            if (!notificationId) {
+                showAlert('danger', 'Notification ID is missing. Cannot process decision.');
+                return;
+            }
+            
+            showAlert('info', 'Submitting your decision...');
+
+            try {
+                const response = await fetch('api/handle_incident_response.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        order_id: orderId, 
+                        decision: decision,
+                        notification_id: notificationId
+                    }),
+                });
+                const result = await response.json();
+                if (result.status === 'success') {
+                    showAlert('success', result.message);
+                    fetchOrderDetails(); // Refresh to show updated status
+                } else {
+                    showAlert('danger', result.message || 'Failed to submit your decision.');
+                }
+            } catch (error) {
+                showAlert('danger', 'Could not connect to the server to submit your decision.');
+            }
         };
 
         reviewForm.addEventListener('submit', async (e) => {

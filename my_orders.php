@@ -35,7 +35,6 @@ require_once 'session_handler.php';
                                         <li class="nav-item"><a class="nav-link" href="#" data-status-filter="toship">To Ship</a></li>
                                         <li class="nav-item"><a class="nav-link" href="#" data-status-filter="toreceive">To Receive</a></li>
                                         <li class="nav-item"><a class="nav-link" href="#" data-status-filter="completed">Completed</a></li>
-                                        <li class="nav-item"><a class="nav-link" href="#" data-status-filter="cancellation_requested">Cancellation Requested</a></li>
                                         <li class="nav-item"><a class="nav-link" href="#" data-status-filter="cancelled">Cancelled</a></li>
                                     </ul>
                                     <div id="orders-container" class="table-responsive mt-3">
@@ -71,6 +70,7 @@ require_once 'session_handler.php';
                 const result = await response.json();
                 if (result.status === 'success') {
                     allOrders = result.data;
+                    // Get the currently active tab and re-render it
                     const activeTab = orderTabs.querySelector('.nav-link.active');
                     const activeFilter = activeTab ? activeTab.dataset.statusFilter : 'all';
                     renderOrders(activeFilter);
@@ -91,7 +91,6 @@ require_once 'session_handler.php';
                     if (filter === 'toship') return ['processing', 'paid'].includes(status);
                     if (filter === 'toreceive') return status === 'in transit';
                     if (filter === 'completed') return status === 'delivered';
-                    if (filter === 'cancellation_requested') return status === 'cancellation requested';
                     if (filter === 'cancelled') return ['cancelled', 'failed'].includes(status);
                     return false;
                 });
@@ -116,17 +115,16 @@ require_once 'session_handler.php';
                     <tbody>
                         ${filteredOrders.map(order => {
                             const cancellableStatuses = ['pending', 'processing', 'paid'];
-                            const isCancellationRequested = order.status.toLowerCase() === 'cancellation requested';
                             return `
                             <tr>
                                 <td><a href="view_order.php?order_id=${order.order_id}">#${order.order_id}</a></td>
                                 <td>${new Date(order.order_date).toLocaleDateString()}</td>
-                                <td>&#8369;${parseFloat(order.total_amount).toFixed(2)}</td>
+                                <td>₱${parseFloat(order.total_amount).toFixed(2)}</td>
                                 <td><span class="badge bg-${getStatusClass(order.status)}">${order.status}</span></td>
                                 <td class="text-center">
                                     <a href="view_order.php?order_id=${order.order_id}" class="btn btn-sm btn-info">View</a>
                                     ${cancellableStatuses.includes(order.status.toLowerCase()) ?
-                                    `<button class="btn btn-sm btn-warning cancel-btn ms-1" data-order-id="${order.order_id}" ${isCancellationRequested ? 'disabled' : ''}>${isCancellationRequested ? 'Cancellation Requested' : 'Request Cancellation'}</button>` :
+                                    `<button class="btn btn-sm btn-danger cancel-btn ms-1" data-order-id="${order.order_id}">Cancel</button>` :
                                     ''}
                                 </td>
                             </tr>
@@ -144,7 +142,6 @@ require_once 'session_handler.php';
                 case 'processing': return 'info';
                 case 'in transit': return 'primary';
                 case 'delivered': return 'success';
-                case 'cancellation requested': return 'danger';
                 case 'cancelled': return 'secondary';
                 case 'failed': return 'danger';
                 default: return 'light';
@@ -163,13 +160,13 @@ require_once 'session_handler.php';
         ordersContainer.addEventListener('click', async (event) => {
             if (event.target.classList.contains('cancel-btn')) {
                 const orderId = event.target.dataset.orderId;
-                if (confirm('Are you sure you want to request to cancel this order?')) {
-                    await requestCancellation(orderId);
+                if (confirm('Are you sure you want to cancel this order?')) {
+                    await cancelOrder(orderId);
                 }
             }
         });
 
-        const requestCancellation = async (orderId) => {
+        const cancelOrder = async (orderId) => {
             const button = ordersContainer.querySelector(`[data-order-id="${orderId}"]`);
             button.disabled = true;
 
@@ -183,18 +180,22 @@ require_once 'session_handler.php';
                 const result = await response.json();
 
                 if (result.status === 'success') {
-                    showAlert('success', result.message);
-                    await fetchOrders();
+                    // If the message from the server contains "locked", show a warning alert.
+                    // Otherwise, show a standard success alert.
+                    const alertType = result.message.toLowerCase().includes('locked') ? 'warning' : 'success';
+                    showAlert(alertType, result.message); // Use the dynamic message from the API
+                    await fetchOrders(); // Refresh the order list
                 } else {
-                    showAlert('danger', result.message || 'There was an issue requesting the cancellation.');
+                    showAlert('danger', result.message || 'There was an issue cancelling your order.');
                     button.disabled = false;
                 }
             } catch (error) {
-                showAlert('danger', 'Could not connect to the server to request the cancellation.');
+                showAlert('danger', 'Could not connect to the server to cancel the order.');
                 button.disabled = false;
             }
         };
 
+        // Initial load
         fetchOrders();
     });
     </script>

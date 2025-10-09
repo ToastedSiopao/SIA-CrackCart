@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: sql101.infinityfree.com
--- Generation Time: Oct 09, 2025 at 03:30 AM
+-- Generation Time: Oct 07, 2025 at 04:39 PM
 -- Server version: 11.4.7-MariaDB
 -- PHP Version: 7.2.22
 
@@ -51,7 +51,8 @@ CREATE TABLE `archived_users` (
 
 INSERT INTO `archived_users` (`USER_ID`, `FIRST_NAME`, `MIDDLE_NAME`, `LAST_NAME`, `EMAIL`, `PHONE`, `PROFILE_PICTURE`, `PASSWORD`, `ROLE`, `ACCOUNT_STATUS`, `LOCK_EXPIRES_AT`, `CREATED_AT`, `UPDATED_AT`, `last_login_at`) VALUES
 (6, 'q3rq', 'qr3rq', 'qr3rq', 'qkramirez04@tip.edu.ph', '125135135', 'default_avatar.png', '$2y$10$ukVSWkly5c4s9UKZZNMPMekPgv.jNIDiSBirIJ5g48KTGElahPAB6', 'customer', 'ACTIVE', NULL, '2025-10-03 08:19:37', '2025-10-03 08:19:37', NULL),
-(5, 'Crack', 'Nemiada', 'Cart', 'crackcart.auth@gmail.com', '0995 633 6238', 'default_avatar.png', '$2y$10$IwU5AvKjNBEncZ8OeXyYTu67a/fKEKo2eYWEuIdRY.HsBhIuSrpFa', 'customer', 'ACTIVE', NULL, '2025-09-25 08:02:11', '2025-09-25 08:02:11', NULL);
+(5, 'Crack', 'Nemiada', 'Cart', 'crackcart.auth@gmail.com', '0995 633 6238', 'default_avatar.png', '$2y$10$IwU5AvKjNBEncZ8OeXyYTu67a/fKEKo2eYWEuIdRY.HsBhIuSrpFa', 'customer', 'ACTIVE', NULL, '2025-09-25 08:02:11', '2025-09-25 08:02:11', NULL),
+(14, 'SaiSai', 'Middle', 'Aniam', 'saisaianiam@gmail.com', '09956336238', 'default_avatar.png', '$2y$10$K/xn08C7ARa.r2xuoluayufQvb95ckRzsAasLdeGXLoZgd1Csjfaa', 'customer', 'ACTIVE', NULL, '2025-10-06 10:39:50', '2025-10-06 10:39:50', NULL);
 
 -- --------------------------------------------------------
 
@@ -85,21 +86,8 @@ CREATE TABLE `coupons` (
   `user_id` int(11) NOT NULL,
   `discount_value` decimal(10,2) NOT NULL,
   `is_used` tinyint(1) NOT NULL DEFAULT 0,
-  `created_at` timestamp NULL DEFAULT current_timestamp(),
-  `expiry_date` date DEFAULT NULL
+  `created_at` timestamp NULL DEFAULT current_timestamp()
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `coupons`
---
-
-INSERT INTO `coupons` (`coupon_id`, `coupon_code`, `user_id`, `discount_value`, `is_used`, `created_at`, `expiry_date`) VALUES
-(1, 'RETURN-68E57E7740A6B', 15, '320.00', 1, '2025-10-07 20:56:23', '2025-11-06'),
-(2, 'RETURN-68E5EBE323B54', 15, '480.00', 1, '2025-10-08 04:43:15', '2025-11-07'),
-(3, 'RETURN-68E5F279C17C1', 19, '210.00', 1, '2025-10-08 05:11:21', '2025-11-07'),
-(4, 'RETURN-68E5F3524937C', 15, '320.00', 0, '2025-10-08 05:14:58', '2025-11-07'),
-(5, 'RETURN-68E5F35281E74', 15, '320.00', 0, '2025-10-08 05:14:58', '2025-11-07'),
-(6, 'RETURN-68E60154D32E7', 20, '8200.00', 0, '2025-10-08 06:14:44', '2025-11-07');
 
 -- --------------------------------------------------------
 
@@ -122,23 +110,6 @@ CREATE TABLE `Delivery_Assignment` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `delivery_incidents`
---
-
-CREATE TABLE `delivery_incidents` (
-  `incident_id` int(11) NOT NULL,
-  `driver_id` int(11) NOT NULL,
-  `order_id` int(11) DEFAULT NULL,
-  `incident_type` varchar(100) NOT NULL,
-  `description` text NOT NULL,
-  `status` enum('reported','resolved') NOT NULL DEFAULT 'reported',
-  `reported_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `resolved_at` timestamp NULL DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `Driver`
 --
 
@@ -147,16 +118,8 @@ CREATE TABLE `Driver` (
   `phone_no` varchar(20) DEFAULT NULL,
   `license_no` varchar(50) DEFAULT NULL,
   `expiry` date DEFAULT NULL,
-  `status` varchar(20) DEFAULT NULL,
-  `vehicle_id` int(11) DEFAULT NULL
+  `status` varchar(20) DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
-
---
--- Dumping data for table `Driver`
---
-
-INSERT INTO `Driver` (`driver_id`, `phone_no`, `license_no`, `expiry`, `status`, `vehicle_id`) VALUES
-(14, '09956336238', NULL, NULL, 'available', 1);
 
 -- --------------------------------------------------------
 
@@ -250,61 +213,12 @@ INSERT INTO `NOTIFICATION` (`NOTIFICATION_ID`, `USER_ID`, `MESSAGE`, `IS_READ`, 
 (42, 13, 'Your account role has been updated to \'Admin\'.', 0, '2025-10-07 09:41:28'),
 (43, 13, 'Your account role has been updated to \'Customer\'.', 0, '2025-10-07 09:42:05'),
 (44, 4, 'Your account role has been updated to \'Customer\'.', 0, '2025-10-07 09:42:52'),
-(45, 16, 'Your order #54 status has been updated to \'delivered\'.', 1, '2025-10-07 10:46:50'),
+(45, 16, 'Your order #54 status has been updated to \'delivered\'.', 0, '2025-10-07 10:46:50'),
 (46, 15, 'Your order #58 status has been updated to \'delivered\'.', 1, '2025-10-07 12:35:43'),
 (47, 11, 'Your order #59 status has been updated to \'delivered\'.', 1, '2025-10-07 17:21:00'),
 (48, 15, 'Your order #63 status has been updated to \'shipped\'.', 1, '2025-10-07 20:31:45'),
 (49, 15, 'Your order #63 status has been updated to \'delivered\'.', 1, '2025-10-07 20:33:10'),
-(50, 15, 'Your return request for order #63 has been updated to \'approved\'.', 1, '2025-10-07 20:34:03'),
-(51, 15, 'Your order #65 status has been updated to \'processing\'.', 1, '2025-10-07 20:48:00'),
-(52, 15, 'Your order #65 status has been updated to \'delivered\'.', 1, '2025-10-07 20:48:20'),
-(53, 15, 'Your return request for order #65 has been updated to \'approved\'.', 1, '2025-10-07 20:49:09'),
-(54, 19, 'Your order #62 status has been updated to \'delivered\'.', 1, '2025-10-07 20:50:50'),
-(55, 15, 'Your order #66 status has been updated to \'delivered\'.', 1, '2025-10-07 20:51:32'),
-(56, 15, 'Your return for order #66 was approved. We have issued a coupon worth â‚±320.00 to your account for the inconvenience.', 1, '2025-10-07 20:56:23'),
-(57, 10, 'Your account role has been updated to \'Admin\'.', 0, '2025-10-07 21:04:20'),
-(58, 15, 'Your order #68 status has been updated to \'delivered\'.', 1, '2025-10-08 04:41:46'),
-(59, 15, 'Your return for order #68 was approved. We have issued a coupon worth â‚±480.00 to your account for the inconvenience.', 1, '2025-10-08 04:43:15'),
-(60, 19, 'Your order #70 status has been updated to \'shipped\'.', 1, '2025-10-08 04:50:06'),
-(61, 19, 'Your order #70 status has been updated to \'delivered\'.', 1, '2025-10-08 04:50:12'),
-(62, 19, 'Your return request for order #70 has been updated to \'rejected\'.', 1, '2025-10-08 04:52:37'),
-(63, 15, 'Your order #71 status has been updated to \'delivered\'.', 1, '2025-10-08 05:06:53'),
-(64, 19, 'Your return request for order #62 has been updated to \'approved\'.', 1, '2025-10-08 05:09:12'),
-(65, 19, 'Your return request for order #62 has been updated to \'approved\'.', 1, '2025-10-08 05:09:12'),
-(66, 19, 'Your return request for order #62 has been updated to \'approved\'.', 1, '2025-10-08 05:09:12'),
-(67, 19, 'Your order #72 status has been updated to \'delivered\'.', 1, '2025-10-08 05:10:57'),
-(68, 19, 'Your return for order #72 was approved. We have issued a coupon worth â‚±210.00 to your account for the inconvenience.', 1, '2025-10-08 05:11:21'),
-(69, 15, 'Your order #69 status has been updated to \'delivered\'.', 1, '2025-10-08 05:14:17'),
-(70, 15, 'Your return for order #71 was approved. We have issued a coupon worth â‚±320.00 to your account for the inconvenience.', 1, '2025-10-08 05:14:58'),
-(71, 15, 'Your return for order #71 was approved. We have issued a coupon worth â‚±320.00 to your account for the inconvenience.', 1, '2025-10-08 05:14:58'),
-(72, 19, 'Your order #76 status has been updated to \'processing\'.', 1, '2025-10-08 06:08:19'),
-(73, 19, 'Your order #76 status has been updated to \'delivered\'.', 1, '2025-10-08 06:11:23'),
-(74, 20, 'Your order #75 status has been updated to \'delivered\'.', 1, '2025-10-08 06:11:28'),
-(75, 21, 'Your order #77 status has been updated to \'processing\'.', 1, '2025-10-08 06:12:05'),
-(76, 19, 'Your order #73 status has been updated to \'processing\'.', 1, '2025-10-08 06:12:14'),
-(77, 11, 'Your order #74 status has been updated to \'processing\'.', 0, '2025-10-08 06:12:54'),
-(78, 21, 'Your order #77 status has been updated to \'delivered\'.', 0, '2025-10-08 06:13:12'),
-(79, 11, 'Your order #74 status has been updated to \'delivered\'.', 0, '2025-10-08 06:13:28'),
-(80, 19, 'Your order #73 status has been updated to \'delivered\'.', 1, '2025-10-08 06:13:36'),
-(81, 20, 'Your return for order #75 was approved. We have issued a coupon worth â‚±8,200.00 to your account for the inconvenience.', 1, '2025-10-08 06:14:44'),
-(82, 15, 'Your order #78 status has been updated to \'delivered\'.', 0, '2025-10-08 07:53:59'),
-(83, 16, 'Your order #79 status has been updated to \'shipped\'.', 1, '2025-10-08 08:48:39'),
-(84, 16, 'Your return request for order #79 has been updated to \'rejected\'.', 1, '2025-10-08 08:52:01'),
-(85, 16, 'Your order #81 status has been updated to \'processing\'.', 0, '2025-10-08 10:29:04'),
-(86, 16, 'Your order #81 status has been updated to \'delivered\'.', 0, '2025-10-08 10:29:23'),
-(87, 4, 'Your account role has been updated to \'Driver\'.', 0, '2025-10-09 03:16:33'),
-(88, 4, 'Your account role has been updated to \'Customer\'.', 0, '2025-10-09 03:35:08'),
-(89, 14, 'Your account role has been updated to \'Driver\'.', 0, '2025-10-09 05:49:30'),
-(90, 14, 'Your account role has been updated to \'Customer\'.', 0, '2025-10-09 05:56:17'),
-(91, 14, 'Your account role has been updated to \'Driver\'.', 0, '2025-10-09 05:56:25'),
-(92, 14, 'Your account role has been updated to \'Customer\'.', 0, '2025-10-09 05:56:56'),
-(93, 14, 'Your account role has been updated to \'Driver\'.', 0, '2025-10-09 05:57:04'),
-(94, 11, 'Your order #83 status has been updated to \'processing\'.', 0, '2025-10-09 07:22:34'),
-(95, 11, 'Your order #83 status has been updated to \'cancelled\'.', 0, '2025-10-09 07:26:03'),
-(96, 11, 'Your order #83 status has been updated to \'pending\'.', 0, '2025-10-09 07:26:11'),
-(97, 11, 'Your order #83 status has been updated to \'delivered\'.', 0, '2025-10-09 07:26:19'),
-(98, 11, 'Your order #83 status has been updated to \'processing\'.', 0, '2025-10-09 07:26:39'),
-(99, 11, 'Your order #84 status has been updated to \'processing\'.', 0, '2025-10-09 07:27:39');
+(50, 15, 'Your return request for order #63 has been updated to \'approved\'.', 1, '2025-10-07 20:34:03');
 
 -- --------------------------------------------------------
 
@@ -374,27 +288,7 @@ INSERT INTO `Payment` (`payment_id`, `booking_id`, `order_id`, `amount`, `curren
 (43, NULL, 63, '284.00', 'PHP', 'cod', 'pending', NULL, NULL),
 (44, NULL, NULL, '320.00', 'PHP', 'paypal', 'completed', NULL, '3HN72759NX592272W'),
 (45, NULL, NULL, '470.00', 'PHP', 'paypal', 'completed', NULL, '4XV15195R94761402'),
-(46, NULL, 64, '470.00', 'PHP', 'paypal', 'completed', NULL, '7XF940754L019954S'),
-(47, NULL, 65, '790.00', 'PHP', 'cod', 'pending', NULL, NULL),
-(48, NULL, 66, '470.00', 'PHP', 'cod', 'pending', NULL, NULL),
-(49, NULL, 67, '150.00', 'PHP', 'paypal', 'completed', NULL, '9GD86862ME2382207'),
-(50, NULL, 68, '580.00', 'PHP', 'cod', 'pending', NULL, NULL),
-(51, NULL, 69, '1540.00', 'PHP', 'cod', 'pending', NULL, NULL),
-(52, NULL, 70, '1060.00', 'PHP', 'cod', 'pending', NULL, NULL),
-(53, NULL, 71, '420.00', 'PHP', 'cod', 'pending', NULL, NULL),
-(54, NULL, 72, '310.00', 'PHP', 'cod', 'pending', NULL, NULL),
-(55, NULL, 73, '210.00', 'PHP', 'cod', 'pending', NULL, NULL),
-(56, NULL, 74, '220.00', 'PHP', 'paypal', 'completed', NULL, '8NV499021M480881U'),
-(57, NULL, 75, '8350.00', 'PHP', 'cod', 'pending', NULL, NULL),
-(58, NULL, 76, '14690.00', 'PHP', 'cod', 'pending', NULL, NULL),
-(59, NULL, 77, '730.00', 'PHP', 'cod', 'pending', NULL, NULL),
-(60, NULL, 78, '630.00', 'PHP', 'paypal', 'completed', NULL, '3D170800RD561170A'),
-(61, NULL, 79, '310.00', 'PHP', 'cod', 'pending', NULL, NULL),
-(62, NULL, 80, '470.00', 'PHP', 'paypal', 'completed', NULL, '5L201290H40460108'),
-(63, NULL, 81, '290.00', 'PHP', 'cod', 'pending', NULL, NULL),
-(64, NULL, 82, '420.00', 'PHP', 'cod', 'pending', NULL, NULL),
-(65, NULL, 83, '220.00', 'PHP', 'cod', 'pending', NULL, NULL),
-(66, NULL, 84, '220.00', 'PHP', 'cod', 'pending', NULL, NULL);
+(46, NULL, 64, '470.00', 'PHP', 'paypal', 'completed', NULL, '7XF940754L019954S');
 
 -- --------------------------------------------------------
 
@@ -419,23 +313,21 @@ CREATE TABLE `PRICE` (
 --
 
 INSERT INTO `PRICE` (`PRICE_ID`, `PRODUCER_ID`, `TYPE`, `PRICE`, `PER`, `STATUS`, `STOCK`, `TRAY_SIZE`, `DATE_CREATED`) VALUES
-(1, 1, 'Standard Eggs', '210.00', 'per tray', 'active', 20640, 30, '2025-10-06 11:22:18'),
+(1, 1, 'Standard Eggs', '210.00', 'per tray', 'active', 22710, 30, '2025-10-06 11:22:18'),
 (2, 1, 'Jumbo Eggs', '240.00', 'per tray', 'active', 22110, 30, '2025-10-06 11:22:18'),
 (3, 2, 'Native Eggs', '280.00', 'per tray', 'active', 1080, 30, '2025-10-06 11:22:18'),
 (4, 2, 'Free-Range Eggs', '300.00', 'per tray', 'active', 2550, 30, '2025-10-06 11:22:18'),
-(5, 3, 'Golden Yolks', '220.00', 'per tray', 'active', 2010, 30, '2025-10-06 11:22:18'),
-(6, 4, 'Fresh Brown Eggs', '215', 'per tray', 'active', 816, 12, '2025-10-06 11:22:18'),
+(5, 3, 'Golden Yolks', '220.00', 'per tray', 'active', 2040, 30, '2025-10-06 11:22:18'),
+(6, 4, 'Fresh Brown Eggs', '215.00', 'per tray', 'active', 2040, 30, '2025-10-06 11:22:18'),
 (7, 4, 'Pidan/Century Eggs', '350.00', 'per tray', 'active', 9390, 30, '2025-10-06 11:22:18'),
-(8, 5, 'Pasture-Raised Eggs', '320.00', 'per tray', 'active', 1470, 30, '2025-10-06 11:22:18'),
-(9, 6, 'White Eggs (Medium)', '190.00', 'per tray', 'active', 3420, 30, '2025-10-06 11:22:18'),
-(10, 6, 'White Eggs (Large)', '205', 'per tray', 'active', 2970, 30, '2025-10-06 11:22:18'),
+(8, 5, 'Pasture-Raised Eggs', '320.00', 'per tray', 'active', 1680, 30, '2025-10-06 11:22:18'),
+(9, 6, 'White Eggs (Medium)', '190.00', 'per tray', 'active', 3450, 30, '2025-10-06 11:22:18'),
+(10, 6, 'White Eggs (Large)', '205', 'per tray', 'active', 3030, 30, '2025-10-06 11:22:18'),
 (11, 7, 'Salted Eggs', '250', 'per tray', 'active', 330, 30, '2025-10-06 11:22:18'),
 (12, 8, 'Itik/Ducks Eggs', '290', 'per tray', 'active', 3300, 30, '2025-10-06 11:22:18'),
 (13, 5, 'Test Egg', '210', 'per tray', 'active', 2850, 30, '2025-10-06 11:22:18'),
 (14, 1, 'Test Egg2211', '6', 'per egg', 'active', 3000, 30, '2025-10-06 11:22:18'),
-(16, 8, 'testegg4', '134', 'tray', 'active', 96, 12, '2025-10-07 12:04:34'),
-(17, 5, 'TestEgg Ver 6.1', '120', 'Tray', 'active', 1069, 12, '2025-10-07 21:14:33'),
-(18, 7, 'Test Egg 7', '121', 'Per Tray', 'active', 1440, 12, '2025-10-08 08:10:13');
+(16, 8, 'testegg4', '134', 'tray', 'active', 84, 12, '2025-10-07 12:04:34');
 
 -- --------------------------------------------------------
 
@@ -535,43 +427,31 @@ INSERT INTO `product_orders` (`order_id`, `user_id`, `order_date`, `total_amount
 (37, 11, '2025-10-06 05:52:16', '320.00', '0.00', 'delivered', 5, 'cod', NULL, '2025-10-06 12:52:16', '2025-10-06 12:53:06', NULL, NULL, 'Motorcycle', 1, NULL, NULL),
 (38, 11, '2025-10-06 06:01:41', '320.00', '0.00', 'refunded', 5, 'cod', NULL, '2025-10-06 13:01:41', '2025-10-06 18:17:34', NULL, NULL, 'Motorcycle', 5, NULL, NULL),
 (39, 11, '2025-10-06 06:25:53', '6720.00', '0.00', 'delivered', 5, 'card', 15, '2025-10-06 13:25:53', '2025-10-06 13:28:07', '9XU17950L4524253S', NULL, NULL, 6, NULL, NULL),
-(40, 11, '2025-10-06 07:48:10', '470.00', '150.00', 'delivered', 5, 'card', 17, '2025-10-06 14:48:10', '2025-10-08 08:48:59', '4BG90957EV100262Y', NULL, 'Car', NULL, NULL, NULL),
+(40, 11, '2025-10-06 07:48:10', '470.00', '150.00', 'shipped', 5, 'card', 17, '2025-10-06 14:48:10', '2025-10-07 08:37:22', '4BG90957EV100262Y', NULL, 'Car', NULL, NULL, NULL),
 (41, 11, '2025-10-06 07:51:19', '360.00', '150.00', 'delivered', 5, 'card', 19, '2025-10-06 14:51:19', '2025-10-07 08:37:10', NULL, NULL, 'Car', 10, NULL, NULL),
 (42, 11, '2025-10-06 07:54:31', '360.00', '150.00', 'refunded', 5, 'card', 20, '2025-10-06 14:54:31', '2025-10-06 18:35:38', NULL, NULL, 'Car', 6, NULL, NULL),
 (43, 11, '2025-10-06 12:22:30', '420.00', '100.00', 'delivered', 5, 'card', 21, '2025-10-06 19:22:30', '2025-10-06 19:23:46', NULL, NULL, 'Motorcycle', 1, NULL, NULL),
-(70, 19, '2025-10-07 21:49:16', '1060.00', '100.00', 'delivered', 14, 'card', 52, '2025-10-08 04:49:16', '2025-10-08 04:50:12', NULL, NULL, 'Motorcycle', 5, NULL, ''),
+(44, 15, '2025-10-07 01:17:06', '420.00', '100.00', 'processing', 10, 'card', 22, '2025-10-07 08:17:06', '2025-10-07 10:40:09', NULL, NULL, 'Motorcycle', 5, NULL, NULL),
 (45, 16, '2025-10-07 01:36:17', '3300.00', '100.00', 'delivered', 11, 'card', 23, '2025-10-07 08:36:17', '2025-10-07 08:42:18', '7SH29966Y8093845U', NULL, 'Motorcycle', 2, NULL, NULL),
 (46, 16, '2025-10-07 01:49:25', '420.00', '100.00', 'cancelled', 11, 'card', 24, '2025-10-07 08:49:25', '2025-10-07 08:49:35', '3MA500343D109353L', NULL, 'Motorcycle', NULL, NULL, NULL),
 (47, 16, '2025-10-07 01:51:39', '290.00', '100.00', 'delivered', 11, 'card', 25, '2025-10-07 08:51:39', '2025-10-07 09:04:43', NULL, NULL, 'Motorcycle', NULL, NULL, NULL),
+(48, 15, '2025-10-07 01:51:45', '310.00', '100.00', 'shipped', 10, 'card', 26, '2025-10-07 08:51:45', '2025-10-07 08:59:54', NULL, NULL, 'Motorcycle', NULL, NULL, NULL),
 (49, 16, '2025-10-07 02:19:01', '3300.00', '100.00', 'delivered', 11, 'card', 27, '2025-10-07 09:19:01', '2025-10-07 09:19:47', '151970546B292060Y', NULL, 'Motorcycle', NULL, NULL, NULL),
 (50, 16, '2025-10-07 02:28:29', '63200.00', '200.00', 'cancelled', 11, 'card', 28, '2025-10-07 09:28:29', '2025-10-07 09:40:51', '92N23835SR736011H', NULL, 'Truck', NULL, NULL, NULL),
 (51, 16, '2025-10-07 03:13:12', '3300.00', '100.00', 'refunded', 11, 'card', 29, '2025-10-07 10:13:12', '2025-10-07 10:34:23', '9NG02769X7065625W', NULL, 'Motorcycle', NULL, NULL, NULL),
 (52, 16, '2025-10-07 03:36:27', '1125.00', '100.00', 'refunded', 11, 'card', 30, '2025-10-07 10:36:27', '2025-10-07 10:37:09', '8S837271MA081681R', NULL, 'Motorcycle', NULL, NULL, NULL),
-(69, 15, '2025-10-07 21:44:35', '1540.00', '100.00', 'delivered', 10, 'card', 51, '2025-10-08 04:44:35', '2025-10-08 05:14:17', NULL, NULL, 'Motorcycle', NULL, 'RETURN-68E5EBE323B54', ''),
+(53, 15, '2025-10-07 03:41:00', '420.00', '100.00', 'delivered', 10, 'card', 31, '2025-10-07 10:41:00', '2025-10-07 10:42:01', NULL, NULL, 'Motorcycle', 4, NULL, NULL),
 (54, 16, '2025-10-07 03:43:57', '186.00', '150.00', 'delivered', 11, 'card', 32, '2025-10-07 10:43:57', '2025-10-07 10:46:50', '09070277VL093634R', NULL, 'Car', 6, NULL, NULL),
 (55, 16, '2025-10-07 03:49:19', '162.00', '150.00', 'refunded', 11, 'card', 33, '2025-10-07 10:49:19', '2025-10-07 10:55:17', '8U211686AT916030W', NULL, 'Car', 6, NULL, NULL),
-(56, 16, '2025-10-07 03:56:40', '360.00', '150.00', 'cancelled', 11, 'card', 34, '2025-10-07 10:56:40', '2025-10-08 09:45:09', '4XE87685J6316111X', NULL, 'Car', NULL, NULL, NULL),
-(57, 16, '2025-10-07 03:57:53', '360.00', '150.00', 'cancelled', 11, 'card', 35, '2025-10-07 10:57:53', '2025-10-08 09:45:06', '31E75124EV231600R', NULL, 'Car', NULL, NULL, NULL),
-(68, 15, '2025-10-07 21:40:43', '580.00', '100.00', 'delivered', 10, 'card', 50, '2025-10-08 04:40:43', '2025-10-08 04:41:46', NULL, NULL, 'Motorcycle', NULL, NULL, ''),
+(56, 16, '2025-10-07 03:56:40', '360.00', '150.00', 'paid', 11, 'card', 34, '2025-10-07 10:56:40', '2025-10-07 10:56:40', '4XE87685J6316111X', NULL, 'Car', NULL, NULL, NULL),
+(57, 16, '2025-10-07 03:57:53', '360.00', '150.00', 'paid', 11, 'card', 35, '2025-10-07 10:57:53', '2025-10-07 10:57:53', '31E75124EV231600R', NULL, 'Car', NULL, NULL, NULL),
+(58, 15, '2025-10-07 05:21:19', '284.00', '150.00', 'delivered', 10, 'card', 36, '2025-10-07 12:21:19', '2025-10-07 12:35:43', NULL, NULL, 'Car', NULL, NULL, NULL),
 (59, 11, '2025-10-07 10:20:49', '560.00', '150.00', 'delivered', 5, 'card', 37, '2025-10-07 17:20:49', '2025-10-07 17:21:00', NULL, NULL, 'Car', NULL, NULL, NULL),
-(67, 15, '2025-10-07 14:12:26', '150.00', '150.00', 'cancelled', 10, 'card', 49, '2025-10-07 21:12:26', '2025-10-07 21:25:15', '8E172480C3755453A', NULL, 'Car', NULL, 'RETURN-68E57E7740A6B', ''),
-(62, 19, '2025-10-07 11:10:39', '790.00', '150.00', 'delivered', 14, 'card', 40, '2025-10-07 18:10:39', '2025-10-07 20:50:50', NULL, NULL, 'Car', NULL, NULL, NULL),
-(66, 15, '2025-10-07 13:51:22', '470.00', '150.00', 'delivered', 10, 'card', 48, '2025-10-07 20:51:22', '2025-10-07 20:51:32', NULL, NULL, 'Car', NULL, NULL, ''),
-(65, 15, '2025-10-07 13:47:33', '790.00', '150.00', 'delivered', 10, 'card', 47, '2025-10-07 20:47:33', '2025-10-07 20:48:20', NULL, NULL, 'Car', 7, NULL, ''),
-(71, 15, '2025-10-07 22:05:11', '420.00', '100.00', 'delivered', 10, 'card', 53, '2025-10-08 05:05:11', '2025-10-08 05:06:53', NULL, NULL, 'Motorcycle', NULL, NULL, ''),
-(72, 19, '2025-10-07 22:10:52', '310.00', '100.00', 'delivered', 14, 'card', 54, '2025-10-08 05:10:52', '2025-10-08 05:10:57', NULL, NULL, 'Motorcycle', NULL, NULL, ''),
-(73, 19, '2025-10-07 22:12:38', '210.00', '100.00', 'delivered', 14, 'card', 55, '2025-10-08 05:12:38', '2025-10-08 06:13:36', NULL, NULL, 'Motorcycle', NULL, 'RETURN-68E5F279C17C1', ''),
-(74, 11, '2025-10-07 23:02:23', '220.00', '100.00', 'delivered', 5, 'card', 56, '2025-10-08 06:02:23', '2025-10-08 06:13:28', '49951566BN065945D', NULL, 'Motorcycle', 1, NULL, ''),
-(75, 20, '2025-10-07 23:03:21', '8350.00', '150.00', 'delivered', 15, 'card', 57, '2025-10-08 06:03:21', '2025-10-08 06:11:28', NULL, NULL, 'Car', 6, NULL, 'WAG PO SI PATRICK CUEVAS UNG MAG DEDELIVERY HAGIS KO SAKANYA UNG ITLOG'),
-(76, 19, '2025-10-07 23:07:14', '14690.00', '200.00', 'delivered', 14, 'card', 58, '2025-10-08 06:07:14', '2025-10-08 06:11:23', NULL, NULL, 'Truck', 11, NULL, ''),
-(77, 21, '2025-10-07 23:09:28', '730.00', '100.00', 'delivered', 16, 'card', 59, '2025-10-08 06:09:28', '2025-10-08 06:13:12', NULL, NULL, 'Motorcycle', NULL, NULL, 'paki ingatan po itlog q ser'),
-(78, 15, '2025-10-07 23:18:34', '630.00', '100.00', 'delivered', 10, 'card', 60, '2025-10-08 06:18:34', '2025-10-08 07:53:59', '53U79929FE9975010', NULL, 'Motorcycle', NULL, NULL, ''),
-(79, 16, '2025-10-08 01:46:56', '310.00', '100.00', 'delivered', 11, 'card', 61, '2025-10-08 08:46:56', '2025-10-08 08:49:11', NULL, NULL, 'Motorcycle', 1, NULL, ''),
-(80, 16, '2025-10-08 02:41:48', '470.00', '150.00', 'cancelled', 11, 'card', 62, '2025-10-08 09:41:48', '2025-10-08 09:44:56', '80S29799L8289501R', NULL, 'Car', NULL, NULL, ''),
-(81, 16, '2025-10-08 02:46:33', '290.00', '100.00', 'delivered', 11, 'card', 63, '2025-10-08 09:46:33', '2025-10-08 10:29:23', NULL, NULL, 'Motorcycle', 1, NULL, 'fjaipfghpia'),
-(82, 19, '2025-10-08 20:00:49', '420.00', '100.00', 'pending', 14, 'card', 64, '2025-10-09 03:00:49', '2025-10-09 03:00:49', NULL, NULL, 'Motorcycle', NULL, NULL, ''),
-(83, 11, '2025-10-09 00:21:36', '220.00', '100.00', 'processing', 5, 'card', 65, '2025-10-09 07:21:36', '2025-10-09 07:26:39', NULL, NULL, 'Motorcycle', 1, NULL, 'test report incident'),
-(84, 11, '2025-10-09 00:27:22', '220.00', '100.00', 'processing', 5, 'card', 66, '2025-10-09 07:27:22', '2025-10-09 07:27:39', NULL, NULL, 'Motorcycle', NULL, NULL, '');
+(60, 15, '2025-10-07 11:00:36', '470.00', '150.00', 'pending', 10, 'card', 38, '2025-10-07 18:00:36', '2025-10-07 18:00:36', NULL, NULL, 'Car', NULL, NULL, NULL),
+(61, 15, '2025-10-07 11:01:33', '470.00', '150.00', 'pending', 10, 'card', 39, '2025-10-07 18:01:33', '2025-10-07 18:01:33', NULL, NULL, 'Car', NULL, NULL, NULL),
+(62, 19, '2025-10-07 11:10:39', '790.00', '150.00', 'pending', 14, 'card', 40, '2025-10-07 18:10:39', '2025-10-07 18:10:39', NULL, NULL, 'Car', NULL, NULL, NULL),
+(63, 15, '2025-10-07 12:58:13', '284.00', '150.00', 'delivered', 10, 'card', 43, '2025-10-07 19:58:13', '2025-10-07 20:33:10', NULL, NULL, 'Car', 9, NULL, ''),
+(64, 15, '2025-10-07 13:25:33', '470.00', '150.00', 'paid', 10, 'card', 46, '2025-10-07 20:25:33', '2025-10-07 20:25:33', '33C50007GE084053Y', NULL, 'Car', NULL, NULL, '');
 
 -- --------------------------------------------------------
 
@@ -657,29 +537,7 @@ INSERT INTO `product_order_items` (`order_item_id`, `order_id`, `producer_id`, `
 (60, 61, 5, 'Pasture-Raised Eggs', 2, '160.00', 0, 12),
 (61, 62, 5, 'Pasture-Raised Eggs', 2, '320.00', 0, 30),
 (62, 63, 8, 'testegg4', 1, '134.00', 0, 12),
-(63, 64, 5, 'Pasture-Raised Eggs', 1, '320.00', 0, 30),
-(64, 65, 5, 'Pasture-Raised Eggs', 2, '320.00', 0, 30),
-(65, 66, 5, 'Pasture-Raised Eggs', 1, '320.00', 0, 30),
-(66, 67, 5, 'Pasture-Raised Eggs', 1, '320.00', 0, 30),
-(67, 68, 5, 'TestEgg Ver 6.1', 4, '120.00', 0, 12),
-(68, 69, 5, 'Pasture-Raised Eggs', 6, '320.00', 0, 30),
-(69, 70, 5, 'TestEgg Ver 6.1', 8, '120.00', 0, 12),
-(70, 71, 5, 'Pasture-Raised Eggs', 1, '320.00', 0, 30),
-(71, 72, 5, 'Test Egg', 1, '210.00', 0, 30),
-(72, 73, 5, 'Pasture-Raised Eggs', 1, '320.00', 0, 30),
-(73, 74, 5, 'TestEgg Ver 6.1', 1, '120.00', 1, 12),
-(74, 75, 6, 'White Eggs (Large)', 40, '205.00', 0, 30),
-(75, 76, 1, 'Standard Eggs', 69, '210.00', 1, 30),
-(76, 77, 6, 'White Eggs (Large)', 2, '205.00', 0, 30),
-(77, 77, 3, 'Golden Yolks', 1, '220.00', 0, 30),
-(78, 78, 5, 'Pasture-Raised Eggs', 1, '320.00', 0, 30),
-(79, 78, 5, 'Test Egg', 1, '210.00', 0, 30),
-(80, 79, 5, 'Test Egg', 1, '210.00', 0, 30),
-(81, 80, 5, 'Pasture-Raised Eggs', 1, '320.00', 0, 30),
-(82, 81, 6, 'White Eggs (Medium)', 1, '190.00', 0, 30),
-(83, 82, 5, 'Pasture-Raised Eggs', 1, '320.00', 0, 30),
-(84, 83, 5, 'TestEgg Ver 6.1', 1, '120.00', 0, 12),
-(85, 84, 5, 'TestEgg Ver 6.1', 1, '120.00', 0, 12);
+(63, 64, 5, 'Pasture-Raised Eggs', 1, '320.00', 0, 30);
 
 -- --------------------------------------------------------
 
@@ -723,9 +581,7 @@ INSERT INTO `product_reviews` (`review_id`, `user_id`, `order_id`, `product_type
 (3, 11, 39, 'Pasture-Raised Eggs', 4, 'meh', '2025-10-06 13:28:37', 39),
 (4, 11, 43, 'Pasture-Raised Eggs', 4, 'hehehaha', '2025-10-06 19:24:06', 42),
 (5, 16, 45, 'Pasture-Raised Eggs', 5, 'GOOD QUALITY', '2025-10-07 08:44:26', 44),
-(6, 16, 47, 'White Eggs (Medium)', 4, 'GOOD SH**', '2025-10-07 09:05:16', 46),
-(7, 19, 76, 'Standard Eggs', 4, 'Is Aight', '2025-10-08 06:12:27', 75),
-(8, 11, 74, 'TestEgg Ver 6.1', 5, 'Heeheehaahaa', '2025-10-08 06:14:23', 73);
+(6, 16, 47, 'White Eggs (Medium)', 4, 'GOOD SH**', '2025-10-07 09:05:16', 46);
 
 -- --------------------------------------------------------
 
@@ -782,16 +638,7 @@ INSERT INTO `returns` (`return_id`, `order_id`, `order_item_id`, `user_id`, `pro
 (10, 55, 54, 0, 0, 'crack po yung dalawa', 'approved', '2025-10-07 10:50:58', '2025-10-07 10:55:17', NULL, NULL, 0),
 (11, 58, 57, 15, 16, 'Damaged in transit', 'rejected', '2025-10-07 17:07:09', '2025-10-07 17:09:02', 'uploads/return_68e548bd103968.01356019_mambo.jpg', NULL, 0),
 (12, 59, 58, 11, 10, 'Damaged in transit', 'rejected', '2025-10-07 17:21:46', '2025-10-07 17:22:17', 'uploads/return_68e54c2a86f375.22197803_Screenshot 2024-11-06 222649.png', NULL, 0),
-(13, 63, 62, 15, 16, 'Damaged in transit', 'approved', '2025-10-07 20:33:35', '2025-10-09 01:31:43', 'uploads/412007e1a4027efed7d275ec84a84448.jpg', '2025-10-07 13:34:03', 1),
-(14, 65, 64, 15, 8, 'Damaged in transit', 'approved', '2025-10-07 20:48:51', '2025-10-09 01:31:43', 'uploads/95fe722cf85d8f9cf7ed7a3694d3bf5d.jpg', '2025-10-07 13:49:09', 1),
-(15, 66, 65, 15, 8, 'Damaged in transit', 'approved', '2025-10-07 20:56:11', '2025-10-09 01:31:43', 'uploads/77fabac44f71034e5a540094d5b6515c.jpg', '2025-10-07 13:56:23', 1),
-(16, 68, 67, 15, 17, 'Damaged in transit', 'approved', '2025-10-08 04:42:58', '2025-10-09 05:26:01', 'uploads/7eaf1aadc3472a13daeabd8681860553.jpg', '2025-10-07 21:43:15', 1),
-(17, 70, 69, 19, 17, 'Quality not as expected', 'rejected', '2025-10-08 04:50:54', '2025-10-08 04:52:37', NULL, NULL, 0),
-(18, 62, 61, 19, 8, 'Item is expired', 'approved', '2025-10-08 05:08:53', '2025-10-09 05:26:01', NULL, '2025-10-07 22:09:12', 1),
-(19, 72, 71, 19, 13, 'Item is expired', 'approved', '2025-10-08 05:11:10', '2025-10-09 05:26:01', NULL, '2025-10-07 22:11:21', 1),
-(20, 71, 70, 15, 8, 'Item is expired', 'approved', '2025-10-08 05:14:35', '2025-10-09 05:26:01', NULL, '2025-10-07 22:14:58', 1),
-(21, 75, 74, 20, 10, 'Item is expired', 'approved', '2025-10-08 06:12:18', '2025-10-09 06:44:37', NULL, '2025-10-07 23:14:44', 1),
-(22, 79, 80, 16, 13, 'Item is expired', 'rejected', '2025-10-08 08:51:41', '2025-10-08 08:52:01', NULL, NULL, 0);
+(13, 63, 62, 15, 16, 'Damaged in transit', 'approved', '2025-10-07 20:33:35', '2025-10-07 20:34:03', 'uploads/412007e1a4027efed7d275ec84a84448.jpg', '2025-10-07 13:34:03', 0);
 
 -- --------------------------------------------------------
 
@@ -821,17 +668,13 @@ CREATE TABLE `USER` (
 --
 
 INSERT INTO `USER` (`USER_ID`, `FIRST_NAME`, `MIDDLE_NAME`, `LAST_NAME`, `EMAIL`, `PHONE`, `PROFILE_PICTURE`, `PASSWORD`, `ROLE`, `ACCOUNT_STATUS`, `LOCK_EXPIRES_AT`, `CREATED_AT`, `UPDATED_AT`, `last_login_at`) VALUES
-(4, 'Rasheed Malachi', 'Ramirez', 'Salamat', 'rasheedmalachi@gmail.com', '', 'default_avatar.png', '$2y$10$befzVXETI53dfpYMhMBvUeXykYXzrIK96lTix/3QtQFUoLCEZ4zpW', 'customer', 'ACTIVE', NULL, '2025-09-22 12:09:06', '2025-10-09 03:35:08', NULL),
-(14, 'SaiSai', 'Middle', 'Aniam', 'saisaianiam@gmail.com', '09956336238', 'default_avatar.png', '$2y$10$K/xn08C7ARa.r2xuoluayufQvb95ckRzsAasLdeGXLoZgd1Csjfaa', 'driver', 'ACTIVE', NULL, '2025-10-06 10:39:50', '2025-10-09 05:57:04', NULL),
-(20, 'Lawrence', 'A', 'Villaflor', 'qljavillaflor@tip.edu.ph', '09458830159', 'default_avatar.png', '$2y$10$J.5IJkAeyC1IhZ5PD7G9fudRn6FiGppnRCPZ..vCsKalkMzITC/fq', 'customer', 'ACTIVE', NULL, '2025-10-08 05:58:10', '2025-10-08 05:58:10', NULL),
+(4, 'Rasheed Malachi', 'Ramirez', 'Salamat', 'rasheedmalachi@gmail.com', '', 'default_avatar.png', '$2y$10$befzVXETI53dfpYMhMBvUeXykYXzrIK96lTix/3QtQFUoLCEZ4zpW', 'customer', 'ACTIVE', NULL, '2025-09-22 12:09:06', '2025-10-07 09:42:52', NULL),
 (11, 'Eduard Simon', 'Nemiada', 'Miana', 'simonmiana@gmail.com', '09956336238', 'uploads/profile_pictures/user_11_68e2844c3376f2.15203154.jpg', '$2y$10$QDBf.AQkpUKMQgTu6r4D6OvmdkqzvIkzl0RKeOG092Ff7ILa/uNIu', 'customer', 'ACTIVE', NULL, '2025-10-04 15:18:40', '2025-10-07 17:09:54', '2025-10-07 17:09:54'),
 (9, 'Admin', NULL, 'User', 'admin@crackcart.com', '123-456-7890', 'uploads/profile_pictures/user_9_68e38e5c29f866.87247820.jpg', '21232f297a57a5a743894a0e4a801fc3', 'admin', 'ACTIVE', NULL, '2025-10-04 14:27:06', '2025-10-07 08:12:37', NULL),
-(21, 'Patrick', 'Alaras', 'Cuevas', 'qplacuevas@tip.edu.ph', '09571788936', 'default_avatar.png', '$2y$10$bqi2.X3DT4f573L0tCUdYeAuSLLG.cYHUieGbAC7PjwYBZol/SlCy', 'customer', 'ACTIVE', NULL, '2025-10-08 06:00:08', '2025-10-08 06:00:08', NULL),
-(19, 'Rasheed Malachi', 'Ramirez', 'Salamat', 'rasheedmalachi.salamat@gmail.com', '09284943131', 'default_avatar.png', '$2y$10$uVORnrTrxCyRn3Feu1IT5eTQYvo638mT.5dlErduZPaC2VWTB6TYi', 'driver', 'ACTIVE', NULL, '2025-10-07 17:50:57', '2025-10-09 03:48:51', '2025-10-09 03:48:51'),
+(19, 'Rasheed Malachi', 'Ramirez', 'Salamat', 'rasheedmalachi.salamat@gmail.com', '09284943131', 'default_avatar.png', '$2y$10$uVORnrTrxCyRn3Feu1IT5eTQYvo638mT.5dlErduZPaC2VWTB6TYi', 'customer', 'ACTIVE', NULL, '2025-10-07 17:50:57', '2025-10-07 17:51:50', '2025-10-07 17:51:50'),
 (15, 'Eduard Simon', 'Nemiada', 'Miana', 'qesnmiana@tip.edu.ph', '09956336238', 'uploads/profile_pictures/0c9b5f4b46035ce4a65af0c8c80f0cdb.jpg', '$2y$10$McsvdTCFkZxxE3r5bc.KIumyhHGwJV6eKWAVCtWMs2aFAFpnyY/Qa', 'customer', 'ACTIVE', NULL, '2025-10-06 19:31:59', '2025-10-07 19:48:49', '2025-10-07 19:25:21'),
-(16, 'Kenneth Angelo', '', 'Sarmiento', 'sken4165@gmail.com', '09273848395', 'uploads/profile_pictures/e904aef644f105632a91dd8e1f8a8cfb.jpeg', '$2y$10$KCNrCJStJ4XPynwSOfDo.OWtzxF7QVyfrDTxEC4ak1V8pfgC.1Ypy', 'customer', 'ACTIVE', NULL, '2025-10-07 07:15:16', '2025-10-08 09:51:37', '2025-10-07 10:10:25'),
-(22, 'Joseph', '', 'Nemiada', 'joseph.nemiada@gmail.com', '5878895297', 'default_avatar.png', '$2y$10$HNAPwCwp4CeIRSc.LKzCIOW1KwDIvxKljn2iiC1Jxw8onltD6GvUS', 'customer', 'ACTIVE', NULL, '2025-10-08 14:02:22', '2025-10-08 14:02:22', NULL),
-(10, 'Eduard Simon', 'Nemiada', 'Miana', 'simonmiana@gmail.co', '09956336238', 'default_avatar.png', '$2y$10$Zzi2FrqhC90ptvMdxXzPVuHriuSOqReJ/6wAZNt3L0b56eCsnZKga', 'admin', 'ACTIVE', NULL, '2025-10-04 15:18:01', '2025-10-07 21:04:20', NULL);
+(16, 'Kenneth Angelo', '', 'Sarmiento', 'sken4165@gmail.com', '09273848395', 'default_avatar.png', '$2y$10$KCNrCJStJ4XPynwSOfDo.OWtzxF7QVyfrDTxEC4ak1V8pfgC.1Ypy', 'customer', 'ACTIVE', NULL, '2025-10-07 07:15:16', '2025-10-07 10:10:25', '2025-10-07 10:10:25'),
+(10, 'Eduard Simon', 'Nemiada', 'Miana', 'simonmiana@gmail.co', '09956336238', 'default_avatar.png', '$2y$10$Zzi2FrqhC90ptvMdxXzPVuHriuSOqReJ/6wAZNt3L0b56eCsnZKga', 'customer', 'ACTIVE', NULL, '2025-10-04 15:18:01', '2025-10-07 09:41:37', NULL);
 
 -- --------------------------------------------------------
 
@@ -869,10 +712,7 @@ INSERT INTO `user_addresses` (`address_id`, `user_id`, `address_line1`, `address
 (11, 16, '245 Purok Silangan', 'Dela Paz', 'Antipolo', 'Antipolo', '', 'Philippines', 'shipping', 1),
 (12, 17, '12 Andres', 'Santolan', 'Pasig City', 'Pasig City', '', 'Philippines', 'shipping', 1),
 (13, 18, '12 Santolan', 'Santolan', 'Pasig City', 'Pasig City', '', 'Philippines', 'shipping', 1),
-(14, 19, '138 A Malumanay', 'UP Village', 'Quezon City', 'Quezon City', '', 'Philippines', 'shipping', 1),
-(15, 20, '12 Andres', 'Santolan', 'Pasig City', 'Pasig City', '', 'Philippines', 'shipping', 1),
-(16, 21, '31 4th West crame', 'West crame', 'San juan city', 'San juan city', '', 'Philippines', 'shipping', 1),
-(17, 22, '9 Mapalad St', 'Mariblo', 'Quezon City', 'Quezon City', '', 'Philippines', 'shipping', 1);
+(14, 19, '138 A Malumanay', 'UP Village', 'Quezon City', 'Quezon City', '', 'Philippines', 'shipping', 1);
 
 -- --------------------------------------------------------
 
@@ -894,16 +734,16 @@ CREATE TABLE `Vehicle` (
 --
 
 INSERT INTO `Vehicle` (`vehicle_id`, `plate_no`, `type`, `capacity_trays`, `status`, `last_maintenance`) VALUES
-(1, 'MC1021', 'Motorcycle', 10, 'available', NULL),
-(2, 'MC2398', 'Motorcycle', 15, 'available', NULL),
-(3, 'MC5874', 'Motorcycle', 8, 'available', NULL),
-(4, 'MC4862', 'Motorcycle', 12, 'available', NULL),
-(5, 'MC3321', 'Motorcycle', 14, 'available', NULL),
-(6, 'CAR7781', 'Car', 50, 'available', NULL),
+(1, 'MC1021', 'Motorcycle', 10, 'in-transit', NULL),
+(2, 'MC2398', 'Motorcycle', 15, 'in-transit', NULL),
+(3, 'MC5874', 'Motorcycle', 8, 'in-transit', NULL),
+(4, 'MC4862', 'Motorcycle', 12, 'in-transit', NULL),
+(5, 'MC3321', 'Motorcycle', 14, 'in-transit', NULL),
+(6, 'CAR7781', 'Car', 50, 'in-transit', NULL),
 (7, 'CAR1212', 'Car', 45, 'available', NULL),
 (8, 'CAR3434', 'Car', 55, 'available', NULL),
 (9, 'CAR9087', 'Car', 40, 'available', NULL),
-(10, 'CAR5656', 'Car', 48, 'available', NULL),
+(10, 'CAR5656', 'Car', 48, 'in-transit', NULL),
 (11, 'TRK4501', 'Truck', 200, 'available', NULL),
 (12, 'TRK3320', 'Truck', 250, 'available', NULL),
 (13, 'TRK8791', 'Truck', 300, 'available', NULL),
@@ -970,19 +810,10 @@ ALTER TABLE `Delivery_Assignment`
   ADD KEY `vehicle_id` (`vehicle_id`);
 
 --
--- Indexes for table `delivery_incidents`
---
-ALTER TABLE `delivery_incidents`
-  ADD PRIMARY KEY (`incident_id`),
-  ADD KEY `driver_id` (`driver_id`),
-  ADD KEY `order_id` (`order_id`);
-
---
 -- Indexes for table `Driver`
 --
 ALTER TABLE `Driver`
-  ADD PRIMARY KEY (`driver_id`),
-  ADD KEY `fk_driver_vehicle` (`vehicle_id`);
+  ADD PRIMARY KEY (`driver_id`);
 
 --
 -- Indexes for table `Fleet_Maintenance`
@@ -1121,7 +952,7 @@ ALTER TABLE `Booking`
 -- AUTO_INCREMENT for table `coupons`
 --
 ALTER TABLE `coupons`
-  MODIFY `coupon_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `coupon_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `Delivery_Assignment`
@@ -1130,16 +961,10 @@ ALTER TABLE `Delivery_Assignment`
   MODIFY `assignment_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `delivery_incidents`
---
-ALTER TABLE `delivery_incidents`
-  MODIFY `incident_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT for table `Driver`
 --
 ALTER TABLE `Driver`
-  MODIFY `driver_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+  MODIFY `driver_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `Fleet_Maintenance`
@@ -1157,19 +982,19 @@ ALTER TABLE `Locations`
 -- AUTO_INCREMENT for table `NOTIFICATION`
 --
 ALTER TABLE `NOTIFICATION`
-  MODIFY `NOTIFICATION_ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=100;
+  MODIFY `NOTIFICATION_ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=51;
 
 --
 -- AUTO_INCREMENT for table `Payment`
 --
 ALTER TABLE `Payment`
-  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=67;
+  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=47;
 
 --
 -- AUTO_INCREMENT for table `PRICE`
 --
 ALTER TABLE `PRICE`
-  MODIFY `PRICE_ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `PRICE_ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- AUTO_INCREMENT for table `PRODUCER`
@@ -1181,13 +1006,13 @@ ALTER TABLE `PRODUCER`
 -- AUTO_INCREMENT for table `product_orders`
 --
 ALTER TABLE `product_orders`
-  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=85;
+  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=65;
 
 --
 -- AUTO_INCREMENT for table `product_order_items`
 --
 ALTER TABLE `product_order_items`
-  MODIFY `order_item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=86;
+  MODIFY `order_item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=64;
 
 --
 -- AUTO_INCREMENT for table `product_returns`
@@ -1199,7 +1024,7 @@ ALTER TABLE `product_returns`
 -- AUTO_INCREMENT for table `product_reviews`
 --
 ALTER TABLE `product_reviews`
-  MODIFY `review_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `review_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `Rate_Card`
@@ -1211,19 +1036,19 @@ ALTER TABLE `Rate_Card`
 -- AUTO_INCREMENT for table `returns`
 --
 ALTER TABLE `returns`
-  MODIFY `return_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+  MODIFY `return_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT for table `USER`
 --
 ALTER TABLE `USER`
-  MODIFY `USER_ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+  MODIFY `USER_ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
 
 --
 -- AUTO_INCREMENT for table `user_addresses`
 --
 ALTER TABLE `user_addresses`
-  MODIFY `address_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+  MODIFY `address_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT for table `Vehicle`
