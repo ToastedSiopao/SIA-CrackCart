@@ -81,6 +81,7 @@ $conn->close();
                                                     <select class="form-select form-select-sm" onchange="updateRole(<?php echo $user['USER_ID']; ?>, this.value)" id="role-select-<?php echo $user['USER_ID']; ?>">
                                                         <option value="customer" <?php echo $user['ROLE'] === 'customer' ? 'selected' : ''; ?>>Customer</option>
                                                         <option value="admin" <?php echo $user['ROLE'] === 'admin' ? 'selected' : ''; ?>>Admin</option>
+                                                        <option value="driver" <?php echo $user['ROLE'] === 'driver' ? 'selected' : ''; ?>>Driver</option>
                                                     </select>
                                                 </td>
                                                 <td>

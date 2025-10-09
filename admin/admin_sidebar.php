@@ -6,7 +6,6 @@ $sidebar_links = [
     'products.php' => '<i class="bi bi-box-seam"></i> Products',
     'manage_orders.php' => '<i class="bi bi-pencil-square"></i> Manage Orders',
     'manage_returns.php' => '<i class="bi bi-arrow-return-left"></i> Manage Returns',
-    'manage_cancellations.php' => '<i class="bi bi-x-circle"></i> Manage Cancellations',
     'manage_users.php' => '<i class="bi bi-people"></i> Manage Users',
     'user_activity.php' => '<i class="bi bi-person-check"></i> User Activity',
     'archived_users.php' => '<i class="bi bi-archive"></i> Archived Users',

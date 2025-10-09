@@ -8,25 +8,17 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role
 
 include '../db_connect.php';
 
-// FINAL CORRECTED QUERY: Based on the provided db.sql schema.
-// - `r.requested_at` is the correct date column.
-// - `po.user_id` (lowercase) is the correct foreign key.
+// CORRECTED QUERY: Using correct uppercase table 'USER' and column names 'USER_ID', 'FIRST_NAME', 'LAST_NAME'
 $query = "
     SELECT 
-        r.return_id, r.order_id, r.status, r.requested_at,
+        r.return_id, r.order_id, r.status, r.created_at,
         CONCAT(u.FIRST_NAME, ' ', u.LAST_NAME) AS customer_name
     FROM returns r
     JOIN product_orders po ON r.order_id = po.order_id
     JOIN `USER` u ON po.user_id = u.USER_ID
-    ORDER BY r.requested_at DESC
+    ORDER BY r.created_at DESC
 ";
-
 $result = $conn->query($query);
-
-if ($result === false) {
-    die("Database query failed: " . htmlspecialchars($conn->error));
-}
-
 $returns = $result->fetch_all(MYSQLI_ASSOC);
 
 $user_name = $_SESSION['user_first_name'] ?? 'Admin';
@@ -39,8 +31,6 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage Returns - CrackCart Admin</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
     <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
     <link href="admin-styles.css?v=1.1" rel="stylesheet">
 </head>
@@ -68,20 +58,18 @@ $user_name = $_SESSION['user_first_name'] ?? 'Admin';
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php if (!empty($returns)): ?>
-                                    <?php foreach ($returns as $return): ?>
-                                        <tr>
-                                            <td><?php echo htmlspecialchars($return['return_id']); ?></td>
-                                            <td><?php echo htmlspecialchars($return['order_id']); ?></td>
-                                            <td><?php echo htmlspecialchars($return['customer_name']); ?></td>
-                                            <td><span class="badge bg-secondary"><?php echo htmlspecialchars($return['status']); ?></span></td>
-                                            <td><?php echo date("M d, Y, h:i A", strtotime($return['requested_at'])); ?></td>
-                                            <td>
-                                                <a href="return_details.php?return_id=<?php echo $return['return_id']; ?>" class="btn btn-primary btn-sm">View</a>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
+                                <?php foreach ($returns as $return): ?>
+                                    <tr>
+                                        <td><?php echo htmlspecialchars($return['return_id']); ?></td>
+                                        <td><?php echo htmlspecialchars($return['order_id']); ?></td>
+                                        <td><?php echo htmlspecialchars($return['customer_name']); ?></td>
+                                        <td><span class="badge bg-secondary"><?php echo htmlspecialchars($return['status']); ?></span></td>
+                                        <td><?php echo date("M d, Y, h:i A", strtotime($return['created_at'])); ?></td>
+                                        <td>
+                                            <a href="return_details.php?return_id=<?php echo $return['return_id']; ?>" class="btn btn-primary btn-sm">View</a>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
                             </tbody>
                         </table>
                     </div>

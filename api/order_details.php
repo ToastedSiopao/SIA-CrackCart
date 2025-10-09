@@ -33,22 +33,7 @@ if (!$order) {
 }
 
 // Fetch order items and join with returns to get return status for each specific item.
-$stmt_items = $conn->prepare("
-    SELECT 
-        poi.order_item_id, 
-        poi.product_type, 
-        poi.price_per_item, 
-        poi.quantity, 
-        poi.tray_size, 
-        poi.is_reviewed, 
-        r.status AS return_status 
-    FROM 
-        product_order_items poi
-    LEFT JOIN 
-        returns r ON poi.order_item_id = r.order_item_id
-    WHERE 
-        poi.order_id = ?
-");
+$stmt_items = $conn->prepare("\n    SELECT \n        poi.order_item_id, \n        poi.product_type, \n        poi.price_per_item, \n        poi.quantity, \n        poi.tray_size, \n        poi.is_reviewed, \n        r.status AS return_status \n    FROM \n        product_order_items poi\n    LEFT JOIN \n        returns r ON poi.order_item_id = r.order_item_id\n    WHERE \n        poi.order_id = ?\n");
 $stmt_items->bind_param("i", $order_id);
 $stmt_items->execute();
 $items_result = $stmt_items->get_result();
@@ -60,17 +45,43 @@ while($item = $items_result->fetch_assoc()) {
 
 $order['items'] = $items;
 
-// Fetch delivery issues
-$stmt_issues = $conn->prepare("SELECT * FROM delivery_issues WHERE order_id = ? ORDER BY created_at DESC");
-$stmt_issues->bind_param("i", $order_id);
-$stmt_issues->execute();
-$issues_result = $stmt_issues->get_result();
-$issues = [];
-while($issue = $issues_result->fetch_assoc()) {
-    $issues[] = $issue;
+// Fetch from delivery_incidents
+$stmt_incidents = $conn->prepare("SELECT incident_id, incident_type, description as issue_description, status, reported_at as created_at FROM delivery_incidents WHERE order_id = ? ORDER BY reported_at DESC");
+$stmt_incidents->bind_param("i", $order_id);
+$stmt_incidents->execute();
+$incidents_result = $stmt_incidents->get_result();
+$incidents = [];
+while($incident = $incidents_result->fetch_assoc()) {
+    $incidents[] = $incident;
+}
+$order['delivery_issues'] = $incidents;
+
+// Check if there is an actionable incident
+$has_actionable_incident = false;
+foreach ($incidents as $incident) {
+    if ($incident['status'] === 'reported') {
+        $has_actionable_incident = true;
+        break;
+    }
 }
 
-$order['delivery_issues'] = $issues;
+// If there is an actionable incident, find the corresponding notification ID
+if ($has_actionable_incident) {
+    // The notification message is expected to contain 'incident' and 'order #'
+    $message_pattern = "%incident%order #$order_id%";
+    
+    // Find the most recent notification for this incident, regardless of IS_READ status
+    $stmt_notification = $conn->prepare(
+        "SELECT NOTIFICATION_ID FROM NOTIFICATION WHERE USER_ID = ? AND MESSAGE LIKE ? ORDER BY CREATED_AT DESC LIMIT 1"
+    );
+    $stmt_notification->bind_param("is", $user_id, $message_pattern);
+    $stmt_notification->execute();
+    $notification_result = $stmt_notification->get_result();
+    
+    if ($notification_row = $notification_result->fetch_assoc()) {
+        $order['notification_id'] = $notification_row['NOTIFICATION_ID'];
+    }
+}
 
 echo json_encode(['status' => 'success', 'data' => $order]);
 
