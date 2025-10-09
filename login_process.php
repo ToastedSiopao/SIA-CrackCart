@@ -4,6 +4,7 @@ require 'vendor/autoload.php';
 require_once 'config.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\SMTP;
 use PHPMailer\PHPMailer\Exception;
 
 session_start();
@@ -94,7 +95,7 @@ try {
                 $mail->send();
 
                 // Respond to frontend
-                echo json_encode(['success' => true, 'two_factor' => true]);
+                echo json_encode(['success' => true, 'two_factor' => true, 'role' => $user['ROLE']]);
                 exit();
 
             } catch (Exception $e) {

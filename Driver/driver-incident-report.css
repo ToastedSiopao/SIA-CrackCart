@@ -1,0 +1,42 @@
+/* driver-incident-report.css */
+
+:root {
+    --primary-color: #FFD500; /* Yellow */
+    --secondary-color: #333;
+    --light-color: #f8f9fa;
+    --dark-color: #212529;
+    --border-radius: 12px;
+    --box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.btn-yellow {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: var(--dark-color);
+    font-weight: 600;
+}
+
+.btn-yellow:hover {
+    background-color: #ffc107;
+    border-color: #ffc107;
+    color: var(--dark-color);
+}
+
+.main-content .card {
+    border: none;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+}
+
+.form-control, .form-select {
+    border-radius: 8px;
+}
+
+.form-label {
+    font-weight: 500;
+}
+
+.incident-icon {
+    font-size: 3rem;
+    color: var(--primary-color);
+}

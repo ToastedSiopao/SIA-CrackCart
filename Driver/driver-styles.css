@@ -1,0 +1,67 @@
+/* Driver Dashboard Styles */
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #f8f9fa;
+}
+
+.main-content {
+    background-color: #FFF;
+    border-radius: 1rem;
+    padding: 2rem;
+}
+
+/* Sidebar Styles */
+.sidebar {
+    position: -webkit-sticky;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    background-color: #fff;
+    border-right: 1px solid #dee2e6;
+    padding: 1.5rem;
+}
+
+.nav-link {
+    color: #333;
+    font-weight: 500;
+    border-radius: 8px;
+    margin-bottom: .5rem;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.nav-link:hover {
+    background-color: #f1f3f5;
+    color: #333;
+}
+
+.nav-link.active {
+    background-color: #ffeb3b;
+    color: #000;
+}
+
+.nav-link .bi {
+    margin-right: 0.5rem;
+}
+
+/* Header Styles */
+.driver-header {
+    background-color: #ffeb3b;
+    border-bottom: 1px solid #dee2e6;
+    padding: 1rem 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,.05);
+}
+
+.navbar-brand {
+    font-weight: 700;
+    color: #000 !important;
+}
+
+/* Card Styles */
+.category-card {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    text-align: center;
+    transition: all 0.3s ease;
+}

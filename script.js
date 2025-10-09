@@ -1,3 +1,4 @@
+
 // Password visibility toggle
 function initPasswordToggle() {
   const toggleButtons = document.querySelectorAll('[id^="toggle"]');
@@ -84,7 +85,7 @@ function initLoginForm() {
     submitBtn.classList.add('loading');
     submitBtn.disabled = true;
 
-    fetch('login_process.php', {
+    fetch('/login_process.php', {
       method: 'POST',
       body: formData,
       credentials: 'include' // ensure session persistence
@@ -100,11 +101,15 @@ function initLoginForm() {
             return;
         }
 
-        if (data.success && data.two_factor) {
-    window.location.href = '2fa_page.php';
-} else if (data.success) {
-    window.location.href = 'dashboard.php';
-}
+        if (data.success) {
+            if (data.two_factor) {
+                window.location.href = '2fa_page.php';
+            } else if (data.role && data.role.toLowerCase() === 'driver') {
+                window.location.href = 'Driver/driver_page.php';
+            } else {
+                window.location.href = 'index.php'; // Default redirect
+            }
+        }
 
     })
     .catch(() => {
@@ -164,7 +169,7 @@ function handleLockout(message, form) {
     submitBtn.disabled = true;
 
     try {
-      const response = await fetch('verify_2fa.php', {
+      const response = await fetch('/verify_2fa.php', {
         method: 'POST',
         body: formData,
         credentials: 'include'
@@ -206,7 +211,7 @@ function initSignupForm() {
     submitBtn.classList.add('loading');
     submitBtn.disabled = true;
 
-    fetch('signup_process.php', {
+    fetch('/signup_process.php', {
       method: 'POST',
       body: formData,
       credentials: 'same-origin'
@@ -289,7 +294,7 @@ function initNotificationSystem() {
   if (!notificationDropdown) return;
 
   function fetchNotifications() {
-    fetch('notifications.php', { credentials: 'same-origin' })
+    fetch('/notifications.php', { credentials: 'same-origin' })
       .then(response => response.json())
       .then(data => {
         notificationList.innerHTML = '';
@@ -333,7 +338,7 @@ function initNotificationSystem() {
   }
 
   function markAsRead(notificationId) {
-    fetch(`notifications.php?mark_as_read=${notificationId}`, { credentials: 'same-origin' })
+    fetch(`/notifications.php?mark_as_read=${notificationId}`, { credentials: 'same-origin' })
       .then(() => fetchNotifications())
       .catch(error => console.error('Error marking notification as read:', error));
   }

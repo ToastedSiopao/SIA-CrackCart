@@ -55,12 +55,16 @@ $username = $isLoggedIn ? $_SESSION['user_name'] : '';
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CrackCart - Your One-Stop Shop</title>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-  <link href="index-styles.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="index-styles.css?v=1.1" rel="stylesheet">
 </head>
 <body>
   <!-- Header -->
-  <header>
-    <img src="assets/Logo.png" alt="CrackCart Logo" class="logo">
+  <header id="secretButton">
+    <div class="logo-container">
+        <i class="fa-solid fa-egg logo-icon"></i>
+        <span class="logo-text">CrackCart</span>
+    </div>
     <nav>
       <ul>
         <li><a href="about.php">About</a></li>
@@ -96,5 +100,41 @@ $username = $isLoggedIn ? $_SESSION['user_name'] : '';
       </div>
     </div>
   </section>
+
+  <script>
+    const secretButton = document.getElementById('secretButton');
+    let clickCount = 0;
+    let clickTimer = null;
+    let pressTimer = null;
+
+    secretButton.addEventListener('click', () => {
+      clickCount++;
+      if (clickTimer) {
+        clearTimeout(clickTimer);
+      }
+      if (clickCount >= 5) {
+        window.location.href = 'admin/index.php';
+        clickCount = 0;
+      } else {
+        clickTimer = setTimeout(() => {
+          clickCount = 0;
+        }, 1000); // Reset click count after 1 second of inactivity
+      }
+    });
+
+    secretButton.addEventListener('mousedown', () => {
+      pressTimer = setTimeout(() => {
+        window.location.href = 'driver_page.php';
+      }, 5000); // 5 seconds
+    });
+
+    secretButton.addEventListener('mouseup', () => {
+      clearTimeout(pressTimer);
+    });
+
+    secretButton.addEventListener('mouseleave', () => {
+      clearTimeout(pressTimer);
+    });
+  </script>
 </body>
 </html>

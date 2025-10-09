@@ -159,7 +159,7 @@ if (isset($_GET['reason']) && $_GET['reason'] === 'inactive') {
               <label for="loginPassword" class="form-label">Password</label>
               <div class="input-group">
                 <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                <input type="password" class="form-control" id="loginPassword" name="password" placeholder="Enter your password" required>
+                <input type="password" class.form-control" id="loginPassword" name="password" placeholder="Enter your password" required>
                 <button class="btn btn-outline-secondary" type="button" id="togglePassword">
                   <i class="fas fa-eye"></i>
                 </button>
@@ -197,6 +197,6 @@ if (isset($_GET['reason']) && $_GET['reason'] === 'inactive') {
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="script.js"></script>
+  <script src="script.js?v=<?php echo time(); ?>"></script>
 </body>
 </html>

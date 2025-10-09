@@ -10,6 +10,7 @@ $sidebar_links = [
     'user_activity.php' => '<i class="bi bi-person-check"></i> User Activity',
     'archived_users.php' => '<i class="bi bi-archive"></i> Archived Users',
     'fleet_management.php' => '<i class="bi bi-truck"></i> Fleet Management',
+    'driver_incident_reports.php' => '<i class="bi bi-exclamation-octagon"></i> Incident Reports',
     'logout.php' => '<i class="bi bi-box-arrow-left"></i> Logout'
 ];
 ?>

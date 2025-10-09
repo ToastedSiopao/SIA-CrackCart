@@ -5,7 +5,7 @@
     --dark-color: #333;
     --light-color: #f8f9fa;
     --white-color: #fff;
-    --font-family: 'Arial', sans-serif;
+    --font-family: 'Poppins', sans-serif;
     --border-radius: 12px;
     --box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     --transition: all 0.3s ease;
@@ -31,8 +31,21 @@ header {
     z-index: 1000;
 }
 
-header img.logo {
-    height: 50px;
+.logo-container {
+    display: flex;
+    align-items: center;
+}
+
+.logo-icon {
+    font-size: 2.5rem; /* Increased size */
+    margin-right: 12px;
+    color: var(--primary-color);
+}
+
+.logo-text {
+    font-size: 28px; /* Increased size */
+    font-weight: 600;
+    font-family: var(--font-family);
 }
 
 nav ul {
