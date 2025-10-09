@@ -5,23 +5,6 @@ $user_id = $_SESSION['user_id'];
 
 include("db_connect.php");
 
-// Handle Add Address
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_address'])) {
-    $address_line1 = $_POST['address_line1'];
-    $address_line2 = $_POST['address_line2'];
-    $city = $_POST['city'];
-    $state = $_POST['state'];
-    $zip_code = $_POST['zip_code'];
-    $country = $_POST['country'];
-    $address_type = $_POST['address_type'];
-
-    $stmt = $conn->prepare("INSERT INTO user_addresses (user_id, address_line1, address_line2, city, state, zip_code, country, address_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("isssssss", $user_id, $address_line1, $address_line2, $city, $state, $zip_code, $country, $address_type);
-    $stmt->execute();
-    header("Location: address.php");
-    exit();
-}
-
 // Fetch existing addresses
 $addresses = [];
 $stmt = $conn->prepare("SELECT * FROM user_addresses WHERE user_id = ?");
@@ -57,47 +40,11 @@ while ($row = $result->fetch_assoc()) {
             <h3 class="mb-0 text-warning fw-bold">Manage Addresses</h3>
         </div>
 
-        <!-- Add New Address Form -->
-        <div class="card mb-4">
-          <div class="card-header fw-bold">Add New Address</div>
-          <div class="card-body">
-            <form method="POST">
-              <div class="row g-3">
-                <div class="col-md-6">
-                  <label for="address_line1" class="form-label">Address Line 1</label>
-                  <input type="text" class="form-control" id="address_line1" name="address_line1" value="123 Egg Street" required>
-                </div>
-                <div class="col-md-6">
-                  <label for="address_line2" class="form-label">Address Line 2 (Optional)</label>
-                  <input type="text" class="form-control" id="address_line2" name="address_line2" value="Apt 4B">
-                </div>
-                <div class="col-md-4">
-                  <label for="city" class="form-label">City</label>
-                  <input type="text" class="form-control" id="city" name="city" value="Cebu City" required>
-                </div>
-                <div class="col-md-4">
-                  <label for="state" class="form-label">State/Province</label>
-                  <input type="text" class="form-control" id="state" name="state" value="Cebu" required>
-                </div>
-                <div class="col-md-4">
-                  <label for="zip_code" class="form-label">ZIP Code</label>
-                  <input type="text" class="form-control" id="zip_code" name="zip_code" value="6000" required>
-                </div>
-                 <div class="col-md-6">
-                  <label for="country" class="form-label">Country</label>
-                  <input type="text" class="form-control" id="country" name="country" value="Philippines" required>
-                </div>
-                <div class="col-md-6">
-                  <label for="address_type" class="form-label">Address Type</label>
-                  <select class="form-select" id="address_type" name="address_type">
-                    <option value="shipping">Shipping</option>
-                    <option value="billing">Billing</option>
-                  </select>
-                </div>
-              </div>
-              <button type="submit" name="add_address" class="btn btn-warning mt-3">Add Address</button>
-            </form>
-          </div>
+        <!-- Add New Address Button -->
+        <div class="mb-4">
+            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#addressModal" data-address-id="">
+                Add New Address
+            </button>
         </div>
 
         <!-- Existing Addresses -->
@@ -112,6 +59,10 @@ while ($row = $result->fetch_assoc()) {
                   <div class="list-group-item">
                     <div class="d-flex w-100 justify-content-between">
                       <h5 class="mb-1"><?= htmlspecialchars($address['address_type']) ?></h5>
+                      <div>
+                        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addressModal" data-address-id="<?= $address['address_id'] ?>"><i class="bi bi-pencil"></i></button>
+                        <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                      </div>
                     </div>
                     <p class="mb-1">
                       <?= htmlspecialchars($address['address_line1']) ?><br>
@@ -129,6 +80,121 @@ while ($row = $result->fetch_assoc()) {
     </div>
   </div>
 
+  <!-- Address Modal -->
+<div class="modal fade" id="addressModal" tabindex="-1" aria-labelledby="addressModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addressModalLabel">Add/Edit Address</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <?php include('psgc_address.php'); ?>
+      </div>
+    </div>
+  </div>
+</div>
+
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const addressModal = document.getElementById('addressModal');
+        addressModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const addressId = button.getAttribute('data-address-id');
+            const modalTitle = addressModal.querySelector('.modal-title');
+            const addressIdInput = addressModal.querySelector('#address_id');
+            const psgcForm = document.getElementById('psgc-address-form');
+
+            if (addressId) {
+                modalTitle.textContent = 'Edit Address';
+                addressIdInput.value = addressId;
+                
+                // Fetch address details and populate the form
+                fetch(`api/get_address.php?id=${addressId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (!data.error) {
+                            // This is a simplified population logic.
+                            // A more robust solution would involve waiting for the PSGC dropdowns to be populated
+                            // and then setting the values.
+                            document.getElementById('street').value = data.street;
+                            document.getElementById('zipcode').value = data.zip_code;
+                            
+                            // We will pre-select the region, province, city and barangay
+                            const regionDropdown = document.getElementById('region');
+                            const provinceDropdown = document.getElementById('province');
+                            const cityDropdown = document.getElementById('city');
+                            const barangayDropdown = document.getElementById('barangay');
+
+                            // We will trigger the change events to populate the dropdowns
+                            regionDropdown.value = data.region_code;
+                            regionDropdown.dispatchEvent(new Event('change'));
+
+                            // We need to wait for the provinces to be populated before setting the value
+                            setTimeout(() => {
+                                provinceDropdown.value = data.province_code;
+                                provinceDropdown.dispatchEvent(new Event('change'));
+                            }, 500);
+
+                            // We need to wait for the cities to be populated before setting the value
+                            setTimeout(() => {
+                                cityDropdown.value = data.city_code;
+                                cityDropdown.dispatchEvent(new Event('change'));
+                            }, 1000);
+
+                            // We need to wait for the barangays to be populated before setting the value
+                            setTimeout(() => {
+                                barangayDropdown.value = data.barangay_code;
+                            }, 1500);
+
+                        }
+                    });
+
+            } else {
+                modalTitle.textContent = 'Add New Address';
+                addressIdInput.value = '';
+                psgcForm.reset();
+            }
+        });
+
+        const psgcForm = document.getElementById('psgc-address-form');
+        psgcForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const formData = new FormData(psgcForm);
+            const addressId = formData.get('address_id');
+            const url = addressId ? 'api/edit_address.php' : 'api/add_address.php';
+
+            // Add text values of dropdowns to formData
+            const regionDropdown = document.getElementById('region');
+            const provinceDropdown = document.getElementById('province');
+            const cityDropdown = document.getElementById('city');
+            const barangayDropdown = document.getElementById('barangay');
+
+            formData.append('region_text', regionDropdown.options[regionDropdown.selectedIndex].text);
+            formData.append('province_text', provinceDropdown.options[provinceDropdown.selectedIndex].text);
+            formData.append('city_text', cityDropdown.options[cityDropdown.selectedIndex].text);
+            formData.append('barangay_text', barangayDropdown.options[barangayDropdown.selectedIndex].text);
+            
+            fetch(url, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload(); // Simple reload for now
+                } else {
+                    alert('Error saving address: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An unexpected error occurred.');
+            });
+        });
+    });
+  </script>
 </body>
 </html>

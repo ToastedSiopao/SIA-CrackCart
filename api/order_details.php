@@ -60,6 +60,18 @@ while($item = $items_result->fetch_assoc()) {
 
 $order['items'] = $items;
 
+// Fetch delivery issues
+$stmt_issues = $conn->prepare("SELECT * FROM delivery_issues WHERE order_id = ? ORDER BY created_at DESC");
+$stmt_issues->bind_param("i", $order_id);
+$stmt_issues->execute();
+$issues_result = $stmt_issues->get_result();
+$issues = [];
+while($issue = $issues_result->fetch_assoc()) {
+    $issues[] = $issue;
+}
+
+$order['delivery_issues'] = $issues;
+
 echo json_encode(['status' => 'success', 'data' => $order]);
 
 $conn->close();

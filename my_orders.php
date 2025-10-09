@@ -89,7 +89,7 @@ require_once 'session_handler.php';
                     const status = order.status.toLowerCase();
                     if (filter === 'topay') return status === 'pending';
                     if (filter === 'toship') return ['processing', 'paid'].includes(status);
-                    if (filter === 'toreceive') return status === 'shipped';
+                    if (filter === 'toreceive') return status === 'in transit';
                     if (filter === 'completed') return status === 'delivered';
                     if (filter === 'cancelled') return ['cancelled', 'failed'].includes(status);
                     return false;
@@ -140,7 +140,7 @@ require_once 'session_handler.php';
                 case 'pending': return 'warning';
                 case 'paid':
                 case 'processing': return 'info';
-                case 'shipped': return 'primary';
+                case 'in transit': return 'primary';
                 case 'delivered': return 'success';
                 case 'cancelled': return 'secondary';
                 case 'failed': return 'danger';

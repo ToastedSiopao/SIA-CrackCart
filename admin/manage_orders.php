@@ -210,6 +210,7 @@ function getStatusClass($status) {
                                     <div class="card-footer bg-white d-flex flex-column gap-2">
                                         <a href="order_details.php?order_id=<?php echo $order['order_id']; ?>" class="btn btn-sm btn-outline-info w-100">View Details</a>
                                         <div class="d-flex gap-2 w-100">
+                                            <button class="btn btn-sm btn-outline-warning w-50" onclick="openReportIssueModal(<?php echo $order['order_id']; ?>)"><i class="bi bi-exclamation-triangle"></i> Report</button>
                                             <button class="btn btn-sm btn-outline-primary w-50" 
                                                     onclick='openAssignVehicleModal(<?php echo json_encode($order); ?>)' 
                                                     <?php echo $order['status'] !== 'processing' || $order['vehicle_id'] != null ? 'disabled' : ''; ?>
@@ -267,13 +268,41 @@ function getStatusClass($status) {
   </div>
 </div>
 
+<!-- Report Issue Modal -->
+<div class="modal fade" id="reportIssueModal" tabindex="-1" aria-labelledby="reportIssueModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="reportIssueModalLabel">Report Issue for Order #<span id="reportIssueOrderId"></span></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="reportIssueForm">
+          <input type="hidden" id="reportOrderId" name="order_id">
+          <div class="mb-3">
+            <label for="issueDescription" class="form-label">Issue Description</label>
+            <textarea class="form-control" id="issueDescription" name="issue_description" rows="3" required></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-danger" onclick="submitReport()">Submit Report</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 const available_vehicles = <?php echo json_encode($available_vehicles); ?>;
 let assignVehicleModal;
+let reportIssueModal;
 
 document.addEventListener("DOMContentLoaded", function() {
     assignVehicleModal = new bootstrap.Modal(document.getElementById('assignVehicleModal'));
+    reportIssueModal = new bootstrap.Modal(document.getElementById('reportIssueModal'));
 });
 
 function openAssignVehicleModal(order) {
@@ -360,6 +389,35 @@ function assignVehicle() {
     }).finally(() => {
         assignBtn.disabled = false;
         assignBtn.innerHTML = 'Assign';
+    });
+}
+
+function openReportIssueModal(orderId) {
+    document.getElementById('reportOrderId').value = orderId;
+    document.getElementById('reportIssueOrderId').textContent = orderId;
+    reportIssueModal.show();
+}
+
+function submitReport() {
+    const form = document.getElementById('reportIssueForm');
+    const formData = new FormData(form);
+
+    fetch('api/report_issue.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        reportIssueModal.hide();
+        if (data.success) {
+            showAlert('Issue reported successfully', 'success');
+        } else {
+            showAlert(data.message || 'Failed to report issue', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('An error occurred while reporting the issue.', 'danger');
     });
 }
 

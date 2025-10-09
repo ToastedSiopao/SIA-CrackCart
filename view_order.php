@@ -64,6 +64,7 @@ $order_id = $_GET['order_id'];
                             </div>
                         </div>
                     </div>
+                    <div id="delivery-issues-container" class="mt-4"></div>
                 </div>
             </main>
         </div>
@@ -103,6 +104,7 @@ $order_id = $_GET['order_id'];
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         const orderDetailsContainer = document.getElementById('order-details-container');
+        const deliveryIssuesContainer = document.getElementById('delivery-issues-container');
         const alertContainer = document.getElementById('order-details-alert-container');
         const orderId = new URLSearchParams(window.location.search).get('order_id');
         const reviewModal = new bootstrap.Modal(document.getElementById('reviewModal'));
@@ -121,7 +123,10 @@ $order_id = $_GET['order_id'];
             try {
                 const response = await fetch(`api/order_details.php?order_id=${orderId}`);
                 const result = await response.json();
-                if (result.status === 'success') { renderOrderDetails(result.data); } 
+                if (result.status === 'success') { 
+                    renderOrderDetails(result.data);
+                    renderDeliveryIssues(result.data.delivery_issues);
+                 } 
                 else { orderDetailsContainer.innerHTML = `<div class="alert alert-danger">${result.message || 'Could not load order details.'}</div>`; }
             } catch (error) { showAlert('danger', 'Could not connect to the server to get order details.'); }
         };
@@ -154,6 +159,26 @@ $order_id = $_GET['order_id'];
             });
         };
         
+        const renderDeliveryIssues = (issues) => {
+            if (!issues || issues.length === 0) return;
+
+            const issuesHtml = issues.map(issue => {
+                return `
+                    <div class="card mb-3">
+                        <div class="card-header d-flex justify-content-between">
+                            <span>Issue Reported: ${new Date(issue.created_at).toLocaleString()}</span>
+                            <span class="badge bg-${issue.status === 'resolved' ? 'success' : 'warning'}">${issue.status}</span>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">${issue.issue_description}</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            deliveryIssuesContainer.innerHTML = `<h5>Delivery Issues</h5>${issuesHtml}`;
+        };
+
         reviewForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             if (ratingInput.value === '0') { 

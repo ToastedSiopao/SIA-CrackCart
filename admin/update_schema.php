@@ -1,12 +1,16 @@
 <?php
-include '../db_connect.php';
+include('../db_connect.php');
 
-$sql = "ALTER TABLE product_order_items ADD COLUMN tray_size INT NOT NULL DEFAULT 30";
+$sql = "ALTER TABLE user_addresses 
+        ADD COLUMN region_code VARCHAR(255) AFTER region,
+        ADD COLUMN province_code VARCHAR(255) AFTER province,
+        ADD COLUMN city_code VARCHAR(255) AFTER city,
+        ADD COLUMN barangay_code VARCHAR(255) AFTER barangay;";
 
-if ($conn->query($sql) === TRUE) {
-    echo "Table product_order_items altered successfully";
+if ($conn->multi_query($sql)) {
+    echo "Table user_addresses updated successfully.";
 } else {
-    echo "Error altering table: " . $conn->error;
+    echo "Error updating table: " . $conn->error;
 }
 
 $conn->close();
