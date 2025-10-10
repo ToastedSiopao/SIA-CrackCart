@@ -176,8 +176,9 @@ $conn->close();
                                 <div class="row">
                                     <?php 
                                         $reasons = [
-                                            "Damaged in transit", "Wrong item delivered", "Item is expired",
-                                            "Missing items from order", "Quality not as expected", "Received a different size/type"
+                                            "Item is expired",
+                                            "Missing items from order", 
+                                            "Received a different size/type"
                                         ];
                                         foreach ($reasons as $index => $reasonText) {
                                             $id = "reason" . ($index + 1);
@@ -194,10 +195,10 @@ $conn->close();
                                 <div id="reason-error" class="invalid-feedback d-block" style="display: none;">Please select a reason.</div>
                             </div>
 
-                            <div class="mb-4" id="damaged_image_container" style="display: none;">
-                                <label for="damaged_image" class="form-label">Upload Image of Damaged Item</label>
-                                <input class="form-control" type="file" id="damaged_image" name="return_image" accept="image/*">
-                                <div class="invalid-feedback">A picture is required for damaged items.</div>
+                            <div class="mb-4">
+                                <label for="return_image" class="form-label fw-bold">Upload Image (Optional)</label>
+                                <p class="form-text text-muted">If the item is incorrect, please upload a photo as evidence.</p>
+                                <input class="form-control" type="file" id="return_image" name="return_image" accept="image/png, image/jpeg, image/gif">
                             </div>
 
                             <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
@@ -207,7 +208,7 @@ $conn->close();
                         </form>
                         
                         <div class="return-policy-note">
-                           Please select from the acceptable reasons for your return. For more details, refer to our <a href="/return-policy">return policy</a>.
+                           Please select from the acceptable reasons for your return. For more details, refer to our <a href="return-policy.php">return policy</a>.
                         </div>
                         
                         <div id="formMessage" class="mt-3"></div>
@@ -231,30 +232,15 @@ $conn->close();
 <script>
 const returnForm = document.getElementById('returnRequestForm');
 if (returnForm) {
-    const damagedImageContainer = document.getElementById('damaged_image_container');
-    const damagedImageInput = document.getElementById('damaged_image');
     const reasonRadios = returnForm.querySelectorAll('input[name="reason"]');
     const reasonError = document.getElementById('reason-error');
 
-    reasonRadios.forEach(radio => {
-        radio.addEventListener('change', function() {
-            reasonError.style.display = 'none';
-            if (this.value === 'Damaged in transit') {
-                damagedImageContainer.style.display = 'block';
-                damagedImageInput.setAttribute('required', 'required');
-            } else {
-                damagedImageContainer.style.display = 'none';
-                damagedImageInput.removeAttribute('required');
-            }
-        });
-    });
 
     returnForm.addEventListener('submit', async function(event) {
         event.preventDefault();
         const form = event.target;
         const formMessage = document.getElementById('formMessage');
         formMessage.innerHTML = '';
-        damagedImageInput.classList.remove('is-invalid');
 
         const selectedReasonRadio = form.querySelector('input[name="reason"]:checked');
         let isValid = true;
@@ -262,13 +248,6 @@ if (returnForm) {
         if (!selectedReasonRadio) {
             reasonError.style.display = 'block';
             isValid = false;
-        }
-
-        if (selectedReasonRadio && selectedReasonRadio.value === 'Damaged in transit') {
-            if (!damagedImageInput.files || damagedImageInput.files.length === 0) {
-                damagedImageInput.classList.add('is-invalid');
-                isValid = false;
-            }
         }
 
         if (!isValid) {
