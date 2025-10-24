@@ -62,17 +62,9 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-3 col-md-6">
-                        <div class="card text-white bg-danger">
-                            <div class="card-body">
-                                <h5 class="card-title">Losses from Returns</h5>
-                                <p class="card-text h3" id="return-losses">-</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Sales Totals -->
-                    <div class="col-lg-4 col-md-6 sales-total-card" data-timeframe="weekly">
+                    
+                    <!-- Sales & Losses Totals -->
+                    <div class="col-lg-4 col-md-6 time-based-card" data-timeframe="weekly">
                         <div class="card text-dark bg-light">
                             <div class="card-body">
                                 <h5 class="card-title">Weekly Sales</h5>
@@ -80,7 +72,15 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-4 col-md-6 sales-total-card" data-timeframe="monthly">
+                     <div class="col-lg-4 col-md-6 time-based-card" data-timeframe="weekly">
+                        <div class="card text-white bg-danger">
+                            <div class="card-body">
+                                <h5 class="card-title">Weekly Losses</h5>
+                                <p class="card-text h3" id="weekly-losses-total">-</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 time-based-card" data-timeframe="monthly">
                         <div class="card text-dark bg-light">
                             <div class="card-body">
                                 <h5 class="card-title">Monthly Sales</h5>
@@ -88,11 +88,27 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-4 col-md-6 sales-total-card" data-timeframe="yearly">
+                    <div class="col-lg-4 col-md-6 time-based-card" data-timeframe="monthly">
+                        <div class="card text-white bg-danger">
+                            <div class="card-body">
+                                <h5 class="card-title">Monthly Losses</h5>
+                                <p class="card-text h3" id="monthly-losses-total">-</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 time-based-card" data-timeframe="yearly">
                         <div class="card text-dark bg-light">
                             <div class="card-body">
                                 <h5 class="card-title">Yearly Sales</h5>
                                 <p class="card-text h3" id="yearly-sales-total">-</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 time-based-card" data-timeframe="yearly">
+                        <div class="card text-white bg-danger">
+                            <div class="card-body">
+                                <h5 class="card-title">Yearly Losses</h5>
+                                <p class="card-text h3" id="yearly-losses-total">-</p>
                             </div>
                         </div>
                     </div>
@@ -116,7 +132,8 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
         </div>
     </div>
 
-   
+    <!-- Off-canvas Sidebar -->
+    <?php include('admin_offcanvas_sidebar.php'); ?>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.0.0-alpha1/js/bootstrap.bundle.min.js"></script>
@@ -125,22 +142,28 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     $(document).ready(function() {
         let salesChart = null; // To hold the chart instance
 
-        function renderChart(salesData, timeframe) {
+        function renderChart(salesData, lossesData, timeframe) {
             const ctx = document.getElementById('sales-chart').getContext('2d');
-            let labels, data, label;
+            let labels, sales, losses, salesLabel, lossesLabel;
 
             if (timeframe === 'weekly') {
                 labels = salesData.weekly.map(d => d.sale_date);
-                data = salesData.weekly.map(d => d.total_sales);
-                label = 'Weekly Sales (Last 7 Days)';
+                sales = salesData.weekly.map(d => d.total_sales);
+                losses = lossesData.weekly.map(d => d.total_losses);
+                salesLabel = 'Weekly Sales';
+                lossesLabel = 'Weekly Losses';
             } else if (timeframe === 'monthly') {
                 labels = salesData.monthly.map(d => d.sale_week);
-                data = salesData.monthly.map(d => d.total_sales);
-                label = 'Monthly Sales (Last 4 Weeks)';
+                sales = salesData.monthly.map(d => d.total_sales);
+                losses = lossesData.monthly.map(d => d.total_losses);
+                salesLabel = 'Monthly Sales';
+                lossesLabel = 'Monthly Losses';
             } else if (timeframe === 'yearly') {
                 labels = salesData.yearly.map(d => d.sale_month);
-                data = salesData.yearly.map(d => d.total_sales);
-                label = 'Yearly Sales (Last 12 Months)';
+                sales = salesData.yearly.map(d => d.total_sales);
+                losses = lossesData.yearly.map(d => d.total_losses);
+                salesLabel = 'Yearly Sales';
+                lossesLabel = 'Yearly Losses';
             }
 
             if (salesChart) {
@@ -151,20 +174,44 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
                 type: 'line',
                 data: {
                     labels: labels,
-                    datasets: [{
-                        label: label,
-                        data: data,
-                        backgroundColor: 'rgba(0, 123, 255, 0.5)',
-                        borderColor: 'rgba(0, 123, 255, 1)',
-                        borderWidth: 2,
-                        tension: 0.3
-                    }]
+                    datasets: [
+                        {
+                            label: salesLabel,
+                            data: sales,
+                            backgroundColor: 'rgba(40, 167, 69, 0.5)',
+                            borderColor: 'rgba(40, 167, 69, 1)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            yAxisID: 'y-sales'
+                        },
+                        {
+                            label: lossesLabel,
+                            data: losses,
+                            backgroundColor: 'rgba(220, 53, 69, 0.5)',
+                            borderColor: 'rgba(220, 53, 69, 1)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            yAxisID: 'y-losses'
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        y: {
+                        'y-sales': {
+                            type: 'linear',
+                            position: 'left',
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return `PHP ${value.toLocaleString()}`;
+                                }
+                            }
+                        },
+                        'y-losses': {
+                            type: 'linear',
+                            position: 'right',
                             beginAtZero: true,
                             ticks: {
                                 callback: function(value) {
@@ -179,12 +226,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 
         function fetchDemographics() {
             fetch('../api/get_demographics_data.php')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
-                })
+                .then(response => response.json())
                 .then(data => {
                     if (data.error) {
                         console.error(data.error);
@@ -193,31 +235,32 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
                     $('#weekly-transactions').text(data.weekly_transactions);
                     $('#monthly-transactions').text(data.monthly_transactions);
                     $('#yearly-transactions').text(data.yearly_transactions);
-                    $('#return-losses').text(`PHP ${data.return_losses}`);
-
+                    
                     $('#weekly-sales-total').text(`PHP ${data.weekly_sales_total}`);
                     $('#monthly-sales-total').text(`PHP ${data.monthly_sales_total}`);
                     $('#yearly-sales-total').text(`PHP ${data.yearly_sales_total}`);
 
+                    $('#weekly-losses-total').text(`PHP ${data.weekly_losses_total}`);
+                    $('#monthly-losses-total').text(`PHP ${data.monthly_losses_total}`);
+                    $('#yearly-losses-total').text(`PHP ${data.yearly_losses_total}`);
+
                     // Initial setup
-                    $('.sales-total-card').hide();
-                    $('.sales-total-card[data-timeframe="weekly"]').show();
-                    renderChart(data.sales_data, 'weekly'); 
+                    $('.time-based-card').hide();
+                    $('.time-based-card[data-timeframe="weekly"]').show();
+                    renderChart(data.sales_data, data.losses_data, 'weekly'); 
 
                     // Handle timeframe button clicks
                     $('.btn-group .btn').on('click', function() {
                         const timeframe = $(this).data('timeframe');
                         $(this).addClass('active').siblings().removeClass('active');
                         
-                        $('.sales-total-card').hide();
-                        $('.sales-total-card[data-timeframe="' + timeframe + '"]').show();
+                        $('.time-based-card').hide();
+                        $('.time-based-card[data-timeframe="' + timeframe + '"]').show();
                         
-                        renderChart(data.sales_data, timeframe);
+                        renderChart(data.sales_data, data.losses_data, timeframe);
                     });
                 })
-                .catch(error => {
-                    console.error('Fetch error:', error.message);
-                });
+                .catch(error => console.error('Fetch error:', error));
         }
 
         fetchDemographics();
