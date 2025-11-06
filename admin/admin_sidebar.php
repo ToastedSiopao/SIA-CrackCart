@@ -12,6 +12,7 @@ $sidebar_links = [
     'fleet_management.php' => '<i class="bi bi-truck"></i> Fleet Management',
     'driver_incident_reports.php' => '<i class="bi bi-exclamation-octagon"></i> Incident Reports',
     'demographics.php' => '<i class="bi bi-graph-up"></i> Demographics',
+    'admin_manual.php' => '<i class="bi bi-book"></i> Admin Manual',
     'logout.php' => '<i class="bi bi-box-arrow-left"></i> Logout'
 ];
 ?>

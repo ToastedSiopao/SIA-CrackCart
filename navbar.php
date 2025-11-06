@@ -29,6 +29,7 @@ $user_name = $_SESSION['user_first_name'] ?? 'Guest';
             <li><a class="dropdown-item" href="my_orders.php">My Orders</a></li>
             <li><a class="dropdown-item" href="contact.php">Contact Us</a></li>
             <li><a class="dropdown-item" href="profilePage.php">Settings</a></li>
+            <li><a class="dropdown-item" href="user_manual.php">User Manual</a></li>
             <li><hr class="dropdown-divider"></li>
             <li><a class="dropdown-item" href="logout.php">Logout</a></li>
           </ul>

@@ -34,6 +34,14 @@ try {
     $monthly_losses_sql = "SELECT CONCAT(YEAR(r.requested_at), '-W', WEEK(r.requested_at, 1)) as loss_week, SUM(oi.quantity * oi.price_per_item) as total_losses FROM `returns` r JOIN `product_order_items` oi ON r.order_item_id = oi.order_item_id WHERE r.status = 'approved' AND r.requested_at >= CURDATE() - INTERVAL 4 WEEK GROUP BY loss_week ORDER BY loss_week ASC";
     $yearly_losses_sql = "SELECT DATE_FORMAT(r.requested_at, '%Y-%m') as loss_month, SUM(oi.quantity * oi.price_per_item) as total_losses FROM `returns` r JOIN `product_order_items` oi ON r.order_item_id = oi.order_item_id WHERE r.status = 'approved' AND r.requested_at >= CURDATE() - INTERVAL 12 MONTH GROUP BY loss_month ORDER BY loss_month ASC";
 
+    // --- Fetch Top Performers ---
+    $weekly_top_item_sql = "SELECT product_type, SUM(quantity) as total_quantity FROM product_order_items oi JOIN product_orders po ON oi.order_id = po.order_id WHERE po.order_date >= CURDATE() - INTERVAL 7 DAY GROUP BY product_type ORDER BY total_quantity DESC LIMIT 1";
+    $monthly_top_item_sql = "SELECT product_type, SUM(quantity) as total_quantity FROM product_order_items oi JOIN product_orders po ON oi.order_id = po.order_id WHERE po.order_date >= CURDATE() - INTERVAL 1 MONTH GROUP BY product_type ORDER BY total_quantity DESC LIMIT 1";
+    $yearly_top_item_sql = "SELECT product_type, SUM(quantity) as total_quantity FROM product_order_items oi JOIN product_orders po ON oi.order_id = po.order_id WHERE po.order_date >= CURDATE() - INTERVAL 1 YEAR GROUP BY product_type ORDER BY total_quantity DESC LIMIT 1";
+
+    $weekly_top_producer_sql = "SELECT p.NAME, SUM(oi.quantity) as total_quantity FROM product_order_items oi JOIN product_orders po ON oi.order_id = po.order_id JOIN PRODUCER p ON oi.producer_id = p.PRODUCER_ID WHERE po.order_date >= CURDATE() - INTERVAL 7 DAY GROUP BY p.NAME ORDER BY total_quantity DESC LIMIT 1";
+    $monthly_top_producer_sql = "SELECT p.NAME, SUM(oi.quantity) as total_quantity FROM product_order_items oi JOIN product_orders po ON oi.order_id = po.order_id JOIN PRODUCER p ON oi.producer_id = p.PRODUCER_ID WHERE po.order_date >= CURDATE() - INTERVAL 1 MONTH GROUP BY p.NAME ORDER BY total_quantity DESC LIMIT 1";
+    $yearly_top_producer_sql = "SELECT p.NAME, SUM(oi.quantity) as total_quantity FROM product_order_items oi JOIN product_orders po ON oi.order_id = po.order_id JOIN PRODUCER p ON oi.producer_id = p.PRODUCER_ID WHERE po.order_date >= CURDATE() - INTERVAL 1 YEAR GROUP BY p.NAME ORDER BY total_quantity DESC LIMIT 1";
 
     // Function to execute a query and fetch results
     function fetch_data($conn, $sql) {
@@ -79,6 +87,20 @@ try {
             'weekly' => fetch_data($conn, $weekly_losses_sql),
             'monthly' => fetch_data($conn, $monthly_losses_sql),
             'yearly' => fetch_data($conn, $yearly_losses_sql)
+        ],
+        'top_performers' => [
+            'weekly' => [
+                'item' => fetch_data($conn, $weekly_top_item_sql)[0] ?? ['product_type' => 'N/A', 'total_quantity' => 0],
+                'producer' => fetch_data($conn, $weekly_top_producer_sql)[0] ?? ['NAME' => 'N/A', 'total_quantity' => 0]
+            ],
+            'monthly' => [
+                'item' => fetch_data($conn, $monthly_top_item_sql)[0] ?? ['product_type' => 'N/A', 'total_quantity' => 0],
+                'producer' => fetch_data($conn, $monthly_top_producer_sql)[0] ?? ['NAME' => 'N/A', 'total_quantity' => 0]
+            ],
+            'yearly' => [
+                'item' => fetch_data($conn, $yearly_top_item_sql)[0] ?? ['product_type' => 'N/A', 'total_quantity' => 0],
+                'producer' => fetch_data($conn, $yearly_top_producer_sql)[0] ?? ['NAME' => 'N/A', 'total_quantity' => 0]
+            ]
         ]
     ];
 

@@ -128,6 +128,61 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
                     </div>
                 </div>
 
+                <!-- Top Performers -->
+                <div class="row mt-5 time-based-card" data-timeframe="weekly">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Most Bought Item (Weekly)</h5>
+                                <p class="card-text h4" id="weekly-top-item">-</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Top Producer (Weekly)</h5>
+                                <p class="card-text h4" id="weekly-top-producer">-</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-5 time-based-card" data-timeframe="monthly">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Most Bought Item (Monthly)</h5>
+                                <p class="card-text h4" id="monthly-top-item">-</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Top Producer (Monthly)</h5>
+                                <p class="card-text h4" id="monthly-top-producer">-</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-5 time-based-card" data-timeframe="yearly">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Most Bought Item (Yearly)</h5>
+                                <p class="card-text h4" id="yearly-top-item">-</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Top Producer (Yearly)</h5>
+                                <p class="card-text h4" id="yearly-top-producer">-</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </main>
         </div>
     </div>
@@ -243,6 +298,14 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
                     $('#weekly-losses-total').text(`PHP ${data.weekly_losses_total}`);
                     $('#monthly-losses-total').text(`PHP ${data.monthly_losses_total}`);
                     $('#yearly-losses-total').text(`PHP ${data.yearly_losses_total}`);
+
+                    // Update top performers
+                    $('#weekly-top-item').text(`${data.top_performers.weekly.item.product_type} (${data.top_performers.weekly.item.total_quantity} units)`);
+                    $('#weekly-top-producer').text(`${data.top_performers.weekly.producer.NAME} (${data.top_performers.weekly.producer.total_quantity} units)`);
+                    $('#monthly-top-item').text(`${data.top_performers.monthly.item.product_type} (${data.top_performers.monthly.item.total_quantity} units)`);
+                    $('#monthly-top-producer').text(`${data.top_performers.monthly.producer.NAME} (${data.top_performers.monthly.producer.total_quantity} units)`);
+                    $('#yearly-top-item').text(`${data.top_performers.yearly.item.product_type} (${data.top_performers.yearly.item.total_quantity} units)`);
+                    $('#yearly-top-producer').text(`${data.top_performers.yearly.producer.NAME} (${data.top_performers.yearly.producer.total_quantity} units)`);
 
                     // Initial setup
                     $('.time-based-card').hide();
